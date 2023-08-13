@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "cr8-cfg"
+name = "cfg"
 version = "0.1.0"

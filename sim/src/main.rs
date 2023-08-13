@@ -2,16 +2,15 @@
 
 mod cr8;
 mod device;
+mod exec;
 
 use cr8::CR8;
-use cr8_cfg::reg::Register;
 
 fn main() {
-    let mut cr8 = CR8::new();
+    let instructions = vec![
+        0b00101000, 0b00000100, 0b00101001, 0b00000010, 0b10010000, 0b00000001,
+    ];
 
-    cr8.mov_imm8(Register::A, 255);
-    cr8.mov_imm8(Register::B, 5);
-    cr8.push_reg(Register::A);
-    cr8.adc_reg(Register::A, Register::B);
-    cr8.debug();
+    let cr8 = exec::exec(instructions, CR8::new());
+    cr8.debug()
 }

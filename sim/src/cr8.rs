@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-use cr8_cfg::{
+use cfg::{
     mem::{PROGRAM_COUNTER, STACK, STACK_END, STACK_POINTER},
     reg::Register,
 };
@@ -114,34 +114,40 @@ impl CR8 {
         self.jnz_imm8(self.reg[reg as usize]);
     }
 
-    pub fn inb_reg(&mut self, dev_id: u8, reg: Register) {
+    pub fn inb_imm8(&mut self, into: Register, port: u8) {
         let i = (|| {
             for (i, dev) in self.dev.iter().enumerate() {
-                if dev.id == dev_id {
+                if dev.id == port {
                     return i;
                 }
             }
             panic!("Attempted to address unpresent device");
         })();
 
-        self.dev[i].send.call((&self.dev[i], self));
+        self.reg[into as usize] = self.dev[i].send.call((&self.dev[i], self));
     }
 
-    pub fn outb_imm8(&mut self, dev_id: u8, imm8: u8) {
+    pub fn inb_reg(&mut self, into: Register, port: Register) {
+        self.inb_imm8(into, self.reg[port as usize]);
+    }
+
+    pub fn outb_imm8(&mut self, send: Register, port: u8) {
         let i = (|| {
             for (i, dev) in self.dev.iter().enumerate() {
-                if dev.id == dev_id {
+                if dev.id == port {
                     return i;
                 }
             }
             panic!("Attempted to address unpresent device");
         })();
 
-        self.dev[i].recieve.call((&self.dev[i], self, imm8));
+        self.dev[i]
+            .recieve
+            .call((&self.dev[i], self, self.reg[send as usize]));
     }
 
-    pub fn outb_reg(&mut self, dev_id: u8, reg: Register) {
-        self.outb_imm8(dev_id, self.reg[reg as usize]);
+    pub fn outb_reg(&mut self, send: Register, port: Register) {
+        self.outb_imm8(send, self.reg[port as usize]);
     }
 
     pub fn cmp_imm8(&mut self, lhs: Register, imm8: u8) {
