@@ -1,4 +1,7 @@
+#![feature(fn_traits)]
+
 mod cr8;
+mod device;
 
 use cr8::CR8;
 use cr8_cfg::reg::Register;

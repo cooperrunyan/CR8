@@ -5,10 +5,12 @@ use cr8_cfg::{
     reg::Register,
 };
 
-#[derive(Debug)]
+use crate::device::Device;
+
 pub struct CR8 {
     reg: [u8; 8],
     mem: [u8; 65536],
+    dev: Vec<Device>,
 }
 
 impl CR8 {
@@ -16,6 +18,7 @@ impl CR8 {
         let mut cr8 = Self {
             reg: [0; 8],
             mem: [0; 65536],
+            dev: vec![],
         };
 
         // initialize stack pointer;
@@ -111,20 +114,34 @@ impl CR8 {
         self.jnz_imm8(self.reg[reg as usize]);
     }
 
-    pub fn inb_imm8(&mut self, imm8: u8) {
-        todo!();
+    pub fn inb_reg(&mut self, dev_id: u8, reg: Register) {
+        let i = (|| {
+            for (i, dev) in self.dev.iter().enumerate() {
+                if dev.id == dev_id {
+                    return i;
+                }
+            }
+            panic!("Attempted to address unpresent device");
+        })();
+
+        self.dev[i].send.call((&self.dev[i], self));
     }
 
-    pub fn inb_reg(&mut self, reg: Register) {
-        self.inb_imm8(self.reg[reg as usize]);
+    pub fn outb_imm8(&mut self, dev_id: u8, imm8: u8) {
+        let i = (|| {
+            for (i, dev) in self.dev.iter().enumerate() {
+                if dev.id == dev_id {
+                    return i;
+                }
+            }
+            panic!("Attempted to address unpresent device");
+        })();
+
+        self.dev[i].recieve.call((&self.dev[i], self, imm8));
     }
 
-    pub fn outb_imm8(&mut self, imm8: u8) {
-        todo!();
-    }
-
-    pub fn outb_reg(&mut self, reg: Register) {
-        self.outb_imm8(self.reg[reg as usize]);
+    pub fn outb_reg(&mut self, dev_id: u8, reg: Register) {
+        self.outb_imm8(dev_id, self.reg[reg as usize]);
     }
 
     pub fn cmp_imm8(&mut self, lhs: Register, imm8: u8) {
@@ -198,6 +215,26 @@ impl CR8 {
         self.and_imm8(lhs, self.reg[reg as usize]);
     }
 
+    pub fn dev_add(&mut self, dev: Device) {
+        let mut dev = dev;
+        dev.id = self.dev.len() as u8;
+        self.dev.push(dev);
+    }
+
+    pub fn dev_rm(&mut self, id: u8) {
+        let i = (|| {
+            for (i, dev) in self.dev.iter().enumerate() {
+                if dev.id == id {
+                    return i;
+                }
+            }
+            panic!("Attempted to remove unpresent device");
+        })();
+
+        let _ = self.dev[i].drop.call((&self.dev[i], self));
+        self.dev.remove(i);
+    }
+
     pub fn debug(&self) {
         println!("A: {}", self.reg[Register::A as usize]);
         println!("B: {}", self.reg[Register::B as usize]);
@@ -208,7 +245,14 @@ impl CR8 {
         println!("[HL]: {}", self.mem[self.hl() as usize]);
         println!("SP: {}", self.sp() - STACK);
         println!("[SP]: {}", self.mem[self.sp() as usize]);
+        println!();
+        println!("Devices:");
 
+        for (i, dev) in self.dev.iter().enumerate() {
+            println!("  {i}: {}", dev.name);
+        }
+
+        println!();
         let f = self.reg[Register::F as usize];
         let lf = f & 1;
         let ef = (f >> 1) & 1;
