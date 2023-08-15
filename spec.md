@@ -22,7 +22,7 @@
 
 > `*`: [Memory mapped](#memory-layout) register
 
-### Flags (LSB-MSB)
+### Flags
 
 - `LF`: Less than flag
 - `EF`: Equal to flag
@@ -38,7 +38,7 @@
 | 2    | `MOV`     | `reg`, `reg/imm8` | `reg = reg/imm8`                         |
 | 3    | `PUSH`    | `reg/imm8`        | `[SP++] = reg/imm8`                      |
 | 4    | `POP`     | `reg`             | `reg = [SP--]`                           |
-| 5    | `JNZ`     | `reg/imm8`        | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
+| 5    | `JNZ`     | `reg/imm8`,       | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
 | 6    | `INB`     | `reg`, `reg/imm8` | `reg = PORT[reg/imm8]`                   |
 | 7    | `OUTB`    | `reg/imm8`, `reg` | `PORT[reg/imm8] = reg`                   |
 | 8    | `CMP*`    | `reg`, `reg/imm8` | `reg - reg/imm8`                         |
@@ -88,11 +88,11 @@ The 0 to 2 bytes succeeding the instruction header.
 | 8      | Low Byte  | Low byte of imm16  |
 | 8      | High Byte | High byte of imm16 |
 
-### Example:
+### Example
 
 - Move contents of `A` register into `B` register:
 
-```
+```txt
 MOV   B         A
 ┌──┐ ┌─┐       ┌─┐
 00100001  00000000
@@ -102,7 +102,7 @@ MOV   B         A
 
 - Compare contents of `C` to 145:
 
-```
+```txt
 CMP   C
 ┌──┐ ┌─┐
 01001010  01001101
@@ -112,7 +112,7 @@ CMP   C
 
 - Load 0x0100 from RAM, then push it to the stack:
 
-```
+```txt
 MOV   L            │ MOV   H            │ LW    A  │ PUSH  A
 ┌──┐ ┌─┐           │ ┌──┐ ┌─┐           │ ┌──┐ ┌─┐ │ ┌──┐ ┌─┐
 00101101  00000000 │ 00101110  00000001 │ 00000000 │ 00110000

@@ -39,23 +39,25 @@ impl From<u8> for Operation {
     }
 }
 
-impl Into<u8> for Operation {
-    fn into(self) -> u8 {
-        match self {
-            Self::LW => 0x00,
-            Self::SW => 0x01,
-            Self::MOV => 0x02,
-            Self::PUSH => 0x03,
-            Self::POP => 0x04,
-            Self::JNZ => 0x05,
-            Self::INB => 0x06,
-            Self::OUTB => 0x07,
-            Self::CMP => 0x08,
-            Self::ADC => 0x09,
-            Self::SBB => 0x0A,
-            Self::OR => 0x0B,
-            Self::NOR => 0x0C,
-            Self::AND => 0x0D,
+impl From<&str> for Operation {
+    fn from(value: &str) -> Self {
+        match value {
+            "lw" => Self::LW,
+            "sw" => Self::SW,
+            "mov" => Self::MOV,
+            "push" => Self::PUSH,
+            "pop" => Self::POP,
+            "jnz" => Self::JNZ,
+            "inb" => Self::INB,
+            "outb" => Self::OUTB,
+            "cmp" => Self::CMP,
+            "adc" => Self::ADC,
+            "sbb" => Self::SBB,
+            "or" => Self::OR,
+            "nor" => Self::NOR,
+            "and" => Self::AND,
+
+            x => panic!("Invalid instruction name: {x}"),
         }
     }
 }

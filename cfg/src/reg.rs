@@ -36,21 +36,6 @@ impl From<u8> for Register {
     }
 }
 
-impl Into<u8> for Register {
-    fn into(self) -> u8 {
-        match self {
-            Self::A => 0x00,
-            Self::B => 0x01,
-            Self::C => 0x02,
-            Self::D => 0x03,
-            Self::Z => 0x04,
-            Self::L => 0x05,
-            Self::H => 0x06,
-            Self::F => 0x07,
-        }
-    }
-}
-
 impl From<usize> for Register {
     fn from(value: usize) -> Self {
         match value {
@@ -68,17 +53,35 @@ impl From<usize> for Register {
     }
 }
 
-impl Into<usize> for Register {
-    fn into(self) -> usize {
-        match self {
-            Self::A => 0x00,
-            Self::B => 0x01,
-            Self::C => 0x02,
-            Self::D => 0x03,
-            Self::Z => 0x04,
-            Self::L => 0x05,
-            Self::H => 0x06,
-            Self::F => 0x07,
+impl From<&str> for Register {
+    fn from(value: &str) -> Self {
+        match value {
+            "a" => Self::A,
+            "b" => Self::B,
+            "c" => Self::C,
+            "d" => Self::D,
+            "z" => Self::Z,
+            "l" => Self::L,
+            "h" => Self::H,
+            "f" => Self::F,
+
+            x => panic!("Invalid register name: {x}"),
         }
+    }
+}
+
+impl ToString for Register {
+    fn to_string(&self) -> String {
+        match self {
+            Self::A => "a",
+            Self::B => "b",
+            Self::C => "c",
+            Self::D => "d",
+            Self::Z => "z",
+            Self::L => "l",
+            Self::H => "h",
+            Self::F => "f",
+        }
+        .to_string()
     }
 }
