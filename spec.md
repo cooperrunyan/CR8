@@ -1,9 +1,9 @@
-# `CR8`
+# CR8
 
 - 8 bit data width
 - 16-bit address bus (64KB)
 - Little endian
-- Designed to be implemented with 7-series ttl logic gates
+- Designed to be implemented with 74-series ttl logic gates
 
 ## Registers
 
@@ -20,7 +20,7 @@
 | 6      | `H`  | 8-bit  | GP - High index |
 | 7      | `F`  | 4-bit  | Flags           |
 
-> `*`: [Memory mapped](#memory-layout) register
+> `*`: Memory mapped register
 
 ### Flags
 
@@ -48,7 +48,7 @@
 | C    | `NOR`     | `reg`, `reg/imm8` | `reg = !(reg \| reg/imm8)`               |
 | D    | `AND`     | `reg`, `reg/imm8` | `reg = reg & reg/imm8`                   |
 
-> `*`: Sets [FLAG](#flags) register
+> `*`: Sets FLAG register
 
 ### Instruction Layout
 
@@ -60,65 +60,13 @@ First byte of the instruction.
 
 | Length | Name      | Description                                                                        |
 | ------ | --------- | ---------------------------------------------------------------------------------- |
-| 4      | Operation | [Instruction](#instructions) to run                                                |
+| 4      | Operation | Instruction to run                                                                 |
 | 1      | Immediate | Signifies whether the instruction is using an imm as an argument, instead of a reg |
-| 3      | Register  | [Register](#registers) to run the operation on                                     |
+| 3      | Register  | Register to run the operation on                                                   |
 
 #### Tail
 
 The 0 to 2 bytes succeeding the instruction header.
-
-##### Case: `reg`
-
-| Length | Name     | Description            |
-| ------ | -------- | ---------------------- |
-| 5      | EMPTY    | Empty space (unneeded) |
-| 3      | Register | [Register](#registers) |
-
-##### Case: `imm8`
-
-| Length | Name | Description   |
-| ------ | ---- | ------------- |
-| 8      | Byte | Value of imm8 |
-
-##### Case: `imm16`
-
-| Length | Name      | Description        |
-| ------ | --------- | ------------------ |
-| 8      | Low Byte  | Low byte of imm16  |
-| 8      | High Byte | High byte of imm16 |
-
-### Example
-
-- Move contents of `A` register into `B` register:
-
-```txt
-MOV   B         A
-┌──┐ ┌─┐       ┌─┐
-00100001  00000000
-    │     └───┘
-   imm    EMPTY
-```
-
-- Compare contents of `C` to 145:
-
-```txt
-CMP   C
-┌──┐ ┌─┐
-01001010  01001101
-    │     └──────┘
-   imm      145
-```
-
-- Load 0x0100 from RAM, then push it to the stack:
-
-```txt
-MOV   L            │ MOV   H            │ LW    A  │ PUSH  A
-┌──┐ ┌─┐           │ ┌──┐ ┌─┐           │ ┌──┐ ┌─┐ │ ┌──┐ ┌─┐
-00101101  00000000 │ 00101110  00000001 │ 00000000 │ 00110000
-    │     └──────┘ │     │     └──────┘ │     │    │     │
-   imm       0     │    imm       1     │    imm   │    imm
-```
 
 ## Memory Layout
 
