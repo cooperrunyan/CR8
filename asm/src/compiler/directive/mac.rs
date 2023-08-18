@@ -1,3 +1,4 @@
+use core::panic;
 use std::collections::HashMap;
 
 use regex::{Captures, Regex};
@@ -35,20 +36,30 @@ pub struct Macro {
 pub enum MacroArg {
     Register(String),
     Immediate(String),
+    Index(String),
 }
 
 impl From<&str> for MacroArg {
     fn from(value: &str) -> Self {
-        if let Some(v) = value.strip_suffix('%') {
-            if v.strip_suffix('i').is_some() {
+        let value = value.trim();
+
+        if value.len() < 2 {
+            panic!("Arg too short");
+        }
+
+        if value.chars().nth(0).unwrap() == '%' {
+            if value.chars().nth(1).unwrap() == 'i' {
                 return Self::Immediate(value.to_string());
             }
-            if v.strip_suffix('r').is_some() {
+            if value.chars().nth(1).unwrap() == 'r' {
                 return Self::Register(value.to_string());
             }
-            panic!("Macro arguments bust be either 'i'mmediate or 'r'egister");
+            if value.starts_with("%[") && value.ends_with("]") {
+                return Self::Index(value.to_string());
+            }
+            panic!("Macro arguments bust be either 'i'mmediate, index, or 'r'egister");
         }
-        panic!("Macro arguments must start with %");
+        panic!("Macro arguments must start with %: {value:#?}",);
     }
 }
 
@@ -57,13 +68,14 @@ impl ToString for MacroArg {
         match self {
             MacroArg::Immediate(n) => n.to_string(),
             MacroArg::Register(r) => r.to_string(),
+            MacroArg::Index(i) => i.to_string(),
         }
     }
 }
 
 lazy_static! {
     static ref MACRO_DEF: Regex =
-        Regex::new(r"@macro\s*(\w+)\s*([%\w+\s]*):[\s\n]+((?:\s\s.*\n)+)").unwrap();
+        Regex::new(r"(?s)@macro\s*(\w+)\s*([%\w+\s\[\]]*):[\s\n]+(.*?)\n\n").unwrap();
 }
 
 impl From<&str> for Macro {
@@ -75,6 +87,7 @@ impl From<&str> for Macro {
             .map(|a| {
                 a.as_str()
                     .split(' ')
+                    .filter(|i| !i.trim().is_empty())
                     .map(MacroArg::from)
                     .collect::<Vec<_>>()
             })

@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-pub fn parse() -> Result<(String, String, String), String> {
+pub fn parse() -> Result<(String, String), String> {
     let args: Vec<_> = env::args().collect();
 
     let mut input_path = String::new();
@@ -36,5 +36,5 @@ pub fn parse() -> Result<(String, String, String), String> {
         Err(_) => return Err("Could not read input file".to_string()),
     };
 
-    Ok((input, input_path, output_path))
+    Ok((input, output_path))
 }

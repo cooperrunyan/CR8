@@ -1,3 +1,7 @@
+use std::{collections::HashMap, vec};
+
+use crate::mem::Size;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Operation {
     LW,
@@ -60,4 +64,110 @@ impl From<&str> for Operation {
             x => panic!("Invalid instruction name: {x}"),
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OpArg {
+    Register,
+    Immediate(Size),
+    None,
+}
+
+lazy_static! {
+    pub static ref NATIVE: HashMap<String, Vec<(OpArg, OpArg)>> = vec![
+        (
+            "lw".to_string(),
+            vec![
+                (OpArg::Register, OpArg::None),
+                (OpArg::Register, OpArg::Immediate(Size::Word))
+            ]
+        ),
+        (
+            "sw".to_string(),
+            vec![
+                (OpArg::Register, OpArg::None),
+                (OpArg::Immediate(Size::Word), OpArg::Register)
+            ]
+        ),
+        (
+            "mov".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "push".to_string(),
+            vec![
+                (OpArg::Register, OpArg::None),
+                (OpArg::Immediate(Size::Byte), OpArg::None)
+            ]
+        ),
+        ("pop".to_string(), vec![(OpArg::Register, OpArg::None),]),
+        (
+            "jnz".to_string(),
+            vec![
+                (OpArg::Register, OpArg::None),
+                (OpArg::Immediate(Size::Byte), OpArg::None)
+            ]
+        ),
+        (
+            "inb".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "outb".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Immediate(Size::Byte), OpArg::Register),
+            ]
+        ),
+        (
+            "cmp".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "adc".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "sbb".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "or".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "nor".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+        (
+            "and".to_string(),
+            vec![
+                (OpArg::Register, OpArg::Register),
+                (OpArg::Register, OpArg::Immediate(Size::Byte))
+            ]
+        ),
+    ]
+    .into_iter()
+    .collect();
 }

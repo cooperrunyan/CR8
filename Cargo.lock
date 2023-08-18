@@ -18,11 +18,16 @@ dependencies = [
  "cfg",
  "lazy_static",
  "regex",
+ "util",
 ]
 
 [[package]]
 name = "cfg"
 version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "util",
+]
 
 [[package]]
 name = "lazy_static"
@@ -64,3 +69,14 @@ name = "regex-syntax"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
+
+[[package]]
+name = "sim"
+version = "0.1.0"
+dependencies = [
+ "cfg",
+]
+
+[[package]]
+name = "util"
+version = "0.1.0"

@@ -2,7 +2,7 @@ pub fn parse_num<T>(str: &str) -> T
 where
     T: From<u64>,
 {
-    let str = str.trim().trim_start_matches("pat");
+    let str = str.trim().trim_start_matches("$");
 
     if str.ends_with('B') {
         let str = str.trim_end_matches('B');

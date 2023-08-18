@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
+use cfg::mem::{Size, GP_RAM};
 use regex::{Captures, Regex};
 
-use super::Size;
-
 lazy_static! {
-    static ref REF_DEFINE_RE: Regex = Regex::new(r"@store +(byte|word|dble) +(\S+)").unwrap();
+    static ref STORE_DEFINE_RE: Regex = Regex::new(r"@store +(byte|word|dble) +(\S+)").unwrap();
 }
 
-pub fn get_store_stmts(file: &str) -> (String, HashMap<String, usize>) {
+pub fn collect(file: &str) -> (String, HashMap<String, u16>) {
     let mut stores: Vec<(String, Size)> = vec![];
 
-    let file = REF_DEFINE_RE
+    let file = STORE_DEFINE_RE
         .replace_all(file, |cap: &Captures| {
             let id = cap.get(2).unwrap().as_str().to_string();
             let ty = Size::from(cap.get(1).unwrap().as_str());
@@ -44,19 +43,8 @@ pub fn get_store_stmts(file: &str) -> (String, HashMap<String, usize>) {
             continue;
         }
 
-        map.insert(name.to_string(), i);
+        map.insert(name.to_string(), (i as u16) + GP_RAM);
     }
 
     (file, map)
-}
-
-impl From<&str> for Size {
-    fn from(value: &str) -> Self {
-        match value {
-            "byte" => Self::Byte,
-            "word" => Self::Word,
-            "dble" => Self::Double,
-            _ => panic!("Invalid @store type"),
-        }
-    }
 }

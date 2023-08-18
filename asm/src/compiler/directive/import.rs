@@ -9,7 +9,12 @@ lazy_static! {
     pub static ref USE_RE: Regex = Regex::new(r#"@use\s*"(?<path>.+)""#).unwrap();
 }
 
-pub fn include_import_statements(file: &str, path: PathBuf, sourced: &mut Vec<PathBuf>) -> String {
+pub fn include(file: &str) -> String {
+    let mut sourced = vec![];
+    include_file(file, PathBuf::from("."), &mut sourced)
+}
+
+fn include_file(file: &str, path: PathBuf, sourced: &mut Vec<PathBuf>) -> String {
     let mut inserts: Vec<(usize, usize, String)> = vec![];
 
     for mat in USE_RE.find_iter(file) {
@@ -53,7 +58,7 @@ pub fn include_import_statements(file: &str, path: PathBuf, sourced: &mut Vec<Pa
         };
 
         sourced.push(insert_path.clone());
-        let full = include_import_statements(&imported_file, insert_path, sourced);
+        let full = include_file(&imported_file, insert_path, sourced);
 
         inserts.push((start, end, full));
     }

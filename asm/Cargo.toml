@@ -1,11 +1,12 @@
 [package]
-name = "asm"
-version = "0.1.0"
-edition = "2021"
+  name    = "asm"
+  version = "0.1.0"
+  edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+  # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cfg = { path = "../cfg", package = "cfg" }
-lazy_static = "1.4.0"
-regex = "1.9.3"
+  cfg         = { path = "../cfg", package = "cfg" }
+  util        = { path = "../util", package = "util" }
+  lazy_static = "1.4.0"
+  regex       = "1.9.3"
