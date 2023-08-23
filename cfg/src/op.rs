@@ -1,17 +1,15 @@
 use std::{collections::HashMap, vec};
 
-use crate::mem::Size;
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Operation {
+    MOV,
     LW,
     SW,
-    MOV,
     PUSH,
     POP,
     JNZ,
-    INB,
-    OUTB,
+    IN,
+    OUT,
     CMP,
     ADC,
     SBB,
@@ -20,17 +18,17 @@ pub enum Operation {
     AND,
 }
 
-impl From<u8> for Operation {
-    fn from(value: u8) -> Self {
+impl From<u64> for Operation {
+    fn from(value: u64) -> Self {
         match value {
-            0x00 => Self::LW,
-            0x01 => Self::SW,
-            0x02 => Self::MOV,
+            0x00 => Self::MOV,
+            0x01 => Self::LW,
+            0x02 => Self::SW,
             0x03 => Self::PUSH,
             0x04 => Self::POP,
             0x05 => Self::JNZ,
-            0x06 => Self::INB,
-            0x07 => Self::OUTB,
+            0x06 => Self::IN,
+            0x07 => Self::OUT,
             0x08 => Self::CMP,
             0x09 => Self::ADC,
             0x0A => Self::SBB,
@@ -43,17 +41,38 @@ impl From<u8> for Operation {
     }
 }
 
+macro_rules! uint {
+    ($trait:ident) => {
+        impl_uint!($trait, u8);
+        impl_uint!($trait, u16);
+        impl_uint!($trait, u32);
+        impl_uint!($trait, usize);
+    };
+}
+
+macro_rules! impl_uint {
+    ($trait:ident, $t:ty) => {
+        impl From<$t> for $trait {
+            fn from(value: $t) -> Self {
+                Self::from(value as u64)
+            }
+        }
+    };
+}
+
+uint!(Operation);
+
 impl From<&str> for Operation {
     fn from(value: &str) -> Self {
         match value {
+            "mov" => Self::MOV,
             "lw" => Self::LW,
             "sw" => Self::SW,
-            "mov" => Self::MOV,
             "push" => Self::PUSH,
             "pop" => Self::POP,
             "jnz" => Self::JNZ,
-            "inb" => Self::INB,
-            "outb" => Self::OUTB,
+            "in" => Self::IN,
+            "out" => Self::OUT,
             "cmp" => Self::CMP,
             "adc" => Self::ADC,
             "sbb" => Self::SBB,
@@ -67,104 +86,91 @@ impl From<&str> for Operation {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum OpArg {
+pub enum Arg {
     Register,
-    Immediate(Size),
-    None,
+    Byte,
 }
 
 lazy_static! {
-    pub static ref NATIVE: HashMap<String, Vec<(OpArg, OpArg)>> = vec![
+    pub static ref NATIVE: HashMap<Operation, Vec<Vec<Arg>>> = vec![
         (
-            "lw".to_string(),
+            Operation::MOV,
             vec![
-                (OpArg::Register, OpArg::None),
-                (OpArg::Register, OpArg::Immediate(Size::Word))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "sw".to_string(),
+            Operation::LW,
             vec![
-                (OpArg::Register, OpArg::None),
-                (OpArg::Immediate(Size::Word), OpArg::Register)
+                vec![Arg::Register],
+                vec![Arg::Register, Arg::Byte, Arg::Byte]
             ]
         ),
         (
-            "mov".to_string(),
+            Operation::SW,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register],
+                vec![Arg::Byte, Arg::Byte, Arg::Register]
+            ]
+        ),
+        (Operation::PUSH, vec![vec![Arg::Register], vec![Arg::Byte]]),
+        (Operation::POP, vec![vec![Arg::Register]]),
+        (Operation::JNZ, vec![vec![Arg::Register], vec![Arg::Byte]]),
+        (
+            Operation::IN,
+            vec![
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "push".to_string(),
+            Operation::OUT,
             vec![
-                (OpArg::Register, OpArg::None),
-                (OpArg::Immediate(Size::Byte), OpArg::None)
-            ]
-        ),
-        ("pop".to_string(), vec![(OpArg::Register, OpArg::None),]),
-        (
-            "jnz".to_string(),
-            vec![
-                (OpArg::Register, OpArg::None),
-                (OpArg::Immediate(Size::Byte), OpArg::None)
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Byte, Arg::Register,]
             ]
         ),
         (
-            "inb".to_string(),
+            Operation::CMP,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "outb".to_string(),
+            Operation::ADC,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Immediate(Size::Byte), OpArg::Register),
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "cmp".to_string(),
+            Operation::SBB,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "adc".to_string(),
+            Operation::OR,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "sbb".to_string(),
+            Operation::NOR,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
         (
-            "or".to_string(),
+            Operation::AND,
             vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
-            ]
-        ),
-        (
-            "nor".to_string(),
-            vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
-            ]
-        ),
-        (
-            "and".to_string(),
-            vec![
-                (OpArg::Register, OpArg::Register),
-                (OpArg::Register, OpArg::Immediate(Size::Byte))
+                vec![Arg::Register, Arg::Register],
+                vec![Arg::Register, Arg::Byte]
             ]
         ),
     ]

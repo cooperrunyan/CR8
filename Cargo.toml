@@ -1,2 +1,2 @@
 [workspace]
-  members = ["asm", "cfg", "sim", "util"]
+  members = ["asm", "cfg", "sim"]

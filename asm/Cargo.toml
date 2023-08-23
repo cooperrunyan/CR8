@@ -7,6 +7,5 @@
 
 [dependencies]
   cfg         = { path = "../cfg", package = "cfg" }
-  util        = { path = "../util", package = "util" }
   lazy_static = "1.4.0"
   regex       = "1.9.3"

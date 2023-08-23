@@ -1,21 +1,19 @@
-use std::fs::write;
-
-#[macro_use]
-extern crate lazy_static;
+use std::fs::OpenOptions;
+use std::fs::{self, File};
+use std::io::Write;
 
 mod args;
-mod compiler;
 
 fn main() {
-    let (input, output_path) = match args::parse() {
-        Ok(r) => r,
-        Err(msg) => {
-            println!("{msg}");
-            return;
-        }
-    };
+    let args = args::collect();
+    let binary = asm::compile(&args.source_file);
 
-    let compiled = compiler::compile(input);
+    let mut options = OpenOptions::new();
+    let mut file = options
+        .write(true)
+        .append(false)
+        .open(args.output)
+        .expect("Failed to open output file");
 
-    write(output_path, compiled.bin).expect("Failed to write output");
+    let _ = file.write_all(&binary);
 }

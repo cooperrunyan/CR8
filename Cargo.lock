@@ -18,7 +18,6 @@ dependencies = [
  "cfg",
  "lazy_static",
  "regex",
- "util",
 ]
 
 [[package]]
@@ -26,7 +25,6 @@ name = "cfg"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
- "util",
 ]
 
 [[package]]
@@ -76,7 +74,3 @@ version = "0.1.0"
 dependencies = [
  "cfg",
 ]
-
-[[package]]
-name = "util"
-version = "0.1.0"

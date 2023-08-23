@@ -7,7 +7,6 @@
 
 [dependencies]
   lazy_static = "1.4.0"
-  util        = { path = "../util" }
 
 [lib]
   name = "cfg"

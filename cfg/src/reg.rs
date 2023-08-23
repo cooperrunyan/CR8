@@ -1,11 +1,11 @@
-pub const A: u8 = 0;
-pub const B: u8 = 1;
-pub const C: u8 = 2;
-pub const D: u8 = 3;
-pub const Z: u8 = 4;
-pub const L: u8 = 5;
-pub const H: u8 = 6;
-pub const F: u8 = 7;
+pub const A: u64 = 0x00;
+pub const B: u64 = 0x01;
+pub const C: u64 = 0x02;
+pub const D: u64 = 0x03;
+pub const Z: u64 = 0x04;
+pub const L: u64 = 0x05;
+pub const H: u64 = 0x06;
+pub const F: u64 = 0x07;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Register {
@@ -19,69 +19,38 @@ pub enum Register {
     F,
 }
 
-impl From<u8> for Register {
-    fn from(value: u8) -> Self {
+impl From<u64> for Register {
+    fn from(value: u64) -> Self {
         match value {
-            0x00 => Self::A,
-            0x01 => Self::B,
-            0x02 => Self::C,
-            0x03 => Self::D,
-            0x04 => Self::Z,
-            0x05 => Self::L,
-            0x06 => Self::H,
-            0x07 => Self::F,
+            A => Self::A,
+            B => Self::B,
+            C => Self::C,
+            D => Self::D,
+            Z => Self::Z,
+            L => Self::L,
+            H => Self::H,
+            F => Self::F,
 
-            _ => panic!(),
+            _ => panic!("Invalid register: {value}"),
         }
     }
 }
 
-impl From<usize> for Register {
-    fn from(value: usize) -> Self {
-        match value {
-            0x00 => Self::A,
-            0x01 => Self::B,
-            0x02 => Self::C,
-            0x03 => Self::D,
-            0x04 => Self::Z,
-            0x05 => Self::L,
-            0x06 => Self::H,
-            0x07 => Self::F,
-
-            _ => panic!(),
-        }
-    }
-}
+uint!(Register);
 
 impl From<&str> for Register {
     fn from(value: &str) -> Self {
         match value {
-            "a" => Self::A,
-            "b" => Self::B,
-            "c" => Self::C,
-            "d" => Self::D,
-            "z" => Self::Z,
-            "l" => Self::L,
-            "h" => Self::H,
-            "f" => Self::F,
+            "%a" => Self::A,
+            "%b" => Self::B,
+            "%c" => Self::C,
+            "%d" => Self::D,
+            "%z" => Self::Z,
+            "%l" => Self::L,
+            "%h" => Self::H,
+            "%f" => Self::F,
 
             x => panic!("Invalid register name: {x}"),
         }
-    }
-}
-
-impl ToString for Register {
-    fn to_string(&self) -> String {
-        match self {
-            Self::A => "a",
-            Self::B => "b",
-            Self::C => "c",
-            Self::D => "d",
-            Self::Z => "z",
-            Self::L => "l",
-            Self::H => "h",
-            Self::F => "f",
-        }
-        .to_string()
     }
 }

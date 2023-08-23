@@ -1,40 +1,44 @@
-use std::{env, fs};
+use std::fs;
 
-pub fn parse() -> Result<(String, String), String> {
-    let args: Vec<_> = env::args().collect();
+#[derive(Debug)]
+pub struct Args {
+    pub input: String,
+    pub source_file: String,
+    pub output: String,
+}
 
-    let mut input_path = String::new();
-    let mut output_path = String::new();
-
-    for (i, arg) in args.iter().enumerate() {
+pub fn collect() -> Args {
+    let mut input = String::new();
+    let mut output = String::new();
+    for (i, arg) in std::env::args().enumerate() {
         if arg == "-i" {
-            if args.len() <= i + 1 {
-                break;
+            if !input.is_empty() {
+                panic!("Attempted to set -i flag twice");
             }
-            input_path = args[i + 1].to_string();
-        } else if arg == "-o" {
-            if args.len() <= i + 1 {
-                break;
+            input = std::env::args().nth(i + 1).unwrap_or_default();
+        }
+        if arg == "-o" {
+            if !output.is_empty() {
+                panic!("Attempted to set -o flag twice");
             }
-            output_path = args[i + 1].to_string();
+            output = std::env::args().nth(i + 1).unwrap_or_default();
         }
     }
-
-    if input_path.is_empty() {
-        return Err("Expected input file".to_string());
+    if input.is_empty() {
+        panic!("Did not specify input file")
+    }
+    if output.is_empty() {
+        panic!("Did not specify output file")
     }
 
-    if output_path.is_empty() {
-        return Err("Expected output file".to_string());
+    let source_file = fs::read(&input)
+        .map(|b| String::from_utf8(b))
+        .expect("Could not read input file")
+        .expect("Could not read input file");
+
+    Args {
+        input,
+        output,
+        source_file,
     }
-
-    let input = match fs::read(input_path.clone()) {
-        Ok(i) => match String::from_utf8(i) {
-            Ok(s) => s,
-            Err(_) => return Err("Bad input file".to_string()),
-        },
-        Err(_) => return Err("Could not read input file".to_string()),
-    };
-
-    Ok((input, output_path))
 }
