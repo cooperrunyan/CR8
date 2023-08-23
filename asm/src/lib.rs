@@ -117,8 +117,6 @@ pub fn compile(source: &str) -> Vec<u8> {
         bin.append(&mut sect);
     }
 
-    dbg!(&bin);
-
     bin
 }
 

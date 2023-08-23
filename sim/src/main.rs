@@ -7,6 +7,9 @@ mod exec;
 
 use cr8::CR8;
 
+#[cfg(test)]
+mod test;
+
 fn main() {
     let bin = args::parse().unwrap();
 

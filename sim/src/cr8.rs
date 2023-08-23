@@ -19,19 +19,31 @@ pub struct CR8 {
     pub reg: [u8; 8],
     pub mem: [u8; 65536],
     pub dev: Vec<Device>,
+    pub speed: u64,
 }
 
+#[allow(dead_code)]
 impl CR8 {
     pub fn new() -> Self {
         let mut cr8 = Self {
             reg: [0; 8],
             mem: [0; 65536],
+            speed: 500,
             dev: vec![],
         };
 
         // initialize stack pointer;
         cr8.set_sp(split(STACK));
         cr8
+    }
+
+    pub fn speed(self, speed: u64) -> Self {
+        Self {
+            reg: self.reg,
+            mem: self.mem,
+            dev: self.dev,
+            speed,
+        }
     }
 
     fn hl(&self) -> (u8, u8) {
@@ -89,6 +101,7 @@ impl CR8 {
     }
 
     pub fn mov_imm8(&mut self, to: Register, imm8: u8) {
+        println!("MOV {to:#?}, {imm8:#?}");
         self.reg[to as usize] = imm8;
     }
 
@@ -125,8 +138,6 @@ impl CR8 {
     }
 
     pub fn jnz_imm8(&mut self, imm8: u8) {
-        println!("JNZ {}, {imm8:#?}", join(self.hl()));
-
         if imm8 == 0 {
             return;
         }
@@ -134,7 +145,7 @@ impl CR8 {
         self.mem[PROGRAM_COUNTER as usize] = self.reg[Register::L as usize];
         self.mem[(PROGRAM_COUNTER + 1) as usize] = self.reg[Register::H as usize];
 
-        println!("Jump to: {}", join(self.pc()));
+        println!("JNZ {}, {imm8:#?}", join(self.pc()));
     }
 
     pub fn jnz_reg(&mut self, reg: Register) {

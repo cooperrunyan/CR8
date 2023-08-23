@@ -83,6 +83,6 @@ pub fn exec(instructions: Vec<u8>, mut cr8: CR8) -> CR8 {
         };
 
         cr8.tick_pc();
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(cr8.speed));
     }
 }
