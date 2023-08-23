@@ -111,7 +111,7 @@ lazy_static! {
             Operation::SW,
             vec![
                 vec![Arg::Register],
-                vec![Arg::Byte, Arg::Byte, Arg::Register]
+                vec![Arg::Register, Arg::Byte, Arg::Byte]
             ]
         ),
         (Operation::PUSH, vec![vec![Arg::Register], vec![Arg::Byte]]),

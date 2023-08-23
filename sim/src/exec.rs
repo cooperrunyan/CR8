@@ -60,7 +60,7 @@ pub fn exec(instructions: Vec<u8>, mut cr8: CR8) -> CR8 {
             (MOV, true) => cr8.mov_imm8(reg, fetch_imm8_0),
             (MOV, false) => cr8.mov_reg(reg, fetch_reg),
             (PUSH, true) => cr8.push_imm8(fetch_imm8_0),
-            (PUSH, false) => cr8.push_reg(fetch_reg),
+            (PUSH, false) => cr8.push_reg(reg),
             (POP, _) => cr8.pop(reg),
             (JNZ, true) => cr8.jnz_imm8(fetch_imm8_0),
             (JNZ, false) => cr8.jnz_reg(reg),
