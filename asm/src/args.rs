@@ -32,7 +32,7 @@ pub fn collect() -> Args {
     }
 
     let source_file = fs::read(&input)
-        .map(|b| String::from_utf8(b))
+        .map(String::from_utf8)
         .expect("Could not read input file")
         .expect("Could not read input file");
 

@@ -1,9 +1,30 @@
-use crate::cr8::CR8;
+pub trait Device {
+    fn receive(&mut self, byte: u8);
+    fn send(&mut self) -> u8;
+    fn inspect(&self) -> u8;
+}
 
-pub struct Device {
-    pub id: u8,
-    pub name: String,
-    pub recieve: Box<dyn Fn(&Device, &CR8, u8)>,
-    pub send: Box<dyn Fn(&Device, &CR8) -> u8>,
-    pub drop: Box<dyn Fn(&Device, &CR8)>,
+#[derive(Default, Debug)]
+pub struct Control {
+    pub state: u8,
+}
+
+impl Device for Control {
+    fn receive(&mut self, byte: u8) {
+        match byte {
+            0x00 => println!("Control recieved NOP message"),
+            0x01 => {
+                self.state |= 0b00000001;
+            }
+            _ => {}
+        }
+    }
+
+    fn send(&mut self) -> u8 {
+        self.state
+    }
+
+    fn inspect(&self) -> u8 {
+        self.state
+    }
 }

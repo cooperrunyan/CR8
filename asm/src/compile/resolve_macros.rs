@@ -16,7 +16,7 @@ pub fn resolve_macros(section: &str, macros: &HashMap<String, Macro>) -> String 
             Some(n) => n,
         };
 
-        let (ident, inputted_args) = next.split_once(" ").unwrap_or((next.as_str(), ""));
+        let (ident, inputted_args) = next.split_once(' ').unwrap_or((next.as_str(), ""));
         let mac = match macros.get(ident) {
             None => {
                 resolved.push_str(next.as_str());
@@ -26,7 +26,10 @@ pub fn resolve_macros(section: &str, macros: &HashMap<String, Macro>) -> String 
             Some(m) => m,
         };
 
-        let inputted_args = inputted_args.split(',').map(|a| a.replace(' ', ""));
+        let inputted_args = inputted_args
+            .split(',')
+            .map(|a| a.trim())
+            .filter(|a| !a.is_empty());
 
         let mut filled = mac.content.clone();
 
@@ -40,14 +43,14 @@ pub fn resolve_macros(section: &str, macros: &HashMap<String, Macro>) -> String 
                     None => panic!("Bad macro call: {next}"),
                     Some(a) => a,
                 };
-                filled = filled.replace(mac_arg_name_l, &format!("{}::0", input.as_str()));
-                filled = filled.replace(mac_arg_name_h, &format!("{}::1", input.as_str()));
+                filled = filled.replace(mac_arg_name_l, &format!("{}::0", input));
+                filled = filled.replace(mac_arg_name_h, &format!("{}::1", input));
             } else {
                 let mac_arg_name = match mac.args.get(i) {
                     None => panic!("Bad macro call: {next}"),
                     Some(a) => a,
                 };
-                filled = filled.replace(mac_arg_name, input.as_str());
+                filled = filled.replace(mac_arg_name, input);
             }
         }
 

@@ -1,12 +1,5 @@
-@static byte REF = 1
-@data byte x
-@data dble y
-@data word z
-
+jmp [main]
 
 main:
-  lda [t]
-  jnz 1
-
-t:
-  adc %a, %b
+  mov %b, 12
+  halt

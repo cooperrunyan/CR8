@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, path::PathBuf};
 use super::{num::try_read_num, resolve_macros};
 use cfg::mem;
 
-pub fn scan(source: &str) -> (Ctx, String) {
+pub fn scan(source: &str) -> Ctx {
     let mut ctx = Ctx::default();
 
     ctx.symbols
@@ -11,7 +11,7 @@ pub fn scan(source: &str) -> (Ctx, String) {
     ctx.symbols
         .insert("VRAM".to_string(), SymbolType::StaticWord(mem::VRAM));
     ctx.symbols
-        .insert("GP_RAM".to_string(), SymbolType::StaticWord(mem::GP_RAM));
+        .insert("GPRAM".to_string(), SymbolType::StaticWord(mem::GPRAM));
     ctx.symbols
         .insert("STACK".to_string(), SymbolType::StaticWord(mem::STACK));
     ctx.symbols.insert(
@@ -34,8 +34,15 @@ pub fn scan(source: &str) -> (Ctx, String) {
         &mut ctx,
     );
 
-    let s = scan_with_ctx(source, &mut ctx);
-    (ctx, s)
+    let global = scan_with_ctx(source, &mut ctx);
+
+    if ctx.sections.contains_key("global") {
+        panic!("Cannot use reserved section name: 'global'");
+    }
+
+    ctx.sections.insert("global".to_string(), global);
+
+    ctx
 }
 
 fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
@@ -49,7 +56,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
             continue;
         }
 
-        if let Some(comm_ind) = line.find(";") {
+        if let Some(comm_ind) = line.find(';') {
             line = &line[0..comm_ind].trim_end();
         };
 
@@ -64,13 +71,13 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                     let lines = source.split('\n').collect::<Vec<_>>();
                     for j in (i + 1)..lines.len() {
                         let current = lines.get(j).unwrap();
-                        if !current.starts_with(" ") && !current.ends_with(":") {
+                        if !current.starts_with(' ') && !current.ends_with(':') {
                             break;
                         }
                         skip += 1;
                         let mut current = current.trim();
 
-                        if let Some(comm_ind) = current.find(";") {
+                        if let Some(comm_ind) = current.find(';') {
                             current = &current[0..comm_ind].trim();
                         };
 
@@ -219,13 +226,13 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                             continue;
                         }
                         let current = lines.get(j).unwrap();
-                        if !current.starts_with(" ") {
+                        if !current.starts_with(' ') {
                             break;
                         }
                         skip += 1;
                         let mut current = current.trim();
 
-                        if let Some(comm_ind) = current.find(";") {
+                        if let Some(comm_ind) = current.find(';') {
                             current = &current[0..comm_ind].trim();
                         };
 
@@ -263,7 +270,7 @@ pub struct Ctx {
 impl Ctx {
     pub fn resolve_macros(&mut self) {
         for (_, section) in self.sections.iter_mut() {
-            *section = resolve_macros::resolve_macros(&section, &self.macros);
+            *section = resolve_macros::resolve_macros(section, &self.macros);
         }
     }
 }

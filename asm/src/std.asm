@@ -93,12 +93,29 @@ jge $0, $1:
 call $0, $1:
   push [(. + 11) >> 8]    ; 3 bytes
   push [(. + 8) & 0x00FF] ; 3 bytes
-  jmp $0, $1             ; 5 bytes
+  jmp $0, $1              ; 5 bytes
 
 @macro
 ret:
   pop %l
   pop %h
   jnz 1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Devices
+
+@static byte STATUS_PORT = 0x00
+@static byte HALT = 0x01
+
+@macro
+outi $0, $1:
+  push %z
+  mov %z, $0
+  out $1, %z
+  pop %z
+
+@macro
+halt:
+  outi HALT, STATUS_PORT
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

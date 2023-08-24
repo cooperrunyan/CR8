@@ -7,6 +7,7 @@
 
 [dependencies]
   cfg = { path = "../cfg" }
+typed-builder = "0.15.2"
 
 [dev-dependencies]
   asm = { path = "../asm" }

@@ -1,5 +1,4 @@
 use std::fs::OpenOptions;
-use std::fs::{self, File};
 use std::io::Write;
 
 mod args;
@@ -11,7 +10,9 @@ fn main() {
     let mut options = OpenOptions::new();
     let mut file = options
         .write(true)
+        .truncate(true)
         .append(false)
+        .create(true)
         .open(args.output)
         .expect("Failed to open output file");
 

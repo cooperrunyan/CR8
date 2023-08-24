@@ -27,24 +27,25 @@
 
 ## Instructions
 
-> 0x00 is effectively a `NOP` because it moves A to A
+> - 0x00 is effectively a `NOP` because it moves A to A
+> - `JNZ` with the is-imm bit set to 1 is effectively `JMP`
 
-| Code | Pnuemonic | Args                        | Result                                   |
-| ---- | --------- | --------------------------- | ---------------------------------------- |
-| 0    | `MOV`     | `reg`, `reg/imm8`           | `reg = reg/imm8`                         |
-| 1    | `LW`      | `reg`, `HL/imm8`, `HL/imm8` | `reg` = `[HL/(imm8, imm8)]`              |
-| 2    | `SW`      | `reg`, `HL/imm8`, `HL/imm8` | `[HL/(imm8, imm8)]` = `reg`              |
-| 3    | `PUSH`    | `reg/imm8`                  | `[SP++] = reg/imm8`                      |
-| 4    | `POP`     | `reg`                       | `reg = [SP--]`                           |
-| 5    | `JNZ`     | `reg/imm1`,                 | `if reg/imm1 != 0; PC = [HL]; else: NOP` |
-| 6    | `IN`      | `reg`, `reg/imm8`           | `reg = PORT[reg/imm8]`                   |
-| 7    | `OUT`     | `reg/imm8`, `reg`           | `PORT[reg/imm8] = reg`                   |
-| 8    | `CMP*`    | `reg`, `reg/imm8`           | `reg - reg/imm8`                         |
-| 9    | `ADC*`    | `reg`, `reg/imm8`           | `reg = reg + reg/imm8 + CF`              |
-| A    | `SBB*`    | `reg`, `reg/imm8`           | `reg = reg - (reg/imm8 + CF)`            |
-| B    | `OR`      | `reg`, `reg/imm8`           | `reg = reg \| reg/imm8`                  |
-| C    | `NOR`     | `reg`, `reg/imm8`           | `reg = !(reg \| reg/imm8)`               |
-| D    | `AND`     | `reg`, `reg/imm8`           | `reg = reg & reg/imm8`                   |
+| Code | Pnuemonic | Args                         | Result                                   |
+| ---- | --------- | ---------------------------- | ---------------------------------------- |
+| 0    | `MOV`     | `reg`, `reg/imm8`            | `reg = reg/imm8`                         |
+| 1    | `LW`      | `reg`, `HL/imm8`, `HL/imm8`  | `reg` = `[HL/(imm8, imm8)]`              |
+| 2    | `SW`      | `HL/imm8`, `HL/imm8`, `reg`, | `[HL/(imm8, imm8)]` = `reg`              |
+| 3    | `PUSH`    | `reg/imm8`                   | `[SP++] = reg/imm8`                      |
+| 4    | `POP`     | `reg`                        | `reg = [SP--]`                           |
+| 5    | `JNZ`     | `reg/imm8`,                  | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
+| 6    | `IN`      | `reg`, `reg/imm8`            | `reg = PORT[reg/imm8]`                   |
+| 7    | `OUT`     | `reg/imm8`, `reg`            | `PORT[reg/imm8] = reg`                   |
+| 8    | `CMP*`    | `reg`, `reg/imm8`            | `reg - reg/imm8`                         |
+| 9    | `ADC*`    | `reg`, `reg/imm8`            | `reg = reg + reg/imm8 + CF`              |
+| A    | `SBB*`    | `reg`, `reg/imm8`            | `reg = reg - (reg/imm8 + CF)`            |
+| B    | `OR`      | `reg`, `reg/imm8`            | `reg = reg \| reg/imm8`                  |
+| C    | `NOR`     | `reg`, `reg/imm8`            | `reg = !(reg \| reg/imm8)`               |
+| D    | `AND`     | `reg`, `reg/imm8`            | `reg = reg & reg/imm8`                   |
 
 ## Built-in Macros
 
@@ -67,7 +68,7 @@
 
 ### Instruction Layout
 
-Instructions are 1-3 bytes long.
+Instructions are 1-4 bytes long.
 
 > JNZ is always 1 byte long
 
@@ -75,22 +76,21 @@ Instructions are 1-3 bytes long.
 
 First byte of the instruction.
 
-| Length | Name      | Description                                                                        |
-| ------ | --------- | ---------------------------------------------------------------------------------- |
-| 4      | Operation | Instruction to run                                                                 |
-| 1      | Immediate | Signifies whether the instruction is using an imm as an argument, instead of a reg |
-| 3      | Register  | Register to run the operation on                                                   |
+`000IIIIC`
 
-#### Tail
-
-The 0 to 2 bytes succeeding the instruction header.
+| Bits | Name          |
+| ---- | ------------- |
+| 0    | Is-immediate? |
+| 1-4  | Operation     |
+| 5-7  | Empty         |
 
 ## Memory Layout
 
 | Start Address | End Address | Size | Purpose         |
 | ------------- | ----------- | ---- | --------------- |
 | `0x0000`      | `0x7FFF`    | 32Kb | ROM             |
-| `0x8000`      | `0xFDFF`    | 30Kb | RAM             |
+| `0x8000`      | `0xBFFF`    | 16Kb | VRAM            |
+| `0xC000`      | `0xFDFF`    | 16Kb | GPRAM           |
 | `0xFC00`      | `0xFEFF`    | 1Kb  | Stack           |
 | `0xFF00`      | `0xFFFB`    | 256B | Empty           |
 | `0xFFFC`      | `0xFFFD`    | 2B   | Stack Pointer   |

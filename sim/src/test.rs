@@ -2,13 +2,13 @@ use cfg::reg::Register;
 
 macro_rules! test {
     ($asm:literal) => {{
-        use crate::{cr8::CR8, exec};
+        use crate::cr8::{CR8Config, CR8};
         use asm;
 
-        let mut bin = asm::compile($asm);
-        bin.append(&mut vec![255]);
-        let state = exec::exec(bin, CR8::new().speed(0));
-        state
+        let bin = asm::compile($asm);
+        let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());
+        cr8.run();
+        cr8
     }};
 }
 
@@ -72,7 +72,7 @@ main:
 
     assert_eq!(state.reg[Register::A as usize], 20);
     assert_eq!(state.reg[Register::B as usize], 20);
-    assert_eq!(state.mem[0xFD00 as usize], 20);
+    assert_eq!(state.mem[0xFD00_usize], 20);
 }
 
 #[test]
