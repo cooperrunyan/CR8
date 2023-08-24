@@ -49,32 +49,34 @@
 
 ## Built-in Macros
 
-| Pnuemonic | Args                     | Result                                                  |
-| --------- | ------------------------ | ------------------------------------------------------- |
-| `LDA`     | `$0`, `$1`               | `MOV l, $0`, `MOV h, $1`                                |
-| `SUB`     | `$0`, `$1`               | SBB with no borrow                                      |
-| `ADD`     | `reg`, `reg`             | ADC with no carry                                       |
-| `NAND`    | `reg`, `reg`             | Logical NAND                                            |
-| `JNZA`    | `reg`, `reg`, `reg/imm8` | `LDA reg, reg`, `JNZ reg/imm8`                          |
-| `JMP`     | `imm8`, `imm8`           | `JNZA imm8, imm8, 0x1`                                  |
-| `JEQ`     | `imm8`, `imm8`           | `AND f, 0b0010`, `JNZA imm8, imm8, f`                   |
-| `JLT`     | `imm8`, `imm8`           | `AND f, 0b0001`, `JNZA imm8, imm8, f`                   |
-| `JLE`     | `imm8`, `imm8`           | `AND f, 0b0011`, `JNZA imm8, imm8, f`                   |
-| `JGT`     | `imm8`, `imm8`           | `NOT f`, `AND f, 0b0001`, `JNZA imm8, imm8, f`          |
-| `JGE`     | `imm8`, `imm8`           | `NAND f, 0b0001`, `AND f, 0b0011`, `JNZA imm8, imm8, f` |
-| `JNE`     | `imm8`, `imm8`           | `NOT f`, `AND f, 0b0010`, `JNZA imm8, imm8, f`          |
+| Pnuemonic | Args       | Result                                    |
+| --------- | ---------- | ----------------------------------------- |
+| `LDA`     | `$0`, `$1` | `MOV l, $0`, `MOV h, $1`                  |
+| `SUB`     | `$0`, `$1` | SBB with no borrow                        |
+| `ADD`     | `$0`, `$1` | ADC with no carry                         |
+| `INC`     | `$0`       | Increment                                 |
+| `DEC`     | `$0`       | Decrement                                 |
+| `NAND`    | `$0`, `$1` | Logical NAND                              |
+| `NOT`     | `$0`       | Logical NOT                               |
+| `XOR`     | `$0`, `$1` | Logical XOR                               |
+| `XNOR`    | `$0`, `$1` | Logical XNOR                              |
+| `JMP`     | `$0`, `$1` | Unconditional jump                        |
+| `JEQ`     | `$0`, `$1` | Jump if Flags is equal to                 |
+| `JLT`     | `$0`, `$1` | Jump if Flags is less than                |
+| `JLE`     | `$0`, `$1` | Jump if Flags is less than or equal to    |
+| `JGT`     | `$0`, `$1` | Jump if Flags is greater than             |
+| `JGE`     | `$0`, `$1` | Jump if Flags is greater than or equal to |
+| `JNE`     | `$0`, `$1` | Jump if Flags is not equal                |
+| `CALL`    | `$0`, `$1` | Pushes PC to stack then jumps to `$0 $1`  |
+| `RET`     | None       | Pops H and L from stack, then jumps       |
+| `OUTB`    | `$0`, `$1` | `OUT` for immediates                      |
+| `HALT`    | None       | Send `SIGHALT` to Control                 |
 
 > `*`: Sets FLAG register
 
 ### Instruction Layout
 
-Instructions are 1-4 bytes long.
-
-> JNZ is always 1 byte long
-
-#### Header
-
-First byte of the instruction.
+Instructions are 1-4 bytes long. First byte of the instruction looks like:
 
 `000IIIIC`
 
@@ -83,6 +85,8 @@ First byte of the instruction.
 | 0    | Is-immediate? |
 | 1-4  | Operation     |
 | 5-7  | Empty         |
+
+> JNZ is always 1 byte long
 
 ## Memory Layout
 
@@ -95,3 +99,8 @@ First byte of the instruction.
 | `0xFF00`      | `0xFFFB`    | 256B | Empty           |
 | `0xFFFC`      | `0xFFFD`    | 2B   | Stack Pointer   |
 | `0xFFFE`      | `0xFFFF`    | 2B   | Program Counter |
+
+## Controller
+
+The simulator has a Control device at port 0x00 to communicate with the CR8.
+Right now it can only issue a HALT command to stop simulating.

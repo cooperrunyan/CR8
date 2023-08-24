@@ -9,8 +9,8 @@ lazy_static! {
     static ref EXPR_RE: Regex = Regex::new(r"\[([^\]]*)\]").unwrap();
     static ref SPACE_RE: Regex = Regex::new(r"\s*").unwrap();
     static ref SYM_RE: Regex = Regex::new(r"\w[\w\d]*").unwrap();
-    static ref DOT_RE: Regex = Regex::new(r"\D(\.)\D").unwrap();
-    static ref EXPR_HEX_RE: Regex = Regex::new(r"0x([0-9a-f]+)").unwrap();
+    static ref DOT_RE: Regex = Regex::new(r"(\.)").unwrap();
+    static ref EXPR_HEX_RE: Regex = Regex::new(r"0x(?i:([0-9a-f]+))").unwrap();
     static ref EXPR_BIN_RE: Regex = Regex::new(r"0b([01]+)").unwrap();
     static ref EXPR_GRP_RE: Regex = Regex::new(r"\((?:[^()]+)*\)").unwrap();
     static ref EXPR_MUL_RE: Regex = Regex::new(r"\d+(\s*\*\s*\d+)+").unwrap();

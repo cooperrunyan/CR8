@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use cfg::{op::Operation, reg::Register};
+use cfg::{mem::STACK, op::Operation, reg::Register};
 
 use super::{join, CR8};
 
@@ -10,8 +10,17 @@ impl CR8 {
 
         loop {
             if let Some(dev) = self.dev.get(&0) {
-                if dev.inspect() == 0x01 {
+                let status = dev.inspect();
+                if status == 0x01 {
                     break;
+                }
+                if status >> 1 == 1 {
+                    let ptr = STACK as usize;
+                    let stack_frame = &self.mem[ptr..ptr + 10];
+                    println!();
+                    println!("SIGPEEKSTACK:");
+                    dbg!(stack_frame);
+                    println!();
                 }
             }
 
@@ -63,7 +72,10 @@ impl CR8 {
                 (SW, true) => self.sw_imm16((b1, b2), Register::from(b0)),
                 (SW, false) => self.sw_hl(Register::from(b0)),
                 (MOV, true) => self.mov_imm8(Register::from(b0), b1),
-                (MOV, false) => self.mov_reg(Register::from(b0), Register::from(b1)),
+                (MOV, false) => {
+                    println!("{b0} {b1}");
+                    self.mov_reg(Register::from(b0), Register::from(b1))
+                }
                 (PUSH, true) => self.push_imm8(b0),
                 (PUSH, false) => self.push_reg(Register::from(b0)),
                 (POP, _) => self.pop(Register::from(b0)),

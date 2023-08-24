@@ -6,8 +6,8 @@
   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-  cfg = { path = "../cfg" }
-typed-builder = "0.15.2"
+  cfg           = { path = "../cfg" }
+  typed-builder = "0.15.2"
 
 [dev-dependencies]
   asm = { path = "../asm" }

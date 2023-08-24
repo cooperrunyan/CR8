@@ -6,26 +6,31 @@ use cfg::mem;
 pub fn scan(source: &str) -> Ctx {
     let mut ctx = Ctx::default();
 
-    ctx.symbols
-        .insert("ROM".to_string(), SymbolType::StaticWord(mem::ROM));
-    ctx.symbols
-        .insert("VRAM".to_string(), SymbolType::StaticWord(mem::VRAM));
-    ctx.symbols
-        .insert("GPRAM".to_string(), SymbolType::StaticWord(mem::GPRAM));
-    ctx.symbols
-        .insert("STACK".to_string(), SymbolType::StaticWord(mem::STACK));
-    ctx.symbols.insert(
-        "STACK_END".to_string(),
-        SymbolType::StaticWord(mem::STACK_END),
-    );
-    ctx.symbols.insert(
-        "STACK_POINTER".to_string(),
-        SymbolType::StaticWord(mem::STACK_POINTER),
-    );
-    ctx.symbols.insert(
-        "PROGRAM_COUNTER".to_string(),
-        SymbolType::StaticWord(mem::PROGRAM_COUNTER),
-    );
+    macro_rules! defb {
+        ($val:expr, $name:literal) => {
+            ctx.symbols
+                .insert($name.to_string(), SymbolType::StaticByte($val));
+        };
+    }
+
+    macro_rules! defw {
+        ($val:expr, $name:literal) => {
+            ctx.symbols
+                .insert($name.to_string(), SymbolType::StaticWord($val));
+        };
+    }
+
+    defw!(mem::ROM, "ROM");
+    defw!(mem::VRAM, "VRAM");
+    defw!(mem::GPRAM, "GPRAM");
+    defw!(mem::STACK, "STACK");
+    defw!(mem::STACK_END, "STACK_END");
+    defw!(mem::STACK_POINTER, "STACK_POINTER");
+    defw!(mem::PROGRAM_COUNTER, "PROGRAM_COUNTER");
+    defb!(mem::DEV_CONTROL, "DEV_CONTROL");
+    defb!(mem::SIGNOP, "SIGNOP");
+    defb!(mem::SIGHALT, "SIGHALT");
+    defb!(mem::SIGDBG, "SIGDBG");
 
     let builtin = include_bytes!("../std.asm");
 
@@ -36,11 +41,7 @@ pub fn scan(source: &str) -> Ctx {
 
     let global = scan_with_ctx(source, &mut ctx);
 
-    if ctx.sections.contains_key("global") {
-        panic!("Cannot use reserved section name: 'global'");
-    }
-
-    ctx.sections.insert("global".to_string(), global);
+    ctx.sections.insert(0, ("".to_string(), global));
 
     ctx
 }
@@ -50,13 +51,13 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
 
     let mut skip = 0;
 
-    for (i, mut line) in source.split('\n').enumerate() {
+    for (i, mut line) in source.lines().enumerate() {
         if skip != 0 {
             skip -= 1;
             continue;
         }
 
-        if let Some(comm_ind) = line.find(';') {
+        if let Some(comm_ind) = line.find('#') {
             line = &line[0..comm_ind].trim_end();
         };
 
@@ -68,7 +69,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
             Some(l) => {
                 if l == "macro" {
                     let mut mac = String::new();
-                    let lines = source.split('\n').collect::<Vec<_>>();
+                    let lines = source.lines().collect::<Vec<_>>();
                     for j in (i + 1)..lines.len() {
                         let current = lines.get(j).unwrap();
                         if !current.starts_with(' ') && !current.ends_with(':') {
@@ -77,7 +78,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         skip += 1;
                         let mut current = current.trim();
 
-                        if let Some(comm_ind) = current.find(';') {
+                        if let Some(comm_ind) = current.find('#') {
                             current = &current[0..comm_ind].trim();
                         };
 
@@ -219,7 +220,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                     }
 
                     let mut section = String::new();
-                    let lines = source.split('\n').collect::<Vec<_>>();
+                    let lines = source.lines().collect::<Vec<_>>();
                     for j in i..lines.len() {
                         if j == i {
                             skip += 1;
@@ -232,7 +233,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         skip += 1;
                         let mut current = current.trim();
 
-                        if let Some(comm_ind) = current.find(';') {
+                        if let Some(comm_ind) = current.find('#') {
                             current = &current[0..comm_ind].trim();
                         };
 
@@ -249,7 +250,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                     }
 
                     ctx.symbols.insert(name.to_string(), SymbolType::Label);
-                    ctx.sections.insert(name.to_string(), section);
+                    ctx.sections.push((name.to_string(), section));
                 } else {
                     out.push_str(&format!("{}\n", line))
                 }
@@ -264,7 +265,7 @@ pub struct Ctx {
     files_imported: Vec<PathBuf>,
     pub symbols: HashMap<String, SymbolType>,
     pub macros: HashMap<String, Macro>,
-    pub sections: HashMap<String, String>,
+    pub sections: Vec<(String, String)>,
 }
 
 impl Ctx {

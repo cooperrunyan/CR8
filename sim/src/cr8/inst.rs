@@ -42,8 +42,6 @@ impl CR8 {
     }
 
     pub(super) fn push_imm8(&mut self, imm8: u8) {
-        // println!("PUSH {imm8:#?}");
-
         let sptr = join(self.sp());
 
         if sptr >= STACK_END {
@@ -52,7 +50,9 @@ impl CR8 {
 
         self.set_sp(split(sptr + 1));
 
-        self.mem[(sptr + 1) as usize] = imm8;
+        self.mem[join(self.sp()) as usize] = imm8;
+
+        // println!("PUSHED: [{}] {}", join(self.sp()) - STACK, imm8);
     }
 
     pub(super) fn push_reg(&mut self, reg: Register) {
@@ -60,15 +60,16 @@ impl CR8 {
     }
 
     pub(super) fn pop(&mut self, reg: Register) {
-        // println!("POP {reg:#?}");
         let sptr = join(self.sp());
 
-        if sptr <= STACK {
+        if sptr < STACK {
             panic!("Cannot pop empty stack");
         }
 
         self.reg[reg as usize] = self.mem[sptr as usize];
         self.mem[sptr as usize] = 0;
+
+        // println!("POPPED: [{}] {}", sptr - STACK, self.reg[reg as usize]);
 
         self.set_sp(split(sptr - 1));
     }
@@ -92,7 +93,7 @@ impl CR8 {
         // println!("IN {into:#?}, {port:#?}");
 
         if let Some(dev) = self.dev.get_mut(&port) {
-            self.reg[into as usize] = dev.send();
+            self.reg[into as usize] = dev.send(&self.reg, &self.mem);
         } else {
             self.debug();
             panic!("No device connected to port: {port}");
@@ -106,7 +107,7 @@ impl CR8 {
     pub(super) fn out_imm8(&mut self, port: u8, send: Register) {
         // println!("OUT {send:#?}, {port:#?}");
         if let Some(dev) = self.dev.get_mut(&port) {
-            dev.receive(self.reg[send as usize]);
+            dev.receive(&self.reg, &self.mem, self.reg[send as usize]);
         } else {
             self.debug();
             panic!("No device connected to port: {port}");

@@ -33,7 +33,10 @@ pub fn resolve_macros(section: &str, macros: &HashMap<String, Macro>) -> String 
 
         let mut filled = mac.content.clone();
 
+        let mut adj = 0;
+
         for (i, input) in inputted_args.enumerate() {
+            let i = i - adj;
             if input.starts_with('[') && input.ends_with(']') {
                 let mac_arg_name_l = match mac.args.get(i) {
                     None => panic!("Bad macro call: {next}"),
@@ -45,6 +48,7 @@ pub fn resolve_macros(section: &str, macros: &HashMap<String, Macro>) -> String 
                 };
                 filled = filled.replace(mac_arg_name_l, &format!("{}::0", input));
                 filled = filled.replace(mac_arg_name_h, &format!("{}::1", input));
+                adj += 1;
             } else {
                 let mac_arg_name = match mac.args.get(i) {
                     None => panic!("Bad macro call: {next}"),

@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use cfg::{mem::STACK, reg::Register};
+use cfg::{
+    mem::{DEV_CONTROL, STACK},
+    reg::Register,
+};
 use typed_builder::TypedBuilder;
 
 use crate::device::{Control, Device};
@@ -48,7 +51,7 @@ impl CR8 {
 
         cr8.set_sp(split(STACK));
 
-        cr8.dev_add(0x00, Box::<Control>::default());
+        cr8.dev_add(DEV_CONTROL, Box::<Control>::default());
 
         for (port, dev) in sim_cfg.with_devices {
             cr8.dev_add(port, dev)

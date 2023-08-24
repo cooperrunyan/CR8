@@ -43,11 +43,12 @@ pub fn compile_section(
                                 byte_num.parse().expect("Failed to parse intended byte");
                             let val: u128 = match val.parse() {
                                 Ok(v) => v,
-                                Err(e) => {
-                                    panic!(
+                                Err(e) => match section_index_map.get(e.to_string().as_str()) {
+                                    None => panic!(
                                         "Expression failed to resolve: '{arg}', to '{parsed}'. {e}"
-                                    )
-                                }
+                                    ),
+                                    Some(v) => v.to_owned() as u128,
+                                },
                             };
                             let b = (val >> (byte_num * 8)) as u8;
                             Byte(b)
