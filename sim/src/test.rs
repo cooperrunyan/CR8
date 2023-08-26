@@ -16,12 +16,12 @@ macro_rules! test {
 fn adc() {
     let state = test!(
         r#"
-main:
-  mov %a, 12
-  mov %b, 9
-  mov %c, 8
-  add %a, %b
-  add %c, %a
+  mov %ax, 12
+  mov %bx, 9
+  mov %cx, 8
+  add %ax, %b
+  add %cx, %a
+  halt
 "#
     );
 
@@ -34,10 +34,10 @@ main:
 fn sbb() {
     let state = test!(
         r#"
-main:
-  mov %a, 12
-  mov %b, 9
-  sbb %a, %b
+  mov %ax, 12
+  mov %bx, 9
+  sbb %ax, %bx
+  halt
 "#
     );
 
@@ -49,9 +49,9 @@ main:
 fn mov() {
     let state = test!(
         r#"
-main:
-  mov %a, 12
-  mov %b, %a
+  mov %ax, 12
+  mov %bx, %ax
+  halt
 "#
     );
 
@@ -63,10 +63,10 @@ main:
 fn lwsw() {
     let state = test!(
         r#"
-main:
-  mov %a, 20
-  sw %a, 0x00, 0xFD
-  lw %b, 0x00, 0xFD
+  mov %ax, 20
+  sw %ax, 0x00, 0xFD
+  lw %bx, 0x00, 0xFD
+  halt
 "#
     );
 
@@ -79,23 +79,23 @@ main:
 fn stack() {
     let state = test!(
         r#"
-main:
-  mov %a, 9
-  mov %b, 4
-  mov %c, 3
-  mov %d, 8
-  push %a
-  push %b
-  push %c
-  push %d
-  mov %a, 0
-  mov %b, 0
-  mov %c, 0
-  mov %d, 0
-  pop %d
-  pop %c
-  pop %b
-  pop %a
+  mov %ax, 9
+  mov %bx, 4
+  mov %cx, 3
+  mov %dx, 8
+  push %ax
+  push %bx
+  push %cx
+  push %dx
+  mov %ax, 0
+  mov %bx, 0
+  mov %cx, 0
+  mov %dx, 0
+  pop %dx
+  pop %cx
+  pop %bx
+  pop %ax
+  halt
 "#
     );
 
@@ -109,10 +109,10 @@ main:
 fn cmp_lt() {
     let state = test!(
         r#"
-main:
-  mov %a, 9
-  mov %b, 12
-  cmp %a, %b
+  mov %ax, 9
+  mov %bx, 12
+  cmp %ax, %bx
+  halt
 "#
     );
 
@@ -123,10 +123,10 @@ main:
 fn cmp_eq() {
     let state = test!(
         r#"
-main:
-  mov %a, 12
-  mov %b, 12
-  cmp %a, %b
+  mov %ax, 12
+  mov %bx, 12
+  cmp %ax, %bx
+  halt
 "#
     );
 
@@ -137,10 +137,10 @@ main:
 fn and() {
     let state = test!(
         r#"
-main:
-  mov %a, 0b00111100
-  mov %b, 0b11001100
-  and %a, %b
+  mov %ax, 0b00111100
+  mov %bx, 0b11001100
+  and %ax, %bx
+  halt
 "#
     );
 
@@ -151,10 +151,10 @@ main:
 fn or() {
     let state = test!(
         r#"
-main:
-  mov %a, 0b00111100
-  mov %b, 0b11001100
-  or %a, %b
+  mov %ax, 0b00111100
+  mov %bx, 0b11001100
+  or %ax, %bx
+  halt
 "#
     );
 
@@ -165,10 +165,10 @@ main:
 fn nor() {
     let state = test!(
         r#"
-main:
-  mov %a, 0b00111100
-  mov %b, 0b11001100
-  nor %a, %b
+  mov %ax, 0b00111100
+  mov %bx, 0b11001100
+  nor %ax, %bx
+  halt
 "#
     );
 

@@ -43,9 +43,7 @@ pub fn parse(
                         i.to_owned().to_string()
                     }
                 },
-                SymbolType::StaticByte(value) => value.to_owned().to_string(),
-                SymbolType::StaticWord(value) => value.to_owned().to_string(),
-                SymbolType::StaticDouble(value) => value.to_owned().to_string(),
+                SymbolType::Static(value) => value.to_owned().to_string(),
                 SymbolType::MemByte | SymbolType::MemWord | SymbolType::MemDouble => {
                     is_addr = true;
 

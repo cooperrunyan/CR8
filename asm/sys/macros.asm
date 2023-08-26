@@ -2,7 +2,7 @@
 # Clear
 @macro
 clrf:
-  mov %f, 0
+  mov %fx, 0
 
 
 ############################################################
@@ -48,8 +48,8 @@ xnor $0, $1:
 # Control Flow
 @macro
 lda $0, $1:
-  mov %l, $0
-  mov %h, $1
+  mov %lx, $0
+  mov %hx, $1
 
 @macro
 jmp $0, $1:
@@ -58,9 +58,9 @@ jmp $0, $1:
 
 @macro
 jeq $0, $1:
-  and %f, 0b0010
+  and %fx, 0b0010
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 @macro
 jz $0, $1, $2:
@@ -69,36 +69,36 @@ jz $0, $1, $2:
 
 @macro
 jlt $0, $1:
-  and %f, 0b0001
+  and %fx, 0b0001
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 @macro
 jle $0, $1:
-  and %f, 0b0011
+  and %fx, 0b0011
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 @macro
 jgt $0, $1:
-  not %f
-  and %f, 0b0001
+  not %fx
+  and %fx, 0b0001
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 @macro
 jne $0, $1:
-  not %f
-  and %f, 0b0010
+  not %fx
+  and %fx, 0b0010
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 @macro
 jge $0, $1:
-  nand %f, 0b0001
-  and %f, 0b0011
+  nand %fx, 0b0001
+  and %fx, 0b0011
   lda $0, $1
-  jnz %f
+  jnz %fx
 
 
 ############################################################
@@ -111,29 +111,29 @@ call $0, $1:
 
 @macro
 ret:
-  pop %l
-  pop %h
+  pop %lx
+  pop %hx
   jnz 0x1
 
 ############################################################
 # Devices
 @macro
 outb $0, $1:
-  mov %d, $1
-  out $0, %d
+  mov %dx, $1
+  out $0, %dx
 
 @macro
 halt:
-  outb DEV_CONTROL, SIGHALT
+  outb PORT_CONTROLLER, CONTROL_SIGHALT
 
 @macro
 peekr:
-  outb DEV_CONTROL, SIGDBG
+  outb PORT_CONTROLLER, CONTROL_SIGDBG
 
 @macro
 peek $0, $1:
-  outb DEV_CONTROL, SIGPEEK
-  outb DEV_CONTROL, $0
-  outb DEV_CONTROL, $1
+  outb PORT_CONTROLLER, CONTROL_SIGPEEK
+  outb PORT_CONTROLLER, $0
+  outb PORT_CONTROLLER, $1
 
 ############################################################

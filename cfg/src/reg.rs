@@ -41,14 +41,14 @@ uint!(Register);
 impl From<&str> for Register {
     fn from(value: &str) -> Self {
         match value {
-            "%a" => Self::A,
-            "%b" => Self::B,
-            "%c" => Self::C,
-            "%d" => Self::D,
-            "%z" => Self::Z,
-            "%l" => Self::L,
-            "%h" => Self::H,
-            "%f" => Self::F,
+            "%ax" => Self::A,
+            "%bx" => Self::B,
+            "%cx" => Self::C,
+            "%dx" => Self::D,
+            "%zx" => Self::Z,
+            "%lx" => Self::L,
+            "%hx" => Self::H,
+            "%fx" => Self::F,
 
             x => panic!("Invalid register name: {x}"),
         }

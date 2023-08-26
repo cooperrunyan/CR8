@@ -1,44 +1,9 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
 use super::{num::try_read_num, resolve_macros};
-use cfg::mem;
 
 pub fn scan(source: &str) -> Ctx {
     let mut ctx = Ctx::default();
-
-    macro_rules! defb {
-        ($val:expr, $name:literal) => {
-            ctx.symbols
-                .insert($name.to_string(), SymbolType::StaticByte($val));
-        };
-    }
-
-    macro_rules! defw {
-        ($val:expr, $name:literal) => {
-            ctx.symbols
-                .insert($name.to_string(), SymbolType::StaticWord($val));
-        };
-    }
-
-    defw!(mem::ROM, "ROM");
-    defw!(mem::VRAM, "VRAM");
-    defw!(mem::GPRAM, "GPRAM");
-    defw!(mem::STACK, "STACK");
-    defw!(mem::STACK_END, "STACK_END");
-    defw!(mem::STACK_POINTER, "STACK_POINTER");
-    defw!(mem::PROGRAM_COUNTER, "PROGRAM_COUNTER");
-    defb!(mem::DEV_CONTROL, "DEV_CONTROL");
-    defb!(mem::SIGNOP, "SIGNOP");
-    defb!(mem::SIGHALT, "SIGHALT");
-    defb!(mem::SIGDBG, "SIGDBG");
-    defb!(mem::SIGPEEK, "SIGPEEK");
-
-    let builtin = include_bytes!("../std.asm");
-
-    let _ = scan_with_ctx(
-        String::from_utf8(builtin.to_vec()).unwrap().as_str(),
-        &mut ctx,
-    );
 
     let global = scan_with_ctx(source, &mut ctx);
 
@@ -123,27 +88,23 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         },
                     );
                 } else if l.starts_with("static") {
-                    let tokens = l
-                        .split(' ')
-                        .map(|t| t.trim())
-                        .filter(|t| !t.is_empty())
-                        .collect::<Vec<_>>();
+                    let tokens = l.split_whitespace().collect::<Vec<_>>();
 
-                    if tokens.len() != 5 {
-                        panic!("Expected @static to be: `@static {{byte|word|dble}} {{name}} = {{value}}`. Got `{l}`")
+                    if tokens.len() != 4 {
+                        panic!("Expected @static to be: `@static {{name}} = {{value}}`. Got `{l}`")
                     }
 
-                    let name = match tokens.get(2) {
+                    let name = match tokens.get(1) {
                         Some(&v) => v,
                         _ => panic!("Invalid static definition syntax"),
                     };
 
-                    match tokens.get(3) {
+                    match tokens.get(2) {
                         Some(&"=") => {}
                         _ => panic!("Invalid static definition syntax"),
                     };
 
-                    let val = match tokens.get(4) {
+                    let val = match tokens.get(3) {
                         Some(&v) => match try_read_num(v) {
                             Err(_) => panic!(
                                 "Failed to set static value {v} for {name}. Bad number syntax"
@@ -154,17 +115,11 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         _ => panic!("Invalid static definition syntax"),
                     };
 
-                    let ty = match tokens.get(1) {
-                        Some(&"byte") => SymbolType::StaticByte(val as u8),
-                        Some(&"word") => SymbolType::StaticWord(val as u16),
-                        Some(&"dble") => SymbolType::StaticDouble(val as u32),
-                        _ => panic!("Invalid static definition syntax"),
-                    };
-
                     if ctx.symbols.contains_key(name) {
                         panic!("Attempted to set symbol: {name} twice")
                     }
-                    ctx.symbols.insert(name.to_string(), ty);
+                    ctx.symbols
+                        .insert(name.to_string(), SymbolType::Static(val));
                 } else if l.starts_with("mem") {
                     let tokens = l
                         .split(' ')
@@ -280,9 +235,7 @@ impl Ctx {
 #[derive(Debug)]
 pub enum SymbolType {
     Label,
-    StaticByte(u8),
-    StaticWord(u16),
-    StaticDouble(u32),
+    Static(u64),
     MemByte,
     MemWord,
     MemDouble,
