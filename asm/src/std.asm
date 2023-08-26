@@ -105,8 +105,8 @@ jge $0, $1:
 # Calling
 @macro
 call $0, $1:
-  push [(. + 13) >> 8]
-  push [(. + 10) & 0x00FF]
+  push [($@ + 13) >> 8]
+  push [($@ + 10) & 0x00FF]
   jmp $0, $1
 
 @macro
@@ -131,8 +131,9 @@ peekr:
   outb DEV_CONTROL, SIGDBG
 
 @macro
-peek $0:
+peek $0, $1:
   outb DEV_CONTROL, SIGPEEK
   outb DEV_CONTROL, $0
+  outb DEV_CONTROL, $1
 
 ############################################################

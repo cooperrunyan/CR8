@@ -18,24 +18,33 @@ pub fn compile_section(
 
     for line in section.lines().map(|l| l.trim()).filter(|l| !l.is_empty()) {
         let (inst, args) = line.split_once(' ').unwrap_or((line, ""));
+        println!("{line}");
         let args = args
             .split(',')
             .map(|a| a.trim())
             .filter(|a| !a.is_empty())
             .map(|arg| {
                 if arg.starts_with('%') {
-                    Reg(Register::from(arg))
+                    arg.to_string()
                 } else {
                     match try_read_num(arg) {
-                        Ok(num) => Byte(num as u8),
+                        Ok(num) => (num).to_string(),
                         Err(_) => {
-                            let parsed = expr::parse(
+                            let (parsed, is_addr) = expr::parse(
                                 arg,
                                 instructions.len() + *section_start,
                                 symbols,
                                 section_index_map,
                                 variables,
                             );
+
+                            if is_addr {
+                                if let Ok(num) = parsed.parse::<u16>() {
+                                    return format!("{},{}", num as u8, (num >> 8) as u8);
+                                }
+                            }
+
+                            println!("{arg}, {parsed}");
                             let parsed = parsed.replace(['[', ']'], "");
                             let (val, byte_num) =
                                 parsed.split_once("::").unwrap_or((parsed.as_str(), "0"));
@@ -51,7 +60,24 @@ pub fn compile_section(
                                 },
                             };
                             let b = (val >> (byte_num * 8)) as u8;
-                            Byte(b)
+                            b.to_string()
+                        }
+                    }
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+
+        let args = args
+            .split(',')
+            .map(|arg| {
+                if arg.starts_with('%') {
+                    Reg(Register::from(arg))
+                } else {
+                    match try_read_num(arg) {
+                        Ok(num) => Byte(num as u8),
+                        Err(_) => {
+                            panic!("Bad arg")
                         }
                     }
                 }

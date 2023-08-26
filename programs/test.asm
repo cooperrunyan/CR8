@@ -1,24 +1,16 @@
-@data byte x
-@data word y
-
-jmp [main]
-
-
-mul:
-  mov %z, 0
-  lda [_mul_loop]
-  jnz %a
-  ret
-
-  _mul_loop:
-    dec %a
-    add %z, %b
-    lda [_mul_loop]
-    jnz %a
-    ret
+@mem word x
 
 main:
-  mov %a, 12
-  mov %b, 14
-  call [mul]
+  mov %a, 32
+  mov %b, 2
+  lda [x]
+  sw %a
+  lda [x + 1]
+  sw %b
+  mov %a, 0
+  mov %b, 0
+  lda [x]
+  lw %a
+  lda [x + 1]
+  lw %b
   halt

@@ -9,7 +9,7 @@ lazy_static! {
     static ref EXPR_RE: Regex = Regex::new(r"\[([^\]]*)\]").unwrap();
     static ref SPACE_RE: Regex = Regex::new(r"\s*").unwrap();
     static ref SYM_RE: Regex = Regex::new(r"\w[\w\d]*").unwrap();
-    static ref DOT_RE: Regex = Regex::new(r"(\.)").unwrap();
+    static ref DOT_RE: Regex = Regex::new(r"(\$@)").unwrap();
     static ref EXPR_HEX_RE: Regex = Regex::new(r"0x(?i:([0-9a-f]+))").unwrap();
     static ref EXPR_BIN_RE: Regex = Regex::new(r"0b([01]+)").unwrap();
     static ref EXPR_GRP_RE: Regex = Regex::new(r"\((?:[^()]+)*\)").unwrap();
@@ -29,7 +29,8 @@ pub fn parse(
     symbols: &HashMap<String, SymbolType>,
     sections: &HashMap<String, usize>,
     variables: &HashMap<String, usize>,
-) -> String {
+) -> (String, bool) {
+    let mut is_addr = false;
     let expr = SYM_RE.replace_all(expr, |caps: &Captures| {
         let symbol = caps.get(0).unwrap().as_str().trim();
 
@@ -37,29 +38,24 @@ pub fn parse(
             match val {
                 SymbolType::Label => match sections.get(symbol) {
                     None => panic!("Undefined section: {symbol}"),
-                    Some(i) => i.to_owned().to_string(),
+                    Some(i) => {
+                        is_addr = true;
+                        i.to_owned().to_string()
+                    }
                 },
                 SymbolType::StaticByte(value) => value.to_owned().to_string(),
                 SymbolType::StaticWord(value) => value.to_owned().to_string(),
                 SymbolType::StaticDouble(value) => value.to_owned().to_string(),
-                SymbolType::MemByte => (mem::GPRAM
-                    + variables
-                        .get(symbol)
-                        .expect(&format!("Undefined variable: {symbol}"))
-                        .to_owned() as u16)
-                    .to_string(),
-                SymbolType::MemWord => (mem::GPRAM
-                    + variables
-                        .get(symbol)
-                        .expect(&format!("Undefined variable: {symbol}"))
-                        .to_owned() as u16)
-                    .to_string(),
-                SymbolType::MemDouble => (mem::GPRAM
-                    + variables
-                        .get(symbol)
-                        .expect(&format!("Undefined variable: {symbol}"))
-                        .to_owned() as u16)
-                    .to_string(),
+                SymbolType::MemByte | SymbolType::MemWord | SymbolType::MemDouble => {
+                    is_addr = true;
+
+                    (mem::GPRAM
+                        + variables
+                            .get(symbol)
+                            .expect(&format!("Undefined variable: {symbol}"))
+                            .to_owned() as u16)
+                        .to_string()
+                }
             }
         } else {
             symbol.to_string()
@@ -78,7 +74,10 @@ pub fn parse(
         u64::from_str_radix(bin_str, 2).unwrap().to_string()
     });
 
-    evaluate_grp(expr.trim_end_matches(']').trim_start_matches('['))
+    (
+        evaluate_grp(expr.trim_end_matches(']').trim_start_matches('[')),
+        is_addr,
+    )
 }
 
 fn evaluate_grp(expr: &str) -> String {

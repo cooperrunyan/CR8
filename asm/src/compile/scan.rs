@@ -31,6 +31,7 @@ pub fn scan(source: &str) -> Ctx {
     defb!(mem::SIGNOP, "SIGNOP");
     defb!(mem::SIGHALT, "SIGHALT");
     defb!(mem::SIGDBG, "SIGDBG");
+    defb!(mem::SIGPEEK, "SIGPEEK");
 
     let builtin = include_bytes!("../std.asm");
 
@@ -164,7 +165,7 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         panic!("Attempted to set symbol: {name} twice")
                     }
                     ctx.symbols.insert(name.to_string(), ty);
-                } else if l.starts_with("data") {
+                } else if l.starts_with("mem") {
                     let tokens = l
                         .split(' ')
                         .map(|t| t.trim())
@@ -172,19 +173,19 @@ fn scan_with_ctx(source: &str, ctx: &mut Ctx) -> String {
                         .collect::<Vec<_>>();
 
                     if tokens.len() != 3 {
-                        panic!("Expected @data to be: `@data {{byte|word|dble}} {{name}}`")
+                        panic!("Expected @mem to be: `@mem {{byte|word|dble}} {{name}}`")
                     }
 
                     let name = match tokens.get(2) {
                         Some(&v) => v,
-                        _ => panic!("Invalid data definition syntax"),
+                        _ => panic!("Invalid mem definition syntax"),
                     };
 
                     let ty = match tokens.get(1) {
                         Some(&"byte") => SymbolType::MemByte,
                         Some(&"word") => SymbolType::MemWord,
                         Some(&"dble") => SymbolType::MemDouble,
-                        _ => panic!("Invalid data definition syntax"),
+                        _ => panic!("Invalid mem definition syntax"),
                     };
 
                     if ctx.symbols.contains_key(name) {
