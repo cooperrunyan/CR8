@@ -4,8 +4,16 @@ macro_rules! test {
     ($asm:literal) => {{
         use crate::cr8::{CR8Config, CR8};
         use asm;
+        use std::path::PathBuf;
 
-        let bin = asm::compile($asm);
+        let cfg = asm::Config {
+            literal: $asm.to_string(),
+            input: PathBuf::from(""),
+            output: PathBuf::from(""),
+        };
+
+        let bin = asm::compile(cfg);
+        let bin = bin.bytes().collect::<Vec<_>>();
         let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());
         cr8.run();
         cr8

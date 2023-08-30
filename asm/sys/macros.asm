@@ -1,139 +1,114 @@
-############################################################
-# Clear
-@macro
-clrf:
-  mov %fx, 0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Clear flags
+#macro
+clrf []:
+  mov %f, 0
+
+#macro
+clrfb []:
+  and %f, 0b0111
+
+#macro
+clrfc []:
+  and %f, 0b1011
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Logic
+#macro
+nand [r0, ir0]:
+  and $r0, $ir0
+  not $r0
+
+#macro
+not [r0]:
+  nor $r0, $r0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Control Flow
+#macro
+lda [a0]:
+  mov %l, $a0l
+  mov %h, $a0h
+
+#macro
+jmp [a0]:
+  lda $a0
+  jnz 1
+
+#macro
+jeq [a0]:
+  and %f, 0b0010
+  lda $a0
+  jnz %f
+
+#macro
+jz [a0, r0]:
+  cmp $r0, 0
+  jeq $a0
+
+#macro
+jlt [a0]:
+  and %f, 0b0001
+  lda $a0
+  jnz %f
+
+#macro
+jle [a0]:
+  and %f, 0b0011
+  lda $a0
+  jnz %f
+
+#macro
+jgt [a0]:
+  not %f
+  and %f, 0b0001
+  lda $a0
+  jnz %f
+
+#macro
+jne [a0]:
+  not %f
+  and %f, 0b0010
+  lda $a0
+  jnz %f
+
+#macro
+jge [a0]:
+  nand %f, 0b0001
+  and %f, 0b0011
+  lda $a0
+  jnz %f
 
 
-############################################################
-# Arithmetic
-@macro
-sub $0, $1:
-  clrf
-  sbb $0, $1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Calling
+#macro
+call [a0]:
+  push [($ + 13) >> 8]
+  push [($ + 10) & 0x00FF]
+  jmp $a0
 
-@macro
-add $0, $1:
-  clrf
-  adc $0, $1
+#macro
+ret []:
+  pop %l
+  pop %h
+  jnz 1
 
-@macro
-inc $0:
-  add $0, 0x1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Devices
+#macro
+outi [i0, i1]:
+  mov %d, $i1
+  out $i0, %d
 
-@macro
-dec $0:
-  sub $0, 0x1
+#macro
+halt []:
+  outb &PORT_SIGNALLER, &SIGNAL_SIGHALT
 
-############################################################
-# Logic
-@macro
-nand $0, $1:
-  and $0, $1
-  not $0
+#macro
+peek [a0]:
+  outb &PORT_SIGNALLER, &SIGNAL_SIGPEEK
+  outb &PORT_SIGNALLER, $a0l
+  outb &PORT_SIGNALLER, $a0h
 
-@macro
-not $0:
-  nor $0, $0
-
-@macro
-xor $0, $1:
-  nor $0, $0
-
-@macro
-xnor $0, $1:
-  nor $0, $0
-
-############################################################
-# Control Flow
-@macro
-lda $0, $1:
-  mov %lx, $0
-  mov %hx, $1
-
-@macro
-jmp $0, $1:
-  lda $0, $1
-  jnz 0x1
-
-@macro
-jeq $0, $1:
-  and %fx, 0b0010
-  lda $0, $1
-  jnz %fx
-
-@macro
-jz $0, $1, $2:
-  cmp $2, 0
-  jeq $0, $1
-
-@macro
-jlt $0, $1:
-  and %fx, 0b0001
-  lda $0, $1
-  jnz %fx
-
-@macro
-jle $0, $1:
-  and %fx, 0b0011
-  lda $0, $1
-  jnz %fx
-
-@macro
-jgt $0, $1:
-  not %fx
-  and %fx, 0b0001
-  lda $0, $1
-  jnz %fx
-
-@macro
-jne $0, $1:
-  not %fx
-  and %fx, 0b0010
-  lda $0, $1
-  jnz %fx
-
-@macro
-jge $0, $1:
-  nand %fx, 0b0001
-  and %fx, 0b0011
-  lda $0, $1
-  jnz %fx
-
-
-############################################################
-# Calling
-@macro
-call $0, $1:
-  push [($@ + 13) >> 8]
-  push [($@ + 10) & 0x00FF]
-  jmp $0, $1
-
-@macro
-ret:
-  pop %lx
-  pop %hx
-  jnz 0x1
-
-############################################################
-# Devices
-@macro
-outb $0, $1:
-  mov %dx, $1
-  out $0, %dx
-
-@macro
-halt:
-  outb PORT_CONTROLLER, CONTROL_SIGHALT
-
-@macro
-peekr:
-  outb PORT_CONTROLLER, CONTROL_SIGDBG
-
-@macro
-peek $0, $1:
-  outb PORT_CONTROLLER, CONTROL_SIGPEEK
-  outb PORT_CONTROLLER, $0
-  outb PORT_CONTROLLER, $1
-
-############################################################
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
