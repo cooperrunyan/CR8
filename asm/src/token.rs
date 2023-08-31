@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 const UNDERSCORE: char = '_';
 const ESCAPE: char = '\\';
 const PERIOD: char = '.';
@@ -26,7 +28,7 @@ const SPACE: char = ' ';
 const NEW_LINE: char = '\n';
 const DIRECTIVE: char = '#';
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     Word(String),
     String(String),
@@ -56,9 +58,11 @@ pub enum Token {
     Directive,
 }
 
-pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
+pub fn tokenize<'s>(text: &'s str, file: &PathBuf) -> Vec<Token> {
     let mut chars = text.chars().peekable();
     let mut tokens = vec![];
+
+    let mut line = 1;
 
     while let Some(ch) = chars.next() {
         tokens.push(match ch {
@@ -97,8 +101,7 @@ pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
                 let mut str = String::new();
                 str.push(ch);
 
-                while let Some('A'..='F' | 'a'..='f' | '0'..='9' | 'x' | &UNDERSCORE) = chars.peek()
-                {
+                while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | &UNDERSCORE) = chars.peek() {
                     let next = chars.next().unwrap();
                     if next != UNDERSCORE {
                         str.push(next);
@@ -115,11 +118,14 @@ pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
 
                 match num {
                     Ok(n) => Token::Number(n),
-                    Err(e) => panic!("Invalid number: {str}. \n\n{e}"),
+                    Err(e) => panic!("Error at {file:?}:{line}\nInvalid number: {str:#?} \n\n{e}"),
                 }
             }
 
-            NEW_LINE => Token::NewLine,
+            NEW_LINE => {
+                line += 1;
+                Token::NewLine
+            }
             COMMA => Token::Comma,
             COLON => Token::Colon,
             SEMI_COLON => {

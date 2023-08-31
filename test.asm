@@ -12,7 +12,7 @@
 jmp [main]
 
 sect:
-    mov %b, 4
+    mov %b, 4h
 
     .done:
     ret

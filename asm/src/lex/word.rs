@@ -1,17 +1,23 @@
 use std::iter::Peekable;
+use std::path::PathBuf;
 use std::vec::IntoIter;
 
 use cfg::op::Operation;
 use cfg::reg::Register;
 
 use crate::ast::{Addr, AstNode, Instruction, Label, ToNode, ToValue};
+use crate::err;
 use crate::token::Token;
 
+use super::LexError;
+
 pub fn lex_word(
+    file: &PathBuf,
     word: String,
+    line: &mut u128,
     tokens: &mut Peekable<IntoIter<Token>>,
     nodes: &mut Vec<AstNode>,
-) -> Result<(), String> {
+) -> Result<(), LexError> {
     if tokens.peek() == Some(&Token::Colon) {
         nodes.push(Label::from(word).to_node());
         tokens.next();
@@ -23,12 +29,14 @@ pub fn lex_word(
         match next {
             Token::Space => continue,
             Token::Percent => {
-                let reg = next!(
-                    tokens,
-                    Word(x),
-                    "Expected word after '%' to specify register"
-                );
-                args.push(Register::try_from(reg)?.to_value());
+                let Some(reg) = next!(tokens, Word(x)) else {
+                    return err!(line, file, "Unexpected symbol");
+                };
+                let Ok(reg) = Register::try_from(reg) else {
+                    return err!(line, file, "Invalid register");
+                };
+
+                args.push(reg.to_value());
             }
             Token::Number(n) => args.push(n.to_value()),
             Token::BracketOpen => {
@@ -40,13 +48,13 @@ pub fn lex_word(
                         }
                         Token::BracketClose => break,
                         Token::Space => continue,
-                        oth => err!("Todo expression support for: {oth:?}")?,
+                        oth => err!(line, file, "Todo: expression value for {oth:#?}")?,
                     }
                 }
             }
             Token::Comma => continue,
             Token::NewLine => break,
-            oth => err!("Unexpected value: {oth:#?} after {inst:#?}")?,
+            oth => err!(line, file, "Unexpected value {oth:#?} after {inst:#?}")?,
         }
     }
 

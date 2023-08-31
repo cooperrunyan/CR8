@@ -1,67 +1,93 @@
 use std::iter::Peekable;
+use std::path::PathBuf;
 use std::vec::IntoIter;
 
 use crate::ast::{AstNode, Directive, Macro, MacroArg, ToNode};
+use crate::err;
 use crate::lex::lex;
 use crate::token::Token;
 
+use super::LexError;
+
 pub fn lex_directive(
+    file: &PathBuf,
+    line: &mut u128,
     tokens: &mut Peekable<IntoIter<Token>>,
     nodes: &mut Vec<AstNode>,
-) -> Result<(), String> {
-    let directive = next!(tokens, Word(v), "Expected directive after: '#'");
+) -> Result<(), LexError> {
+    macro_rules! defnext {
+        ($name:ident, $t:ident$(($a:ident))?) => {
+            macro_rules! $name {
+                ($err:expr) => {{
+                    let Some(w) = next!(tokens, $t $(($a))?) else {
+                        err!(line,  file, $err)?
+                    };
+                    w
+                }};
+            }
+        };
+    }
+
+    defnext!(word, Word(x));
+    defnext!(num, Number(x));
+    defnext!(stri, String(x));
+    defnext!(brackopen, BracketOpen);
+    defnext!(space, Space);
+    defnext!(colon, Colon);
+
+    let directive = word!("Expected directive after: '#'");
     match directive.as_str() {
         "include" => {
-            next!(tokens, Space);
-            let path = next!(tokens, String(x), "path");
+            space!("Syntax error");
+            let path = stri!("Expected path after #include statement");
             nodes.push(Directive::Import(path).to_node());
         }
         "origin" => {
-            next!(tokens, Space);
-            let addr = next!(tokens, Number(x), "Expected address after #origin");
+            space!("Syntax error");
+            let addr = num!("Expected address after #origin");
             nodes.push(Directive::Origin(addr as u128).to_node());
         }
         "define" => {
-            next!(tokens, Space);
-            let name = next!(tokens, Word(x), "Expected name for #define statement");
-            next!(tokens, Space);
-            let val = next!(tokens, Number(x), "Expected value for #define statement");
+            space!("Syntax error");
+            let name = word!("Expected name for #define statement");
+            space!("Syntax error");
+            let val = num!("Expected value for #define statement");
             nodes.push(Directive::Define(name, val as u128).to_node());
         }
         "dyn" | "mem" => {
-            next!(tokens, Space);
+            space!("Syntax error");
 
-            let len = match expect_any!(tokens) {
-                Token::Word(s) => match s.as_str() {
+            let len = match tokens.next() {
+                Some(Token::Word(s)) => match s.as_str() {
                     "byte" => 1,
                     "word" => 2,
-                    t => err!("Invalid type for #{directive:?} definition: {t}")?,
+                    t => err!(
+                        line,
+                        file,
+                        "Invalid type for #{directive:?} definition: {t}"
+                    )?,
                 },
-                Token::Number(l) => l,
-                _ => err!("Expected length after '#{directive:?}'")?,
+                Some(Token::Number(l)) => l,
+                _ => err!(line, file, "Expected length after '#{directive:?}'")?,
             };
 
-            next!(tokens, Space);
+            space!("Syntax error");
 
-            let name = next!(tokens, Word(x), "Expected name after '#{directive:?}'");
+            let name = word!("Expected name after '#{directive:?}'");
 
             if directive == "mem" {
-                next!(tokens, Space);
+                space!("Syntax error");
 
                 let mut val = vec![];
                 if len == 1 {
-                    let v = next!(tokens, Number(x), "Expected value after #mem assignment");
+                    let v = num!("Expected value after #mem assignment");
                     val.push(v as u8);
                 } else if len == 2 {
-                    let v = next!(tokens, Number(x), "Expected value after #mem assignment");
+                    let v = num!("Expected value after #mem assignment");
                     val.push(v as u8);
                     val.push((v >> 8) as u8);
                 } else {
-                    next!(
-                        tokens,
-                        BracketOpen,
-                        "Expected '[0, 0, ...]' for #mem assignments longer than 2"
-                    );
+                    brackopen!("Expected '[0, 0, ...]' for #mem assignments longer than 2");
                     while let Some(next_num) = tokens.next() {
                         match next_num {
                             Token::Number(n) => {
@@ -70,23 +96,37 @@ pub fn lex_directive(
                                     match next_num {
                                         Token::Comma => break,
                                         Token::BracketClose => break,
-                                        Token::Space | Token::NewLine => {
+                                        Token::Space => {
                                             tokens.next();
                                         }
-                                        other => err!("Expected [0, 0, 0, ...], got: {other:?}")?,
+                                        Token::NewLine => {
+                                            *line += 1;
+                                            tokens.next();
+                                        }
+                                        other => err!(
+                                            line,
+                                            file,
+                                            "Expected [0, 0, 0, ...], got: {other:?}"
+                                        )?,
                                     }
                                 }
                             }
                             Token::Comma => continue,
-                            Token::Space | Token::NewLine => continue,
+                            Token::Space => continue,
+                            Token::NewLine => {
+                                *line += 1;
+                                continue;
+                            }
                             Token::BracketClose => break,
-                            other => err!("Expected [0, 0, 0, ...], got: {other:?}")?,
+                            other => err!(line, file, "Expected [0, 0, 0, ...], got: {other:?}")?,
                         }
                     }
                 }
 
                 if val.len() != len as usize {
                     err!(
+                        line,
+                        file,
                         "Expected {name} to be {len} bytes long, got {} bytes",
                         val.len()
                     )?
@@ -99,9 +139,15 @@ pub fn lex_directive(
         }
         "macro" => {
             ignore_line_space!(tokens);
-            let name = next!(tokens, Word(x), "Expected macro name");
+            while tokens.peek() == Some(&Token::Space) || tokens.peek() == Some(&Token::NewLine) {
+                if tokens.peek() == Some(&Token::NewLine) {
+                    *line += 1;
+                }
+                tokens.next();
+            }
+            let name = word!("Expected macro name");
             ignore_space!(tokens);
-            next!(tokens, BracketOpen, "Expected macro args");
+            brackopen!("Expected macro args");
             ignore_space!(tokens);
 
             let mut args = vec![];
@@ -118,16 +164,16 @@ pub fn lex_directive(
                         } else if arg.starts_with('a') {
                             args.push(MacroArg::Addr(arg))
                         } else {
-                            err!("Macro arg should start with 'i' 'ir' 'r' or 'a' to signify its type")?
+                            err!(line,file,"Macro arg should start with 'i' 'ir' 'r' or 'a' to signify its type")?
                         }
                     }
                     Token::Comma => continue,
                     Token::BracketClose => break,
-                    oth => err!("Unexpected value: {oth:?}")?,
+                    oth => err!(line, file, "Unexpected value: {oth:?}")?,
                 }
             }
 
-            next!(tokens, Colon, "Invalid macro syntax");
+            colon!("Invalid macro syntax");
 
             let mut body = vec![];
 
@@ -143,7 +189,7 @@ pub fn lex_directive(
                 }
             }
 
-            let mac_nodes = lex(body)?
+            let mac_nodes = lex(body, file)?
                 .into_iter()
                 .map(|mn| match mn {
                     AstNode::Instruction(inst) => inst,
@@ -156,7 +202,7 @@ pub fn lex_directive(
 
             nodes.push(Macro::new(name, args, mac_nodes).to_node())
         }
-        _ => err!("Invalid directive: '#{directive}'")?,
+        _ => err!(line, file, "Invalid directive: '#{directive}'")?,
     };
     Ok(())
 }

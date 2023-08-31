@@ -1,31 +1,31 @@
 #[macro_export]
-macro_rules! err {
-    ($err:expr $(, $args:expr)*) => {
-        Err(format!($err $(, $args )* ))
+macro_rules! next {
+    ($tkns:ident, $tk:ident($v:ident)) => {
+        match $tkns.next() {
+            Some(Token::$tk($v)) => Some($v),
+            _ => None,
+        }
+    };
+    ($tkns:ident, $tk:ident) => {
+        match $tkns.next() {
+            Some(Token::$tk) => Some(Token::$tk),
+            _ => None,
+        }
     };
 }
 
 #[macro_export]
-macro_rules! next {
-            ($tkns:ident, $tk:ident$(($v:ident))? $(, $err:literal)?) => {
-                match $tkns.next() {
-                    Some(Token::$tk$(($v))?) => {$($v)?},
-                    x => {
-                        #[allow(unused_mut, unused_assignments)]
-                        let mut e = Err(format!("Invalid syntax at: {:#?}", x));
-                        $( e = Err(format!($err)); )?
-                        e
-                    }?,
-                }
-            };
+macro_rules! peek {
+    ($tkns:ident, $tk:ident($v:ident)) => {
+        match $tkns.peek() {
+            Some(Token::$tk($v)) => Some($v),
+            _ => None,
         }
-
-#[macro_export]
-macro_rules! expect_any {
-    ($tkns:ident) => {
-        match $tkns.next() {
-            Some(t) => t,
-            None => Err(format!("Expected symbol, found EOL"))?,
+    };
+    ($tkns:ident, $tk:ident) => {
+        match $tkns.peek() {
+            Some(Token::$tk) => Some(Token::$tk),
+            _ => None,
         }
     };
 }
