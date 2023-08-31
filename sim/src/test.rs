@@ -8,14 +8,14 @@ macro_rules! test {
 
         let cfg = asm::Config {
             literal: $asm.to_string(),
-            input: PathBuf::from(""),
+            input: String::from(""),
             output: PathBuf::from(""),
         };
 
         let bin = asm::compile(cfg);
         let bin = bin.bytes().collect::<Vec<_>>();
         let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());
-        cr8.run();
+        let _ = cr8.run();
         cr8
     }};
 }

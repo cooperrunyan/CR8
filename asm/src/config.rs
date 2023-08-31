@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Config {
-    pub input: PathBuf,
+    pub input: String,
     pub output: PathBuf,
     pub literal: String,
 }
@@ -34,7 +34,7 @@ impl Config {
         }
 
         Self {
-            input: input.into(),
+            input: input,
             literal: "".into(),
             output: output.into(),
         }

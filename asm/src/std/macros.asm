@@ -1,3 +1,5 @@
+#include "<std>/arch.asm"
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Clear flags
 #macro
@@ -29,6 +31,11 @@ not [r0]:
 lda [a0]:
   mov %l, $a0l
   mov %h, $a0h
+
+#macro
+jnza [a0, ir0]:
+  lda $a0
+  jnz $ir0
 
 #macro
 jmp [a0]:
@@ -84,8 +91,8 @@ jge [a0]:
 ; Calling
 #macro
 call [a0]:
-  push [($ + 13) >> 8]
-  push [($ + 10) & 0x00FF]
+  ; push [($ + 13) >> 8]
+  ; push [($ + 10) & 0x00FF]
   jmp $a0
 
 #macro
@@ -103,12 +110,12 @@ outi [i0, i1]:
 
 #macro
 halt []:
-  outb &PORT_SIGNALLER, &SIGNAL_SIGHALT
+  outb &SIGNAL_PORT, &SIGHALT
 
 #macro
 peek [a0]:
-  outb &PORT_SIGNALLER, &SIGNAL_SIGPEEK
-  outb &PORT_SIGNALLER, $a0l
-  outb &PORT_SIGNALLER, $a0h
+  outb &SIGNAL_PORT, &SIGPEEK
+  outb &SIGNAL_PORT, $a0l
+  outb &SIGNAL_PORT, $a0h
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,18 +1,17 @@
 use std::iter::Peekable;
-use std::path::PathBuf;
 use std::vec::IntoIter;
 
 use cfg::op::Operation;
 use cfg::reg::Register;
 
-use crate::ast::{Addr, AstNode, Instruction, Label, ToNode, ToValue};
+use crate::ast::{Addr, AstNode, Ident, Instruction, Label, ToNode, ToValue};
 use crate::err;
 use crate::token::Token;
 
 use super::LexError;
 
-pub fn lex_word(
-    file: &PathBuf,
+pub fn lex_word<'s>(
+    file: &'s str,
     word: String,
     line: &mut u128,
     tokens: &mut Peekable<IntoIter<Token>>,
@@ -28,6 +27,18 @@ pub fn lex_word(
     while let Some(next) = tokens.next() {
         match next {
             Token::Space => continue,
+            Token::Dollar => {
+                let Some(arg) = next!(tokens, Word(x)) else {
+                    return err!(line, file, "Expected word after '$'");
+                };
+                args.push(Ident::MacroArg(arg).to_value());
+            }
+            Token::Ampersand => {
+                let Some(stat) = next!(tokens, Word(x)) else {
+                    return err!(line, file, "Expected static after '&'");
+                };
+                args.push(Ident::Static(stat).to_value());
+            }
             Token::Percent => {
                 let Some(reg) = next!(tokens, Word(x)) else {
                     return err!(line, file, "Unexpected symbol");

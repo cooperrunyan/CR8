@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 const UNDERSCORE: char = '_';
 const ESCAPE: char = '\\';
 const PERIOD: char = '.';
@@ -15,7 +13,7 @@ const PAREN_CLOSE: char = ')';
 const DOUBLE_QUOTE: char = '"';
 const EQUAL: char = '=';
 const ANGLE_OPEN: char = '<';
-const ANGLE_CLOSE: char = '?';
+const ANGLE_CLOSE: char = '>';
 const ADD: char = '+';
 const SUB: char = '-';
 const AMPERSAND: char = '&';
@@ -58,7 +56,7 @@ pub enum Token {
     Directive,
 }
 
-pub fn tokenize<'s>(text: &'s str, file: &PathBuf) -> Vec<Token> {
+pub fn tokenize<'s>(text: &'s str, file: &'s str) -> Vec<Token> {
     let mut chars = text.chars().peekable();
     let mut tokens = vec![];
 

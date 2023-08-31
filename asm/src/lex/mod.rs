@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::{ast::AstNode, token::Token};
 
 use self::{directive::lex_directive, word::lex_word};
@@ -12,7 +10,7 @@ mod word;
 pub struct LexError {
     pub msg: String,
     pub line: u128,
-    pub file: PathBuf,
+    pub file: String,
 }
 
 #[macro_export]
@@ -23,7 +21,7 @@ macro_rules! err {
 }
 
 impl LexError {
-    pub fn new(line: &u128, file: &PathBuf, msg: String) -> Self {
+    pub fn new(line: &u128, file: &str, msg: String) -> Self {
         Self {
             msg,
             line: line.to_owned(),
@@ -32,7 +30,7 @@ impl LexError {
     }
 }
 
-pub fn lex(tokens: Vec<Token>, file: &PathBuf) -> Result<Vec<AstNode>, LexError> {
+pub fn lex<'s>(tokens: Vec<Token>, file: &'s str) -> Result<Vec<AstNode>, LexError> {
     let mut nodes = vec![];
     let mut tokens = tokens.into_iter().peekable();
 

@@ -1,5 +1,4 @@
 use std::iter::Peekable;
-use std::path::PathBuf;
 use std::vec::IntoIter;
 
 use crate::ast::{AstNode, Directive, Macro, MacroArg, ToNode};
@@ -9,8 +8,8 @@ use crate::token::Token;
 
 use super::LexError;
 
-pub fn lex_directive(
-    file: &PathBuf,
+pub fn lex_directive<'s>(
+    file: &'s str,
     line: &mut u128,
     tokens: &mut Peekable<IntoIter<Token>>,
     nodes: &mut Vec<AstNode>,
@@ -180,7 +179,9 @@ pub fn lex_directive(
             while let Some(next) = tokens.next() {
                 match next {
                     Token::NewLine => {
+                        *line += 1;
                         if tokens.peek() == Some(&Token::NewLine) {
+                            *line += 1;
                             break;
                         }
                         body.push(Token::NewLine);

@@ -35,11 +35,13 @@ impl_conv! {to_exp_item, ToExpressionItem, ExpressionItem}
 
 #[derive(Debug, Default)]
 pub struct Ast {
-    tree: Vec<AstNode>,
-    files: Vec<PathBuf>,
-    macros: HashMap<String, Macro>,
-    statics: HashMap<String, u128>,
-    ram_origin: u16,
+    pub tree: Vec<AstNode>,
+    pub files: Vec<String>,
+    pub macros: HashMap<String, Macro>,
+    pub statics: HashMap<String, u128>,
+    pub ram_locations: HashMap<String, u128>,
+    pub ram_length: u128,
+    pub ram_origin: u16,
 }
 
 #[derive(Debug)]
@@ -81,9 +83,9 @@ pub enum Directive {
 
 #[derive(Debug)]
 pub struct Macro {
-    name: String,
-    args: Vec<MacroArg>,
-    body: Vec<Instruction>,
+    pub name: String,
+    pub args: Vec<MacroArg>,
+    pub body: Vec<Instruction>,
 }
 
 impl ToNode for Macro {
@@ -185,11 +187,5 @@ impl From<Vec<AstNode>> for Ast {
             tree: value,
             ..Default::default()
         }
-    }
-}
-
-impl Ast {
-    pub fn insert(&mut self, idx: usize, new: Vec<AstNode>) {
-        self.tree = self.tree.splice(idx..idx, new).collect();
     }
 }

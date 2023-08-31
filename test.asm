@@ -1,18 +1,13 @@
-#include "asm/sys/sys.asm"
-#define RAM 0x23
-#origin 0x43
-
-#dyn byte dynamic_byte1
-#dyn 12 dynamic2
-
-#mem byte rombt1 2
-#mem 3 romdata1 [0x01, 0xF0, 0xF]
-
+#include "<std>/arch.asm"
+#include "<std>/macros.asm"
 
 jmp [main]
 
+#include "<std>/math.asm"
+
 sect:
-    mov %b, 4h
+    mov %b, 4
+    jmp [.done]
 
     .done:
     ret
