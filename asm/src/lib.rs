@@ -1,7 +1,5 @@
 use std::fs;
 
-use ast::Ast;
-
 mod ast;
 mod config;
 mod lex;
@@ -22,7 +20,10 @@ pub fn compile(cfg: Config) -> String {
     };
 
     let tokens = tokenize(&source);
-    let nodes = lex(tokens);
+    let nodes = match lex(tokens) {
+        Ok(n) => n,
+        Err(e) => panic!("Error: \n{e}"),
+    };
 
     dbg!(nodes);
 

@@ -32,7 +32,6 @@ pub enum Token {
     String(String),
     Number(i128),
     Escape(char),
-    Period,
     Comma,
     Colon,
     MustacheOpen,
@@ -72,7 +71,7 @@ pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
                 x => panic!("Expected `<` after `<` got: {x:?}"),
             },
             ESCAPE => {
-                let Some(ch) = chars.peek() else {
+                let Some(_) = chars.peek() else {
                     panic!("Expected a character after `\\`")
                 };
                 Token::Escape(chars.next().unwrap())
@@ -83,11 +82,13 @@ pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
                 }
                 Token::Space
             }
-            'A'..='Z' | 'a'..='z' | UNDERSCORE => {
+            'A'..='Z' | 'a'..='z' | UNDERSCORE | PERIOD => {
                 let mut word = String::new();
                 word.push(ch);
 
-                while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | &UNDERSCORE) = chars.peek() {
+                while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | &UNDERSCORE | &PERIOD) =
+                    chars.peek()
+                {
                     word.push(chars.next().unwrap());
                 }
                 Token::Word(word)
@@ -119,7 +120,6 @@ pub fn tokenize<'s>(text: &'s str) -> Vec<Token> {
             }
 
             NEW_LINE => Token::NewLine,
-            PERIOD => Token::Period,
             COMMA => Token::Comma,
             COLON => Token::Colon,
             SEMI_COLON => {

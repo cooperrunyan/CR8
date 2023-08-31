@@ -16,6 +16,9 @@ fn main() {
 
     let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());
 
-    cr8.run();
+    match cr8.run() {
+        Err(msg) => panic!("Error: {msg}"),
+        _ => {}
+    };
     cr8.debug()
 }

@@ -1,3 +1,25 @@
+macro_rules! impl_for {
+    (for $for:ident, as $a:ty, impl $($t:ty),+) => {
+        $(impl TryFrom<$t> for $for {
+            type Error = String;
+            fn try_from(value: $t) -> Result<Self, Self::Error> {
+                Self::try_from(value as $a)
+            }
+        })*
+    }
+}
+
+macro_rules! impl_str {
+    (for $for:ident) => {
+        impl TryFrom<String> for $for {
+            type Error = String;
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                Self::try_from(value.as_str())
+            }
+        }
+    };
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Operation {
     MOV,
@@ -16,69 +38,53 @@ pub enum Operation {
     AND,
 }
 
-impl From<u64> for Operation {
-    fn from(value: u64) -> Self {
-        match value {
-            0x00 => Self::MOV,
-            0x01 => Self::LW,
-            0x02 => Self::SW,
-            0x03 => Self::PUSH,
-            0x04 => Self::POP,
-            0x05 => Self::JNZ,
-            0x06 => Self::IN,
-            0x07 => Self::OUT,
-            0x08 => Self::CMP,
-            0x09 => Self::ADC,
-            0x0A => Self::SBB,
-            0x0B => Self::OR,
-            0x0C => Self::NOR,
-            0x0D => Self::AND,
+impl_for!(for Operation, as u64, impl u8, u16, u32, usize);
 
-            _ => panic!(),
+impl TryFrom<u64> for Operation {
+    type Error = String;
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            0x00 => Ok(Self::MOV),
+            0x01 => Ok(Self::LW),
+            0x02 => Ok(Self::SW),
+            0x03 => Ok(Self::PUSH),
+            0x04 => Ok(Self::POP),
+            0x05 => Ok(Self::JNZ),
+            0x06 => Ok(Self::IN),
+            0x07 => Ok(Self::OUT),
+            0x08 => Ok(Self::CMP),
+            0x09 => Ok(Self::ADC),
+            0x0A => Ok(Self::SBB),
+            0x0B => Ok(Self::OR),
+            0x0C => Ok(Self::NOR),
+            0x0D => Ok(Self::AND),
+
+            x => Err(format!("Invalid operation: {x:#?}")),
         }
     }
 }
 
-macro_rules! uint {
-    ($trait:ident) => {
-        impl_uint!($trait, u8);
-        impl_uint!($trait, u16);
-        impl_uint!($trait, u32);
-        impl_uint!($trait, usize);
-    };
-}
+impl_str!(for Operation);
 
-macro_rules! impl_uint {
-    ($trait:ident, $t:ty) => {
-        impl From<$t> for $trait {
-            fn from(value: $t) -> Self {
-                Self::from(value as u64)
-            }
-        }
-    };
-}
-
-uint!(Operation);
-
-impl From<&str> for Operation {
-    fn from(value: &str) -> Self {
+impl TryFrom<&str> for Operation {
+    type Error = String;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "mov" => Self::MOV,
-            "lw" => Self::LW,
-            "sw" => Self::SW,
-            "push" => Self::PUSH,
-            "pop" => Self::POP,
-            "jnz" => Self::JNZ,
-            "in" => Self::IN,
-            "out" => Self::OUT,
-            "cmp" => Self::CMP,
-            "adc" => Self::ADC,
-            "sbb" => Self::SBB,
-            "or" => Self::OR,
-            "nor" => Self::NOR,
-            "and" => Self::AND,
-
-            x => panic!("Invalid instruction name: {x}"),
+            "mov" => Ok(Self::MOV),
+            "lw" => Ok(Self::LW),
+            "sw" => Ok(Self::SW),
+            "push" => Ok(Self::PUSH),
+            "pop" => Ok(Self::POP),
+            "jnz" => Ok(Self::JNZ),
+            "in" => Ok(Self::IN),
+            "out" => Ok(Self::OUT),
+            "cmp" => Ok(Self::CMP),
+            "adc" => Ok(Self::ADC),
+            "sbb" => Ok(Self::SBB),
+            "or" => Ok(Self::OR),
+            "nor" => Ok(Self::NOR),
+            "and" => Ok(Self::AND),
+            x => Err(format!("Invalid operation: {x:#?}")),
         }
     }
 }

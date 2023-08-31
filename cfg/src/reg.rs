@@ -1,11 +1,11 @@
-pub const A: u64 = 0x00;
-pub const B: u64 = 0x01;
-pub const C: u64 = 0x02;
-pub const D: u64 = 0x03;
-pub const Z: u64 = 0x04;
-pub const L: u64 = 0x05;
-pub const H: u64 = 0x06;
-pub const F: u64 = 0x07;
+const A: u64 = 0x00;
+const B: u64 = 0x01;
+const C: u64 = 0x02;
+const D: u64 = 0x03;
+const Z: u64 = 0x04;
+const L: u64 = 0x05;
+const H: u64 = 0x06;
+const F: u64 = 0x07;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Register {
@@ -19,38 +19,42 @@ pub enum Register {
     F,
 }
 
-impl From<u64> for Register {
-    fn from(value: u64) -> Self {
-        match value {
-            A => Self::A,
-            B => Self::B,
-            C => Self::C,
-            D => Self::D,
-            Z => Self::Z,
-            L => Self::L,
-            H => Self::H,
-            F => Self::F,
+impl_for!(for Register, as u64, impl u8, u16, u32, usize);
 
-            _ => panic!("Invalid register: {value}"),
+impl TryFrom<u64> for Register {
+    type Error = String;
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            A => Ok(Self::A),
+            B => Ok(Self::B),
+            C => Ok(Self::C),
+            D => Ok(Self::D),
+            Z => Ok(Self::Z),
+            L => Ok(Self::L),
+            H => Ok(Self::H),
+            F => Ok(Self::F),
+
+            x => Err(format!("Invalid register: {x:#?}")),
         }
     }
 }
 
-uint!(Register);
+impl_str!(for Register);
 
-impl From<&str> for Register {
-    fn from(value: &str) -> Self {
+impl TryFrom<&str> for Register {
+    type Error = String;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "%ax" => Self::A,
-            "%bx" => Self::B,
-            "%cx" => Self::C,
-            "%dx" => Self::D,
-            "%zx" => Self::Z,
-            "%lx" => Self::L,
-            "%hx" => Self::H,
-            "%fx" => Self::F,
+            "a" => Ok(Self::A),
+            "b" => Ok(Self::B),
+            "c" => Ok(Self::C),
+            "d" => Ok(Self::D),
+            "z" => Ok(Self::Z),
+            "l" => Ok(Self::L),
+            "h" => Ok(Self::H),
+            "f" => Ok(Self::F),
 
-            x => panic!("Invalid register name: {x}"),
+            x => Err(format!("Invalid register: {x:#?}")),
         }
     }
 }
