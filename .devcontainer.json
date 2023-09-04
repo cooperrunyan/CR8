@@ -8,7 +8,11 @@
 
   "customizations": {
     "vscode": {
-      "settings": {},
+      "settings": {
+        "search.exclude": {
+          "**/target": true
+        }
+      },
       "extensions": []
     }
   }

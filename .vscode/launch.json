@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug",
+      "cargo": {
+        "args": ["build", "--bin=asm", "--manifest-path=Cargo.toml"],
+        "filter": {
+          "kind": "bin"
+        }
+      },
+      "args": ["-i", "asm/test.asm", "-o", "target/testasm.bin"]
+    }
+  ]
+}
