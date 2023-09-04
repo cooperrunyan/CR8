@@ -1,0 +1,19 @@
+{
+  "name": "Rust",
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": ["streetsidesoftware.code-spell-checker"]
+    }
+  }
+
+  // "forwardPorts": [],
+  // "postCreateCommand": "rustc --version",
+  // "remoteUser": "root"
+}
