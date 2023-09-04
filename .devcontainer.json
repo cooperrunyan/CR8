@@ -9,7 +9,7 @@
   "customizations": {
     "vscode": {
       "settings": {},
-      "extensions": ["streetsidesoftware.code-spell-checker"]
+      "extensions": []
     }
   }
 
