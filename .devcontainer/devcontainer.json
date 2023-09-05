@@ -16,8 +16,4 @@
       "extensions": []
     }
   }
-
-  // "forwardPorts": [],
-  // "postCreateCommand": "rustc --version",
-  // "remoteUser": "root"
 }
