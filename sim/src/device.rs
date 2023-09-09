@@ -1,4 +1,4 @@
-use cfg::{
+use asm::{
     mem::{SIGDBG, SIGHALT, SIGNOP, SIGPEEK},
     reg::Register,
 };

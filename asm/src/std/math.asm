@@ -94,7 +94,7 @@ mul:
         dec %a
         add %z, %b
         adcc %d
-        jnza [.loop]
+        jnza [.loop], %a
         jmp [.done]
 
     .done:

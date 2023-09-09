@@ -1,4 +1,4 @@
-use cfg::{
+use asm::{
     mem::{PROGRAM_COUNTER, STACK_POINTER},
     reg::Register,
 };

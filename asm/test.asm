@@ -10,8 +10,7 @@ sect:
     jmp [.done]
 
     .done:
-    ret
+        halt
 
 main:
-    call [sect]
-    halt
+    jmp [sect]

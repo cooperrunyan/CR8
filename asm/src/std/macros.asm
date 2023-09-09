@@ -28,24 +28,24 @@ not [r0]:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Control Flow
 #macro
-lda [a0]:
+ldhl [a0]:
   mov %l, $a0l
   mov %h, $a0h
 
 #macro
 jnza [a0, ir0]:
-  lda $a0
+  ldhl $a0
   jnz $ir0
 
 #macro
 jmp [a0]:
-  lda $a0
+  ldhl $a0
   jnz 1
 
 #macro
 jeq [a0]:
   and %f, 0b0010
-  lda $a0
+  ldhl $a0
   jnz %f
 
 #macro
@@ -56,34 +56,34 @@ jz [a0, r0]:
 #macro
 jlt [a0]:
   and %f, 0b0001
-  lda $a0
+  ldhl $a0
   jnz %f
 
 #macro
 jle [a0]:
   and %f, 0b0011
-  lda $a0
+  ldhl $a0
   jnz %f
 
 #macro
 jgt [a0]:
   not %f
   and %f, 0b0001
-  lda $a0
+  ldhl $a0
   jnz %f
 
 #macro
 jne [a0]:
   not %f
   and %f, 0b0010
-  lda $a0
+  ldhl $a0
   jnz %f
 
 #macro
 jge [a0]:
   nand %f, 0b0001
   and %f, 0b0011
-  lda $a0
+  ldhl $a0
   jnz %f
 
 
@@ -110,12 +110,12 @@ outi [i0, i1]:
 
 #macro
 halt []:
-  outb &SIGNAL_PORT, &SIGHALT
+  outi &SIGNAL_PORT, &SIGHALT
 
 #macro
 peek [a0]:
-  outb &SIGNAL_PORT, &SIGPEEK
-  outb &SIGNAL_PORT, $a0l
-  outb &SIGNAL_PORT, $a0h
+  outi &SIGNAL_PORT, &SIGPEEK
+  outi &SIGNAL_PORT, $a0l
+  outi &SIGNAL_PORT, $a0h
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,10 +1,9 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 
-use cfg::op::Operation;
-use cfg::reg::Register;
+use crate::{op::Operation, reg::Register};
 
-use crate::ast::{Addr, AstNode, Ident, Instruction, Label, ToNode, ToValue};
+use crate::ast::{AstNode, Ident, Instruction, Label, ToNode, ToValue};
 use crate::err;
 use crate::token::Token;
 
@@ -54,8 +53,7 @@ pub fn lex_word<'s>(
                 while let Some(next) = tokens.next() {
                     match next {
                         Token::Word(w) => {
-                            args.push(Addr::LowByte(w.clone()).to_value());
-                            args.push(Addr::HighByte(w).to_value());
+                            args.push(Ident::Addr(w).to_value());
                         }
                         Token::BracketClose => break,
                         Token::Space => continue,

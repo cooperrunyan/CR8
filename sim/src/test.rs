@@ -1,4 +1,4 @@
-use cfg::reg::Register;
+use asm::reg::Register;
 
 macro_rules! test {
     ($asm:literal) => {{
@@ -12,8 +12,8 @@ macro_rules! test {
             output: PathBuf::from(""),
         };
 
-        let bin = asm::compile(cfg);
-        let bin = bin.bytes().collect::<Vec<_>>();
+        let mut bin = asm::compile(cfg);
+        bin.push(0xFF);
         let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());
         let _ = cr8.run();
         cr8
@@ -24,27 +24,25 @@ macro_rules! test {
 fn adc() {
     let state = test!(
         r#"
-  mov %ax, 12
-  mov %bx, 9
-  mov %cx, 8
-  add %ax, %b
-  add %cx, %a
-  halt
+  mov %a, 9
+  mov %b, 9
+  mov %c, 8
+  adc %a, %b
 "#
     );
 
     assert_eq!(state.reg[Register::A as usize], 21);
     assert_eq!(state.reg[Register::B as usize], 9);
-    assert_eq!(state.reg[Register::C as usize], 29);
+    assert_eq!(state.reg[Register::C as usize], 8);
 }
 
 #[test]
 fn sbb() {
     let state = test!(
         r#"
-  mov %ax, 12
-  mov %bx, 9
-  sbb %ax, %bx
+  mov %a, 12
+  mov %b, 9
+  sbb %a, %b
   halt
 "#
     );
@@ -57,8 +55,8 @@ fn sbb() {
 fn mov() {
     let state = test!(
         r#"
-  mov %ax, 12
-  mov %bx, %ax
+  mov %a, 12
+  mov %b, %a
   halt
 "#
     );
@@ -71,9 +69,9 @@ fn mov() {
 fn lwsw() {
     let state = test!(
         r#"
-  mov %ax, 20
-  sw %ax, 0x00, 0xFD
-  lw %bx, 0x00, 0xFD
+  mov %a, 20
+  sw %a, 0x00, 0xFD
+  lw %b, 0x00, 0xFD
   halt
 "#
     );
@@ -87,22 +85,22 @@ fn lwsw() {
 fn stack() {
     let state = test!(
         r#"
-  mov %ax, 9
-  mov %bx, 4
-  mov %cx, 3
-  mov %dx, 8
-  push %ax
-  push %bx
-  push %cx
-  push %dx
-  mov %ax, 0
-  mov %bx, 0
-  mov %cx, 0
-  mov %dx, 0
-  pop %dx
-  pop %cx
-  pop %bx
-  pop %ax
+  mov %a, 9
+  mov %b, 4
+  mov %c, 3
+  mov %d, 8
+  push %a
+  push %b
+  push %c
+  push %d
+  mov %a, 0
+  mov %b, 0
+  mov %c, 0
+  mov %d, 0
+  pop %d
+  pop %c
+  pop %b
+  pop %a
   halt
 "#
     );
@@ -117,9 +115,9 @@ fn stack() {
 fn cmp_lt() {
     let state = test!(
         r#"
-  mov %ax, 9
-  mov %bx, 12
-  cmp %ax, %bx
+  mov %a, 9
+  mov %b, 12
+  cmp %a, %b
   halt
 "#
     );
@@ -131,9 +129,9 @@ fn cmp_lt() {
 fn cmp_eq() {
     let state = test!(
         r#"
-  mov %ax, 12
-  mov %bx, 12
-  cmp %ax, %bx
+  mov %a, 12
+  mov %b, 12
+  cmp %a, %b
   halt
 "#
     );
@@ -145,9 +143,9 @@ fn cmp_eq() {
 fn and() {
     let state = test!(
         r#"
-  mov %ax, 0b00111100
-  mov %bx, 0b11001100
-  and %ax, %bx
+  mov %a, 0b00111100
+  mov %b, 0b11001100
+  and %a, %b
   halt
 "#
     );
@@ -159,9 +157,9 @@ fn and() {
 fn or() {
     let state = test!(
         r#"
-  mov %ax, 0b00111100
-  mov %bx, 0b11001100
-  or %ax, %bx
+  mov %a, 0b00111100
+  mov %b, 0b11001100
+  or %a, %b
   halt
 "#
     );
@@ -173,9 +171,9 @@ fn or() {
 fn nor() {
     let state = test!(
         r#"
-  mov %ax, 0b00111100
-  mov %bx, 0b11001100
-  nor %ax, %bx
+  mov %a, 0b00111100
+  mov %b, 0b11001100
+  nor %a, %b
   halt
 "#
     );

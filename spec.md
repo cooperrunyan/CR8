@@ -78,13 +78,13 @@
 
 Instructions are 1-4 bytes long. First byte of the instruction looks like:
 
-`000IIIIC`
+`OOOOIRRR`
 
 | Bits | Name          |
 | ---- | ------------- |
-| 0    | Is-immediate? |
-| 1-4  | Operation     |
-| 5-7  | Empty         |
+| I    | Is-immediate? |
+| O    | Operation     |
+| R    | Register      |
 
 > JNZ is always 1 byte long
 

@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-use cfg::{
+use asm::{
     mem::{PROGRAM_COUNTER, STACK, STACK_END},
     reg::Register,
 };
@@ -8,40 +8,46 @@ use cfg::{
 use super::{join, split, CR8};
 
 impl CR8 {
-    pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) {
+    pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> u8 {
         let addr = join(i);
         // println!("LW {to:#?}, {addr:#?}");
         self.reg[to as usize] = self.mem[addr as usize];
+        3
     }
 
-    pub(super) fn lw_hl(&mut self, to: Register) {
+    pub(super) fn lw_hl(&mut self, to: Register) -> u8 {
         let addr = join(self.hl());
         // println!("LW {to:#?}, {}", addr);
         self.reg[to as usize] = self.mem[addr as usize];
+        1
     }
 
-    pub(super) fn sw_hl(&mut self, from: Register) {
+    pub(super) fn sw_hl(&mut self, from: Register) -> u8 {
         // println!("SW {from:#?}, {}", join(self.hl()));
         self.mem[join(self.hl()) as usize] = self.reg[from as usize];
+        1
     }
 
-    pub(super) fn sw_imm16(&mut self, i: (u8, u8), from: Register) {
+    pub(super) fn sw_imm16(&mut self, i: (u8, u8), from: Register) -> u8 {
         // println!("SW {from:#?}, {}", join(i));
         self.mem[join(i) as usize] = self.reg[from as usize];
+        3
     }
 
-    pub(super) fn mov_reg(&mut self, to: Register, from: Register) {
+    pub(super) fn mov_reg(&mut self, to: Register, from: Register) -> u8 {
         // println!("MOV {to:#?}, {from:#?}");
 
         self.reg[to as usize] = self.reg[from as usize];
+        2
     }
 
-    pub(super) fn mov_imm8(&mut self, to: Register, imm8: u8) {
+    pub(super) fn mov_imm8(&mut self, to: Register, imm8: u8) -> u8 {
         // println!("MOV {to:#?}, {imm8:#?}");
         self.reg[to as usize] = imm8;
+        2
     }
 
-    pub(super) fn push_imm8(&mut self, imm8: u8) {
+    pub(super) fn push_imm8(&mut self, imm8: u8) -> u8 {
         let sptr = join(self.sp());
 
         if sptr >= STACK_END {
@@ -53,13 +59,15 @@ impl CR8 {
         self.mem[join(self.sp()) as usize] = imm8;
 
         // println!("PUSHED: [{}] {}", join(self.sp()) - STACK, imm8);
+        2
     }
 
-    pub(super) fn push_reg(&mut self, reg: Register) {
+    pub(super) fn push_reg(&mut self, reg: Register) -> u8 {
         self.push_imm8(self.reg[reg as usize]);
+        1
     }
 
-    pub(super) fn pop(&mut self, reg: Register) {
+    pub(super) fn pop(&mut self, reg: Register) -> u8 {
         let sptr = join(self.sp());
 
         if sptr < STACK {
@@ -72,24 +80,27 @@ impl CR8 {
         // println!("POPPED: [{}] {}", sptr - STACK, self.reg[reg as usize]);
 
         self.set_sp(split(sptr - 1));
+        1
     }
 
-    pub(super) fn jnz_imm8(&mut self, imm8: u8) {
+    pub(super) fn jnz_imm8(&mut self, imm8: u8) -> u8 {
         if imm8 == 0 {
-            return;
+            return 2;
         }
 
         self.mem[PROGRAM_COUNTER as usize] = self.reg[Register::L as usize];
         self.mem[(PROGRAM_COUNTER + 1) as usize] = self.reg[Register::H as usize];
 
-        // println!("JNZ {}, {imm8:#?}", join(self.pc()));
+        // println!("JNZ {} ", join(self.pc()));
+        0
     }
 
-    pub(super) fn jnz_reg(&mut self, reg: Register) {
+    pub(super) fn jnz_reg(&mut self, reg: Register) -> u8 {
         self.jnz_imm8(self.reg[reg as usize]);
+        0
     }
 
-    pub(super) fn in_imm8(&mut self, into: Register, port: u8) {
+    pub(super) fn in_imm8(&mut self, into: Register, port: u8) -> u8 {
         // println!("IN {into:#?}, {port:#?}");
 
         if let Some(dev) = self.dev.get_mut(&port) {
@@ -98,13 +109,15 @@ impl CR8 {
             self.debug();
             panic!("No device connected to port: {port}");
         }
+        2
     }
 
-    pub(super) fn in_reg(&mut self, into: Register, port: Register) {
+    pub(super) fn in_reg(&mut self, into: Register, port: Register) -> u8 {
         self.in_imm8(into, self.reg[port as usize]);
+        2
     }
 
-    pub(super) fn out_imm8(&mut self, port: u8, send: Register) {
+    pub(super) fn out_imm8(&mut self, port: u8, send: Register) -> u8 {
         // println!("OUT {send:#?}, {port:#?}");
         if let Some(dev) = self.dev.get_mut(&port) {
             dev.receive(&self.reg, &self.mem, self.reg[send as usize]);
@@ -112,13 +125,15 @@ impl CR8 {
             self.debug();
             panic!("No device connected to port: {port}");
         }
+        2
     }
 
-    pub(super) fn out_reg(&mut self, port: Register, send: Register) {
+    pub(super) fn out_reg(&mut self, port: Register, send: Register) -> u8 {
         self.out_imm8(self.reg[port as usize], send);
+        2
     }
 
-    pub(super) fn cmp_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn cmp_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("CMP {lhs:#?}, {imm8:#?}");
 
         let diff = (self.reg[lhs as usize] as i16) - (imm8 as i16);
@@ -133,13 +148,15 @@ impl CR8 {
         }
 
         self.reg[Register::F as usize] = f;
+        2
     }
 
-    pub(super) fn cmp_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn cmp_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.cmp_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 
-    pub(super) fn adc_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn adc_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("ADC {lhs:#?}, {imm8:#?}");
 
         let f = self.reg[Register::F as usize];
@@ -153,13 +170,15 @@ impl CR8 {
         }
 
         self.reg[lhs as usize] = res;
+        2
     }
 
-    pub(super) fn adc_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn adc_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.adc_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 
-    pub(super) fn sbb_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn sbb_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("SBB {lhs:#?}, {imm8:#?}");
 
         let f = self.reg[Register::F as usize];
@@ -173,36 +192,44 @@ impl CR8 {
         }
 
         self.reg[lhs as usize] = res;
+        2
     }
 
-    pub(super) fn sbb_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn sbb_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.sbb_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 
-    pub(super) fn or_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn or_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("OR {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] |= imm8;
+        2
     }
 
-    pub(super) fn or_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn or_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.or_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 
-    pub(super) fn nor_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn nor_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("NOR {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] = !(self.reg[lhs as usize] | imm8);
+        2
     }
 
-    pub(super) fn nor_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn nor_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.nor_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 
-    pub(super) fn and_imm8(&mut self, lhs: Register, imm8: u8) {
+    pub(super) fn and_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
         // println!("AND {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] &= imm8;
+        2
     }
 
-    pub(super) fn and_reg(&mut self, lhs: Register, reg: Register) {
+    pub(super) fn and_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.and_imm8(lhs, self.reg[reg as usize]);
+        2
     }
 }
