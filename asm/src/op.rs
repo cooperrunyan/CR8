@@ -134,14 +134,14 @@ impl Operation {
             }
             PUSH => {
                 match args.next() {
-                    Some(Value::Immediate(_)) => return none!(args, 2),
+                    Some(Value::Immediate(_) | Value::Expression(_)) => return none!(args, 2),
                     Some(Value::Register(_)) => return none!(args, 1),
                     _ => return Err("Expected register or immediate as first argument".to_string()),
                 };
             }
             JNZ => {
                 let len = match args.next() {
-                    Some(Value::Immediate(_)) => 2,
+                    Some(Value::Immediate(_) | Value::Expression(_)) => 2,
                     Some(Value::Register(_)) => 1,
                     _ => return Err("Expected register or immediate as first argument".to_string()),
                 };

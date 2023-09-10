@@ -3,44 +3,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MATH.asm
 
-#macro
-adcc [r0]:
-    adc $r0, 0
-
-#macro
-sbbb [r0]:
-    sbb $r0, 0
-
-#macro
-add [r0, ir0]:
-    clrfc
-    adc $r0, $ir0
-
-#macro
-sub [r0, ir0]:
-    clrfb
-    sbb $r0, $ir0
-
-#macro
-dec [r0]:
-    sbb $r0, 1
-
-#macro
-inc [r0]:
-    adc $r0, 1
-
-#macro
-dec16 [r0, r1]:
-    clrfb
-    dec $r0
-    sbbb $r1
-
-#macro
-inc16 [r0, r1]:
-    clrfc
-    inc $r0
-    adcc $r1
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Shift
 lsh:
@@ -88,31 +50,17 @@ lsh16:
 mul:
     mov %z, 0
     jnza [.loop], %a
-    jmp [.done]
+    ret
 
     .loop:
         dec %a
         add %z, %b
         adcc %d
         jnza [.loop], %a
-        jmp [.done]
-
-    .done:
         ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 16 bit manipulation
-#macro
-add16 [r0, r1, ir0, ir1]:
-    add %a, $ir0
-    adc %b, $ir1
-
-#macro
-sub16 [r0, r1, ir0, ir1]:
-    sub %a, $ir0
-    sbb %b, $ir1
-
-
 ; Multiply %ab * %cd -> %abcd
 ; Occupies PSR:
 ; Byte:  0   1   2   3

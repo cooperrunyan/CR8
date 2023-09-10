@@ -5,12 +5,10 @@ jmp [main]
 
 #include "<std>/math.asm"
 
-sect:
-    mov %b, 4
-    jmp [.done]
-
-    .done:
-        halt
-
 main:
-    jmp [sect]
+    mov %a, 24
+    mov %b, 12
+    call [mul]
+    halt
+
+

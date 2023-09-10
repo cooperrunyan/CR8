@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
-use crate::ast::{AddrByte, Ast, AstNode, Expression, Ident, Instruction, Label, Value};
+use crate::ast::{AddrByte, Ast, AstNode, Ident, Instruction, Label, Value};
+use crate::expr;
 use crate::op::Operation;
 
 #[derive(Debug, Default)]
 pub struct Compiler {
     pub bin: Vec<u8>,
-    ast: Ast,
-    labels: HashMap<String, usize>,
-    last_label: String,
-    pc: usize,
+    pub ast: Ast,
+    pub labels: HashMap<String, usize>,
+    pub last_label: String,
+    pub pc: usize,
 }
 
 impl From<Ast> for Compiler {
@@ -46,38 +47,24 @@ impl Compiler {
         dbg!(&self.labels);
     }
 
-    fn resolve_addr(&mut self, name: &str) -> Result<i128, ()> {
-        if let Some(stat) = self.ast.statics.get(name) {
-            Ok(stat.to_owned() as i128)
-        } else if let Some(label) = self.labels.get(name) {
-            Ok(label.to_owned() as i128)
-        } else if let Some(label) = self.labels.get(&format!("{}{}", self.last_label, name)) {
-            Ok(label.to_owned() as i128)
-        } else if let Some(ram_loc) = self.ast.ram_locations.get(name) {
-            Ok((*ram_loc as i128) + self.ast.ram_origin as i128)
-        } else {
-            Err(())
-        }
-    }
-
-    fn resolve_static(&mut self, name: &str) -> Result<i128, ()> {
+    pub fn resolve_static(&self, name: &str) -> Result<i128, ()> {
         let Some(stat) = self.ast.statics.get(name) else {
             return Err(());
         };
         return Ok(stat.to_owned() as i128);
     }
 
-    fn resolve_ident(&mut self, ident: &Ident) -> Result<i128, ()> {
+    pub fn resolve_ident(&self, ident: &Ident) -> Result<i128, ()> {
         match ident {
-            Ident::Addr(a) => self.resolve_addr(&a),
+            Ident::Addr(a) => self.resolve_expr(&a).map_err(|_| ()),
             Ident::Static(s) => self.resolve_static(&s),
             Ident::PC => Ok(self.pc as i128),
             _ => Err(()),
         }
     }
 
-    fn resolve_expr(&mut self, expr: &Expression) -> Result<i128, ()> {
-        Err(())
+    fn resolve_expr(&self, expr: &str) -> Result<i128, String> {
+        expr::parse(expr, &self)
     }
 
     pub fn compile(&mut self) {
@@ -99,13 +86,13 @@ impl Compiler {
 
                     for arg in args {
                         match arg {
-                            Value::AddrByte(AddrByte::High(a)) => match self.resolve_addr(&a) {
+                            Value::AddrByte(AddrByte::High(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push((a >> 8) as u8),
-                                Err(()) => panic!("Unknown address: {a:#?}"),
+                                Err(e) => panic!("Unknown address: {a:#?}. {e:#?}"),
                             },
-                            Value::AddrByte(AddrByte::Low(a)) => match self.resolve_addr(&a) {
+                            Value::AddrByte(AddrByte::Low(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push(a as u8),
-                                Err(()) => panic!("Unknown address: {a:#?}"),
+                                Err(e) => panic!("Unknown address: {a:#?}. {e:#?}"),
                             },
                             Value::Register(r) => {
                                 if regn > 0 {
@@ -126,10 +113,12 @@ impl Compiler {
                                 Err(()) => panic!("Unknown identifier: {id:#?}"),
                             },
                             Value::Expression(exp) => match self.resolve_expr(&exp) {
-                                Err(()) => panic!("Failed to resolve: {exp:#?}"),
+                                Err(e) => panic!("Failed to resolve: {exp:#?}. {e:#?}"),
                                 Ok(v) => {
                                     compiled_args.push(v as u8);
-                                    compiled_args.push((v >> 8) as u8);
+                                    if op == LW || op == SW {
+                                        compiled_args.push((v >> 8) as u8);
+                                    }
                                 }
                             },
                         }
@@ -151,45 +140,3 @@ impl Compiler {
         }
     }
 }
-
-// (LW, true) => self.lw_imm16(Register::try_from(reg_bits)?, (b0, b1)),
-// (LW, false) => self.lw_hl(Register::try_from(reg_bits)?),
-// (SW, true) => self.sw_imm16((b0, b1), Register::try_from(reg_bits)?),
-// (SW, false) => self.sw_hl(Register::try_from(reg_bits)?),
-// (MOV, true) => self.mov_imm8(Register::try_from(reg_bits)?, b0),
-// (MOV, false) => {
-//     self.mov_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (PUSH, true) => self.push_imm8(b0),
-// (PUSH, false) => self.push_reg(Register::try_from(reg_bits)?),
-// (POP, _) => self.pop(Register::try_from(reg_bits)?),
-// (JNZ, true) => self.jnz_imm8(b0),
-// (JNZ, false) => self.jnz_reg(Register::try_from(reg_bits)?),
-// (IN, true) => self.in_imm8(Register::try_from(reg_bits)?, b0),
-// (IN, false) => self.in_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?),
-// (OUT, true) => self.out_imm8(b0, Register::try_from(reg_bits)?),
-// (OUT, false) => {
-//     self.out_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (CMP, true) => self.cmp_imm8(Register::try_from(reg_bits)?, b0),
-// (CMP, false) => {
-//     self.cmp_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (ADC, true) => self.adc_imm8(Register::try_from(reg_bits)?, b0),
-// (ADC, false) => {
-//     self.adc_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (SBB, true) => self.sbb_imm8(Register::try_from(reg_bits)?, b0),
-// (SBB, false) => {
-//     self.sbb_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (OR, true) => self.or_imm8(Register::try_from(reg_bits)?, b0),
-// (OR, false) => self.or_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?),
-// (NOR, true) => self.nor_imm8(Register::try_from(reg_bits)?, b0),
-// (NOR, false) => {
-//     self.nor_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }
-// (AND, true) => self.and_imm8(Register::try_from(reg_bits)?, b0),
-// (AND, false) => {
-//     self.and_reg(Register::try_from(reg_bits)?, Register::try_from(b0)?)
-// }

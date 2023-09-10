@@ -1,8 +1,17 @@
 use std::fs;
 
+#[macro_use]
+extern crate lazy_static;
+
+#[macro_use]
+pub mod op;
+pub mod mem;
+pub mod reg;
+
 mod ast;
 mod compiler;
 mod config;
+mod expr;
 mod lex;
 mod token;
 
@@ -10,11 +19,6 @@ use compiler::Compiler;
 pub use config::Config;
 
 use crate::ast::Ast;
-
-#[macro_use]
-pub mod op;
-pub mod mem;
-pub mod reg;
 
 use phf::phf_map;
 

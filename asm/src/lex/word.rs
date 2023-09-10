@@ -3,7 +3,7 @@ use std::vec::IntoIter;
 
 use crate::{op::Operation, reg::Register};
 
-use crate::ast::{AstNode, Ident, Instruction, Label, ToNode, ToValue};
+use crate::ast::{AstNode, Ident, Instruction, Label, ToNode, ToValue, Value};
 use crate::err;
 use crate::token::Token;
 
@@ -50,16 +50,14 @@ pub fn lex_word<'s>(
             }
             Token::Number(n) => args.push(n.to_value()),
             Token::BracketOpen => {
+                let mut expr = String::new();
                 while let Some(next) = tokens.next() {
                     match next {
-                        Token::Word(w) => {
-                            args.push(Ident::Addr(w).to_value());
-                        }
                         Token::BracketClose => break,
-                        Token::Space => continue,
-                        oth => err!(line, file, "Todo: expression value for {oth:#?}")?,
+                        oth => expr.push_str(&oth.to_string()),
                     }
                 }
+                args.push(Value::Expression(expr))
             }
             Token::Comma => continue,
             Token::NewLine => break,

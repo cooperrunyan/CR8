@@ -56,6 +56,39 @@ pub enum Token {
     Directive,
 }
 
+impl ToString for Token {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Word(v) => v.to_string(),
+            Self::String(v) => v.to_string(),
+            Self::Number(v) => v.to_string(),
+            Self::Escape(v) => v.to_string(),
+            Self::Comma => COMMA.to_string(),
+            Self::Colon => COLON.to_string(),
+            Self::MustacheOpen => MUSTACHE_OPEN.to_string(),
+            Self::MustacheClose => MUSTACHE_CLOSE.to_string(),
+            Self::BracketOpen => BRACKET_OPEN.to_string(),
+            Self::BracketClose => BRACKET_CLOSE.to_string(),
+            Self::ParenOpen => PAREN_OPEN.to_string(),
+            Self::ParenClose => PAREN_CLOSE.to_string(),
+            Self::Equal => EQUAL.to_string(),
+            Self::LeftShift => "<<".to_string(),
+            Self::RightShift => ">>".to_string(),
+            Self::Add => ADD.to_string(),
+            Self::Sub => SUB.to_string(),
+            Self::Ampersand => AMPERSAND.to_string(),
+            Self::Pipe => PIPE.to_string(),
+            Self::Mul => MUL.to_string(),
+            Self::Div => DIV.to_string(),
+            Self::Percent => PERCENT.to_string(),
+            Self::Dollar => DOLLAR.to_string(),
+            Self::Space => SPACE.to_string(),
+            Self::NewLine => NEW_LINE.to_string(),
+            Self::Directive => DIRECTIVE.to_string(),
+        }
+    }
+}
+
 pub fn tokenize<'s>(text: &'s str, file: &'s str) -> Vec<Token> {
     let mut chars = text.chars().peekable();
     let mut tokens = vec![];

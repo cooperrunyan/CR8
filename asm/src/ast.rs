@@ -25,17 +25,8 @@ macro_rules! impl_conv {
     };
 }
 
-macro_rules! operator {
-    ($n:ident, $t:expr) => {
-        pub fn $n(self, rhs: Self) -> Expression {
-            $t(vec![self, rhs])
-        }
-    };
-}
-
 impl_conv! {to_node, ToNode, AstNode}
 impl_conv! {to_value, ToValue, Value}
-impl_conv! {to_exp_item, ToExpressionItem, ExpressionItem}
 
 #[derive(Debug, Default)]
 pub struct Ast {
@@ -124,14 +115,14 @@ pub enum Instruction {
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Expression(Expression),
+    Expression(String),
     Immediate(i128),
     Register(Register),
     AddrByte(AddrByte),
     Ident(Ident),
 }
 
-to_value! {Expression, Value::Expression}
+// to_value! {Expression, Value::Expression}
 to_value! {Register, Value::Register}
 to_value! {AddrByte, Value::AddrByte}
 to_value! {Ident, Value::Ident}
@@ -149,40 +140,6 @@ pub enum Ident {
     Addr(String),
     MacroArg(String),
     PC,
-}
-
-#[derive(Debug, Clone)]
-pub enum Expression {
-    Add(Vec<ExpressionItem>),
-    Mul(Vec<ExpressionItem>),
-    Sub(Vec<ExpressionItem>),
-    Div(Vec<ExpressionItem>),
-    LeftShift(Vec<ExpressionItem>),
-    RightShift(Vec<ExpressionItem>),
-    And(Vec<ExpressionItem>),
-    Or(Vec<ExpressionItem>),
-}
-
-#[derive(Debug, Clone)]
-pub enum ExpressionItem {
-    Immediate(i128),
-    Ident(Ident),
-    Group(Expression),
-}
-
-to_exp_item! {Ident, ExpressionItem::Ident}
-to_exp_item! {Expression, ExpressionItem::Group}
-to_exp_item! {i128, ExpressionItem::Immediate}
-
-impl ExpressionItem {
-    operator! {sub, Expression::Sub}
-    operator! {add, Expression::Add}
-    operator! {mul, Expression::Mul}
-    operator! {div, Expression::Div}
-    operator! {left_shift, Expression::LeftShift}
-    operator! {right_shift, Expression::RightShift}
-    operator! {and, Expression::And}
-    operator! {or, Expression::Or}
 }
 
 impl From<Vec<AstNode>> for Ast {
@@ -339,6 +296,11 @@ fn swap_macro(macros: &HashMap<String, Macro>, node: AstNode) -> Vec<AstNode> {
                                 parsed_args.insert(format!("{name}"), Value::Ident(Ident::Addr(a.clone())));
                                 parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(a.clone())));
                                 parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(a)));
+                            },
+                            Value::Expression(expr) => {
+                                parsed_args.insert(format!("{name}"), Value::Expression(expr.clone()));
+                                parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(expr.clone())));
+                                parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(expr)));
                             },
                             _ => panic!("Expected an address at {mac_name:#?} argument {i}. Received: {next:#?}")
                         };

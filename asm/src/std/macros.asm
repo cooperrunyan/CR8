@@ -91,8 +91,8 @@ jge [a0]:
 ; Calling
 #macro
 call [a0]:
-  ; push [($ + 13) >> 8]
-  ; push [($ + 10) & 0x00FF]
+  push [($ + 10) >> 8]
+  push [($ + 8) & 0x00FF]
   jmp $a0
 
 #macro
@@ -105,8 +105,10 @@ ret []:
 ; Devices
 #macro
 outi [i0, i1]:
-  mov %d, $i1
-  out $i0, %d
+  push %f
+  mov %f, $i1
+  out $i0, %f
+  pop %f
 
 #macro
 halt []:
@@ -118,4 +120,53 @@ peek [a0]:
   outi &SIGNAL_PORT, $a0l
   outi &SIGNAL_PORT, $a0h
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Math
+#macro
+add16 [r0, r1, ir0, ir1]:
+    add %a, $ir0
+    adc %b, $ir1
+
+#macro
+sub16 [r0, r1, ir0, ir1]:
+    sub %a, $ir0
+    sbb %b, $ir1
+
+#macro
+adcc [r0]:
+    adc $r0, 0
+
+#macro
+sbbb [r0]:
+    sbb $r0, 0
+
+#macro
+add [r0, ir0]:
+    clrfc
+    adc $r0, $ir0
+
+#macro
+sub [r0, ir0]:
+    clrfb
+    sbb $r0, $ir0
+
+#macro
+dec [r0]:
+    sub $r0, 1
+
+#macro
+inc [r0]:
+    add $r0, 1
+
+#macro
+dec16 [r0, r1]:
+    clrfb
+    dec $r0
+    sbbb $r1
+
+#macro
+inc16 [r0, r1]:
+    clrfc
+    inc $r0
+    adcc $r1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
