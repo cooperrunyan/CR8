@@ -1,11 +1,8 @@
 use std::num::Wrapping;
 
-use asm::{
-    mem::{PROGRAM_COUNTER, STACK, STACK_END},
-    reg::Register,
-};
+use asm::reg::Register;
 
-use super::{join, split, CR8};
+use super::{join, split, CR8, PROGRAM_COUNTER, STACK, STACK_END};
 
 impl CR8 {
     pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> u8 {

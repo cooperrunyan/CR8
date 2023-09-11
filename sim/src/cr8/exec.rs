@@ -1,6 +1,8 @@
 use std::{thread, time::Duration};
 
-use asm::{mem::STACK, op::Operation, reg::Register};
+use asm::{op::Operation, reg::Register};
+
+use crate::cr8::STACK;
 
 use super::{join, CR8};
 

@@ -1,9 +1,6 @@
-use asm::{
-    mem::{PROGRAM_COUNTER, STACK_POINTER},
-    reg::Register,
-};
+use asm::reg::Register;
 
-use super::{join, split, CR8};
+use super::{join, split, CR8, PROGRAM_COUNTER, STACK_POINTER};
 
 impl CR8 {
     pub(super) fn hl(&self) -> (u8, u8) {

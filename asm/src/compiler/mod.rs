@@ -1,80 +1,75 @@
 use std::collections::HashMap;
+use std::fs;
 
-use crate::ast::{AddrByte, Ast, AstNode, Ident, Instruction, Label, Value};
-use crate::expr;
+mod ast;
+mod config;
+mod debug;
+mod lexer;
+mod resolver;
+mod tokenizer;
+
+use phf::phf_map;
+
+use ast::{AstNode, Macro};
+use lexer::Lexer;
+
+use crate::compiler::ast::{AddrByte, Instruction, Label, Value};
 use crate::op::Operation;
 
-#[derive(Debug, Default)]
-pub struct Compiler {
-    pub bin: Vec<u8>,
-    pub ast: Ast,
-    pub labels: HashMap<String, usize>,
-    pub last_label: String,
-    pub pc: usize,
-}
+pub use config::Config;
 
-impl From<Ast> for Compiler {
-    fn from(ast: Ast) -> Self {
-        Self {
-            ast,
-            ..Default::default()
-        }
-    }
+use self::config::{DebugInfo, Input};
+
+static STD: phf::Map<&'static str, &'static str> = phf_map! {
+    "<std>/arch.asm" => include_str!("../std/arch.asm"),
+    "<std>/macros.asm" => include_str!("../std/macros.asm"),
+    "<std>/math.asm" => include_str!("../std/math.asm"),
+};
+
+#[derive(Debug)]
+pub struct Compiler {
+    debug: DebugInfo,
+    bin: Vec<u8>,
+    tree: Vec<AstNode>,
+    labels: HashMap<String, usize>,
+    last_label: String,
+    pc: usize,
+    files: Vec<String>,
+    macros: HashMap<String, Macro>,
+    statics: HashMap<String, u128>,
+    ram_locations: HashMap<String, u128>,
+    ram_length: u128,
+    ram_origin: u16,
 }
 
 impl Compiler {
-    pub fn strip_labels(&mut self) {
-        for node in self.ast.tree.iter() {
-            match node {
-                AstNode::Label(Label::Label(ln)) => {
-                    self.last_label = ln.to_string();
-                    self.labels.insert(ln.to_owned(), self.pc);
-                }
-                AstNode::Label(Label::SubLabel(sub)) => {
-                    self.labels
-                        .insert(format!("{}{sub}", self.last_label), self.pc);
-                }
-                AstNode::Instruction(Instruction::Native(op, args)) => {
-                    let size = match op.size(args) {
-                        Ok(sz) => sz,
-                        Err(e) => panic!("Argument error for {op:#?}: {e:#?}. At {node:#?}"),
-                    };
-                    self.pc += size as usize;
-                }
-                oth => panic!("Unexpected {oth:#?}. At {node:#?}"),
-            }
-        }
-        dbg!(&self.labels);
-    }
-
-    pub fn resolve_static(&self, name: &str) -> Result<i128, ()> {
-        let Some(stat) = self.ast.statics.get(name) else {
-            return Err(());
-        };
-        return Ok(stat.to_owned() as i128);
-    }
-
-    pub fn resolve_ident(&self, ident: &Ident) -> Result<i128, ()> {
-        match ident {
-            Ident::Addr(a) => self.resolve_expr(&a).map_err(|_| ()),
-            Ident::Static(s) => self.resolve_static(&s),
-            Ident::PC => Ok(self.pc as i128),
-            _ => Err(()),
+    pub fn new(config: &Config) -> Self {
+        Self {
+            debug: config.debug,
+            bin: vec![],
+            tree: vec![],
+            labels: HashMap::new(),
+            last_label: String::new(),
+            pc: 0,
+            files: vec![],
+            macros: HashMap::new(),
+            statics: HashMap::new(),
+            ram_locations: HashMap::new(),
+            ram_length: 0,
+            ram_origin: 0,
         }
     }
 
-    fn resolve_expr(&self, expr: &str) -> Result<i128, String> {
-        expr::parse(expr, &self)
-    }
-
-    pub fn compile(&mut self) {
+    pub fn compile(mut self) -> Vec<u8> {
         use Operation::*;
+        self.resolve_macros();
+        self.resolve_labels();
 
         self.last_label = String::new();
 
         let mut tree = vec![];
-        tree.append(&mut self.ast.tree);
-        self.ast.tree = vec![];
+        tree.append(&mut self.tree);
+        self.tree = vec![];
 
         for node in tree {
             match node {
@@ -138,5 +133,31 @@ impl Compiler {
                 _ => {}
             }
         }
+
+        self.debug();
+
+        self.bin
+    }
+
+    pub fn push(&mut self, input: Input) {
+        let (source, file) = match input {
+            Input::File(f) => {
+                let Ok(source) = fs::read_to_string(&f) else {
+                    panic!("Failed to read {f}");
+                };
+                (source, f)
+            }
+            Input::Raw(s) => (s, "raw".to_string()),
+        };
+
+        self.files.push(file.clone());
+
+        let tokens = Compiler::tokenize(&source, &file);
+        let nodes = match Lexer::new(tokens, &file).lex() {
+            Ok(n) => n.nodes,
+            Err(e) => panic!("Error at file: {:?}\n{}", &file, e),
+        };
+
+        self.resolve_directives(nodes);
     }
 }

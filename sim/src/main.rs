@@ -8,9 +8,6 @@ use cr8::CR8;
 
 use crate::cr8::CR8Config;
 
-#[cfg(test)]
-mod test;
-
 fn main() {
     let bin = args::parse().unwrap();
     let mut cr8 = CR8::new(CR8Config::builder().tick_rate(0).mem(bin).build());

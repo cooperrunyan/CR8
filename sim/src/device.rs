@@ -1,7 +1,6 @@
-use asm::{
-    mem::{SIGDBG, SIGHALT, SIGNOP, SIGPEEK},
-    reg::Register,
-};
+use asm::reg::Register;
+
+use crate::cr8::{SIGDBG, SIGHALT, SIGNOP, SIGPEEK};
 
 pub trait Device {
     fn receive(&mut self, reg: &[u8], mem: &[u8], byte: u8);

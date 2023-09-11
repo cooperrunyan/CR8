@@ -1,5 +1,3 @@
-use crate::ast::Value;
-
 macro_rules! impl_for {
     (for $for:ident, as $a:ty, impl $($t:ty),+) => {
         $(impl TryFrom<$t> for $for {
@@ -87,86 +85,6 @@ impl TryFrom<&str> for Operation {
             "nor" => Ok(Self::NOR),
             "and" => Ok(Self::AND),
             x => Err(format!("Invalid operation: {x:#?}")),
-        }
-    }
-}
-
-impl Operation {
-    pub fn size(&self, _args: &Vec<Value>) -> Result<u8, String> {
-        use Operation::*;
-        let mut args = vec![];
-        for arg in _args {
-            args.push(arg)
-        }
-
-        macro_rules! none {
-            ($a:expr, $n:expr) => {
-                if $a.next().is_none() {
-                    Ok($n as u8)
-                } else {
-                    dbg!(&$a);
-                    Err("Too many arguments".to_string())
-                }
-            };
-        }
-        let mut args = args.into_iter();
-
-        match self {
-            LW | SW => {
-                let mut args = match self {
-                    LW => args.collect::<Vec<_>>().into_iter(),
-                    SW => args.rev().collect::<Vec<_>>().into_iter(),
-                    _ => panic!(),
-                };
-
-                let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected the first argument of LW to be a register".to_string());
-                };
-                match args.next() {
-                    None => return Ok(1),
-                    Some(Value::AddrByte(_) | Value::Immediate(_)) => match args.next() {
-                        Some(Value::AddrByte(_) | Value::Immediate(_)) => return none!(args, 3),
-                        _ => return Err("Expected another address byte for LW".to_string()),
-                    },
-                    Some(Value::Expression(_) | Value::Ident(_)) => return none!(args, 3),
-                    oth => return Err(format!("Unexpected additional argument: {oth:#?}")),
-                }
-            }
-            PUSH => {
-                match args.next() {
-                    Some(Value::Immediate(_) | Value::Expression(_)) => return none!(args, 2),
-                    Some(Value::Register(_)) => return none!(args, 1),
-                    _ => return Err("Expected register or immediate as first argument".to_string()),
-                };
-            }
-            JNZ => {
-                let len = match args.next() {
-                    Some(Value::Immediate(_) | Value::Expression(_)) => 2,
-                    Some(Value::Register(_)) => 1,
-                    _ => return Err("Expected register or immediate as first argument".to_string()),
-                };
-                return none!(args, len);
-            }
-            POP => {
-                let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected register as only argument".to_string());
-                };
-                return none!(args, 1);
-            }
-            OUT | IN | MOV | CMP | ADC | SBB | OR | NOR | AND => {
-                let mut args = match self {
-                    OUT => args.rev().collect::<Vec<_>>().into_iter(),
-                    _ => args.collect::<Vec<_>>().into_iter(),
-                };
-
-                let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected register argument".to_string());
-                };
-                match args.next() {
-                    None => return Err("Expected another argument".to_string()),
-                    Some(_) => return none!(args, 2),
-                }
-            }
         }
     }
 }
