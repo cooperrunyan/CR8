@@ -13,9 +13,6 @@ mod probe;
 
 pub const STACK: u16 = 0xFC00;
 pub const STACK_END: u16 = 0xFEFF;
-pub const STACK_POINTER: u16 = 0xFFFC;
-pub const PROGRAM_COUNTER: u16 = 0xFFFE;
-
 pub const DEV_CONTROL: u8 = 0x00;
 pub const SIGNOP: u8 = 0x00;
 pub const SIGHALT: u8 = 0x01;
@@ -45,9 +42,60 @@ pub struct CR8Config {
     pub debug: bool,
 }
 
+#[derive(Debug)]
+pub struct Mem {
+    rom: [u8; 0x8000],
+    builtin_ram: [u8; 0x8000],
+    banks: Vec<[u8; 0x4000]>,
+}
+
+impl Default for Mem {
+    fn default() -> Self {
+        Self {
+            rom: [0; 0x8000],
+            builtin_ram: [0; 0x8000],
+            banks: vec![],
+        }
+    }
+}
+
+impl Mem {
+    pub fn get(&self, bank: u8, addr: u16) -> u8 {
+        if addr & 0b10000000_00000000 == 0 {
+            return self.rom[(addr & 0b01111111_11111111) as usize];
+        }
+        if addr & 0b01000000_00000000 == 0 && bank != 0 {
+            if self.banks.len() <= bank as usize - 1 {
+                panic!("Attempted to address nonexistent bank: {}", bank - 1);
+            }
+            return self.banks[bank as usize - 1][(addr & 0b00111111_11111111) as usize];
+        }
+        return self.builtin_ram[(addr & 0b01111111_11111111) as usize];
+    }
+
+    pub fn set(&mut self, bank: u8, addr: u16, value: u8) {
+        if addr & 0b10000000_00000000 == 0 {
+            return;
+        }
+        if addr & 0b01000000_00000000 == 0 && bank != 0 {
+            if self.banks.len() <= bank as usize - 1 {
+                panic!("Attempted to address nonexistent bank: {}", bank - 1);
+            }
+            self.banks[bank as usize - 1][(addr & 0b00111111_11111111) as usize] = value;
+        } else {
+            self.builtin_ram[(addr & 0b01111111_11111111) as usize] = value;
+        }
+    }
+}
+
 pub struct CR8 {
     pub reg: [u8; 8],
-    pub mem: [u8; 65536],
+    pub pcl: u8,
+    pub pch: u8,
+    pub spl: u8,
+    pub sph: u8,
+    pub mb: u8,
+    pub memory: Mem,
     pub dev: HashMap<u8, Box<dyn Device>>,
     pub tickrate: Duration,
     pub debug: bool,
@@ -58,7 +106,12 @@ impl CR8 {
     pub fn new(sim_cfg: CR8Config) -> Self {
         let mut cr8 = Self {
             reg: [0; 8],
-            mem: [0; 65536],
+            pcl: 0,
+            pch: 0,
+            spl: 0,
+            sph: 0,
+            mb: 0,
+            memory: Mem::default(),
             tickrate: sim_cfg.tickrate,
             dev: HashMap::new(),
             step: sim_cfg.step,
@@ -67,6 +120,8 @@ impl CR8 {
 
         cr8.set_sp(split(STACK));
 
+        cr8.memory.banks.push([0; 0x4000]); // VRAM
+
         cr8.dev_add(DEV_CONTROL, Box::<Control>::default());
 
         for (port, dev) in sim_cfg.with_devices {
@@ -74,7 +129,7 @@ impl CR8 {
         }
 
         for (i, byte) in sim_cfg.mem.into_iter().enumerate() {
-            cr8.mem[i] = byte
+            cr8.memory.rom[i] = byte
         }
 
         cr8

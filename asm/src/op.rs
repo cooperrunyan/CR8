@@ -36,6 +36,7 @@ pub enum Operation {
     OR,
     NOR,
     AND,
+    MB,
 }
 
 impl_for!(for Operation, as u64, impl u8, u16, u32, usize);
@@ -58,6 +59,7 @@ impl TryFrom<u64> for Operation {
             0x0B => Ok(Self::OR),
             0x0C => Ok(Self::NOR),
             0x0D => Ok(Self::AND),
+            0x0E => Ok(Self::MB),
 
             x => Err(format!("Invalid operation: {x:#?}")),
         }
@@ -84,6 +86,7 @@ impl TryFrom<&str> for Operation {
             "or" => Ok(Self::OR),
             "nor" => Ok(Self::NOR),
             "and" => Ok(Self::AND),
+            "mb" => Ok(Self::MB),
             x => Err(format!("Invalid operation: {x:#?}")),
         }
     }

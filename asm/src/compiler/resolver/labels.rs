@@ -90,6 +90,12 @@ impl Operation {
                 };
                 return none!(args, 1);
             }
+            MB => {
+                let Some(Value::Immediate(_)) = args.next() else {
+                    return Err("Expected immediate as only argument".to_string());
+                };
+                return none!(args, 2);
+            }
             OUT | IN | MOV | CMP | ADC | SBB | OR | NOR | AND => {
                 let mut args = match self {
                     OUT => args.rev().collect::<Vec<_>>().into_iter(),

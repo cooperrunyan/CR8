@@ -1,7 +1,7 @@
 # CR8
 
 - 8 bit data width
-- 16-bit address bus (64KB)
+- 16-bit address bus (64KB) + 8 bit memory bank
 - Little endian
 - Designed to be implemented with 74HC logic gates
 
@@ -17,6 +17,16 @@
 | 5      | `L`  | 8-bit | Low index byte       |
 | 6      | `H`  | 8-bit | High index byte      |
 | 7      | `F`  | 8-bit | Flags / Intermediate |
+
+### System Registers
+
+| Name  | Size  | Description          |
+| ----- | ----- | -------------------- |
+| `PCL` | 8-bit | Program counter LOW  |
+| `PCH` | 8-bit | Program counter HIGH |
+| `SPL` | 8-bit | Stack pointer LOW    |
+| `SPH` | 8-bit | Stack pointer HIGH   |
+| `MB`  | 8-bit | Memory Bank          |
 
 ### Flags
 
@@ -46,6 +56,7 @@
 | B    | `OR`      | `reg`, `reg/imm8`            | `reg = reg \| reg/imm8`                  |
 | C    | `NOR`     | `reg`, `reg/imm8`            | `reg = !(reg \| reg/imm8)`               |
 | D    | `AND`     | `reg`, `reg/imm8`            | `reg = reg & reg/imm8`                   |
+| E    | `MB`      | `imm8`                       | `SYSTEM_REGISTER[MB] = imm8`             |
 
 ## Built-in Macros
 
@@ -69,7 +80,7 @@
 | `JNE`     | `$0`, `$1` | Jump if Flags is not equal                |
 | `CALL`    | `$0`, `$1` | Pushes PC to stack then jumps to `$0 $1`  |
 | `RET`     | None       | Pops H and L from stack, then jumps       |
-| `OUTB`    | `$0`, `$1` | `OUT` for immediates                      |
+| `OUTI`    | `$0`, `$1` | `OUT` for immediates                      |
 | `HALT`    | None       | Send `SIGHALT` to Control                 |
 
 > `*`: Sets FLAG register
@@ -90,15 +101,16 @@ Instructions are 1-4 bytes long. First byte of the instruction looks like:
 
 ## Memory Layout
 
-| Start Address | End Address | Size | Purpose         |
-| ------------- | ----------- | ---- | --------------- |
-| `0x0000`      | `0x7FFF`    | 32Kb | ROM             |
-| `0x8000`      | `0xBFFF`    | 16Kb | VRAM            |
-| `0xC000`      | `0xFDFF`    | 16Kb | GPRAM           |
-| `0xFC00`      | `0xFEFF`    | 1Kb  | Stack           |
-| `0xFF00`      | `0xFFFB`    | 256B | Empty           |
-| `0xFFFC`      | `0xFFFD`    | 2B   | Stack Pointer   |
-| `0xFFFE`      | `0xFFFF`    | 2B   | Program Counter |
+| Start Address | End Address | Size | Purpose    |
+| ------------- | ----------- | ---- | ---------- |
+| `0x0000`      | `0x7FFF`    | 32Kb | ROM        |
+| `0x8000`      | `0xFFFF`    | 32Kb | Banked RAM |
+
+## Memory Banks
+
+- `0x00`: Builtin-memory
+- `0x01`: VRAM
+- Extensible
 
 ## Controller
 

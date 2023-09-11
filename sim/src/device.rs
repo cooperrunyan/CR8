@@ -1,10 +1,10 @@
 use asm::reg::Register;
 
-use crate::cr8::{SIGDBG, SIGHALT, SIGNOP, SIGPEEK};
+use crate::cr8::{Mem, SIGDBG, SIGHALT, SIGNOP, SIGPEEK};
 
 pub trait Device {
-    fn receive(&mut self, reg: &[u8], mem: &[u8], byte: u8);
-    fn send(&mut self, reg: &[u8], mem: &[u8]) -> u8;
+    fn receive(&mut self, reg: &[u8], bank: u8, mem: &Mem, byte: u8);
+    fn send(&mut self, reg: &[u8], bank: u8, mem: &Mem) -> u8;
     fn inspect(&self) -> u8;
 }
 
@@ -16,7 +16,7 @@ pub struct Control {
 }
 
 impl Device for Control {
-    fn receive(&mut self, reg: &[u8], mem: &[u8], byte: u8) {
+    fn receive(&mut self, reg: &[u8], bank: u8, mem: &Mem, byte: u8) {
         if self.peeking {
             if self.peek_low_byte.is_none() {
                 self.peek_low_byte = Some(byte);
@@ -25,7 +25,7 @@ impl Device for Control {
                 let l = self.peek_low_byte.unwrap();
 
                 let addr = ((h as u16) << 8) | l as u16;
-                println!("PEEK {addr}: [{}]", mem[addr as usize]);
+                println!("PEEK {addr}: [{}]", mem.get(bank, addr));
 
                 self.peeking = false;
                 self.peek_low_byte = None;
@@ -52,7 +52,7 @@ impl Device for Control {
         }
     }
 
-    fn send(&mut self, _reg: &[u8], _mem: &[u8]) -> u8 {
+    fn send(&mut self, _reg: &[u8], _bank: u8, _mem: &Mem) -> u8 {
         self.state
     }
 

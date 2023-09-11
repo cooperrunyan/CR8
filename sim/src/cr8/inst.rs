@@ -2,7 +2,7 @@ use std::num::Wrapping;
 
 use asm::reg::Register;
 
-use super::{join, split, CR8, PROGRAM_COUNTER, STACK, STACK_END};
+use super::{join, split, CR8, STACK, STACK_END};
 macro_rules! cr8debug {
     ($self:ident, $msg:expr $(,$args:expr)*) => {
         if $self.debug {
@@ -15,26 +15,27 @@ impl CR8 {
     pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> u8 {
         let addr = join(i);
         cr8debug!(self, "LW {to:#?}, {addr:#?}");
-        self.reg[to as usize] = self.mem[addr as usize];
+        self.reg[to as usize] = self.memory.get(self.mb, addr);
         3
     }
 
     pub(super) fn lw_hl(&mut self, to: Register) -> u8 {
         let addr = join(self.hl());
         cr8debug!(self, "LW {to:#?}, {}", addr);
-        self.reg[to as usize] = self.mem[addr as usize];
+        self.reg[to as usize] = self.memory.get(self.mb, addr);
         1
     }
 
     pub(super) fn sw_hl(&mut self, from: Register) -> u8 {
         cr8debug!(self, "SW {from:#?}, {}", join(self.hl()));
-        self.mem[join(self.hl()) as usize] = self.reg[from as usize];
+        self.memory
+            .set(self.mb, join(self.hl()), self.reg[from as usize]);
         1
     }
 
     pub(super) fn sw_imm16(&mut self, i: (u8, u8), from: Register) -> u8 {
         cr8debug!(self, "SW {from:#?}, {}", join(i));
-        self.mem[join(i) as usize] = self.reg[from as usize];
+        self.memory.set(self.mb, join(i), self.reg[from as usize]);
         3
     }
 
@@ -59,8 +60,7 @@ impl CR8 {
         }
 
         self.set_sp(split(sptr + 1));
-
-        self.mem[join(self.sp()) as usize] = imm8;
+        self.memory.set(self.mb, join(self.sp()), imm8);
 
         cr8debug!(self, "PUSHED: [{}] {}", join(self.sp()) - STACK, imm8);
         2
@@ -78,8 +78,8 @@ impl CR8 {
             panic!("Cannot pop empty stack");
         }
 
-        self.reg[reg as usize] = self.mem[sptr as usize];
-        self.mem[sptr as usize] = 0;
+        self.reg[reg as usize] = self.memory.get(self.mb, sptr);
+        self.memory.set(self.mb, sptr, 0);
 
         cr8debug!(
             self,
@@ -98,8 +98,8 @@ impl CR8 {
             return 2;
         }
 
-        self.mem[PROGRAM_COUNTER as usize] = self.reg[Register::L as usize];
-        self.mem[(PROGRAM_COUNTER + 1) as usize] = self.reg[Register::H as usize];
+        self.pcl = self.reg[Register::L as usize];
+        self.pch = self.reg[Register::H as usize];
 
         cr8debug!(self, "JNZ to {}", join(self.pc()));
         0
@@ -118,7 +118,7 @@ impl CR8 {
         cr8debug!(self, "IN {into:#?}, {port:#?}");
 
         if let Some(dev) = self.dev.get_mut(&port) {
-            self.reg[into as usize] = dev.send(&self.reg, &self.mem);
+            self.reg[into as usize] = dev.send(&self.reg, self.mb, &self.memory);
         } else {
             self.debug();
             panic!("No device connected to port: {port}");
@@ -134,7 +134,7 @@ impl CR8 {
     pub(super) fn out_imm8(&mut self, port: u8, send: Register) -> u8 {
         cr8debug!(self, "OUT {send:#?}, {port:#?}");
         if let Some(dev) = self.dev.get_mut(&port) {
-            dev.receive(&self.reg, &self.mem, self.reg[send as usize]);
+            dev.receive(&self.reg, self.mb, &self.memory, self.reg[send as usize]);
         } else {
             self.debug();
             panic!("No device connected to port: {port}");
@@ -244,6 +244,12 @@ impl CR8 {
 
     pub(super) fn and_reg(&mut self, lhs: Register, reg: Register) -> u8 {
         self.and_imm8(lhs, self.reg[reg as usize]);
+        2
+    }
+
+    pub(super) fn set_mb(&mut self, bank: u8) -> u8 {
+        cr8debug!(self, "MB {bank:#?}");
+        self.mb = bank;
         2
     }
 }

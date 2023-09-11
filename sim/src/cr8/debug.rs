@@ -9,14 +9,21 @@ impl CR8 {
         println!("D: {}", self.reg[Register::D as usize]);
         println!("Z: {}", self.reg[Register::Z as usize]);
         println!("HL: {}", join(self.hl()));
-        println!("[HL]: {}", self.mem[join(self.hl()) as usize]);
+        println!("[HL]: {}", self.memory.get(self.mb, join(self.hl())));
         println!("SP: {}", join(self.sp()) - STACK);
-        println!("[SP]: {}", self.mem[join(self.sp()) as usize]);
+        println!("[SP]: {}", self.memory.get(self.mb, join(self.sp())));
         println!();
         println!("Devices:");
 
         for (port, dev) in self.dev.iter() {
             println!("  {port}: {}", dev.inspect());
+        }
+
+        println!();
+        println!("Memory banks:");
+
+        for (bank, _) in self.memory.banks.iter().enumerate() {
+            println!("  {}", bank + 1);
         }
 
         println!();

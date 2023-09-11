@@ -3,8 +3,6 @@ use std::thread;
 
 use asm::{op::Operation, reg::Register};
 
-use crate::cr8::STACK;
-
 use super::{join, CR8};
 
 impl CR8 {
@@ -36,24 +34,16 @@ impl CR8 {
             if status == 0x01 {
                 return Ok(false);
             }
-            if status >> 1 == 1 {
-                let ptr = STACK as usize;
-                let stack_frame = &self.mem[ptr..ptr + 10];
-                println!();
-                println!("SIGPEEKSTACK:");
-                dbg!(stack_frame);
-                println!();
-            }
         }
 
-        let inst = self.mem[join(self.pc()) as usize];
+        let inst = self.memory.get(self.mb, join(self.pc()));
 
         let op = Operation::try_from(inst >> 4)?;
         let is_imm = (inst & 0b00001000) == 0b00001000;
         let reg_bits = inst & 0b00000111;
 
-        let b0: u8 = *self.mem.get((join(self.pc()) + 1) as usize).unwrap_or(&0);
-        let b1: u8 = *self.mem.get((join(self.pc()) + 2) as usize).unwrap_or(&0);
+        let b0: u8 = self.memory.get(self.mb, join(self.pc()) + 1);
+        let b1: u8 = self.memory.get(self.mb, join(self.pc()) + 2);
 
         let ticks = match (op, is_imm) {
             (LW, true) => self.lw_imm16(Register::try_from(reg_bits)?, (b0, b1)),
@@ -65,6 +55,7 @@ impl CR8 {
             (PUSH, true) => self.push_imm8(b0),
             (PUSH, false) => self.push_reg(Register::try_from(reg_bits)?),
             (POP, _) => self.pop(Register::try_from(reg_bits)?),
+            (MB, _) => self.set_mb(b0),
             (JNZ, true) => self.jnz_imm8(b0),
             (JNZ, false) => self.jnz_reg(Register::try_from(reg_bits)?),
             (IN, true) => self.in_imm8(Register::try_from(reg_bits)?, b0),
