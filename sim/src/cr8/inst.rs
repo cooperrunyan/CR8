@@ -3,43 +3,50 @@ use std::num::Wrapping;
 use asm::reg::Register;
 
 use super::{join, split, CR8, PROGRAM_COUNTER, STACK, STACK_END};
+macro_rules! cr8debug {
+    ($self:ident, $msg:expr $(,$args:expr)*) => {
+        if $self.debug {
+            println!($msg $(,$args)*);
+        }
+    }
+}
 
 impl CR8 {
     pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> u8 {
         let addr = join(i);
-        println!("LW {to:#?}, {addr:#?}");
+        cr8debug!(self, "LW {to:#?}, {addr:#?}");
         self.reg[to as usize] = self.mem[addr as usize];
         3
     }
 
     pub(super) fn lw_hl(&mut self, to: Register) -> u8 {
         let addr = join(self.hl());
-        println!("LW {to:#?}, {}", addr);
+        cr8debug!(self, "LW {to:#?}, {}", addr);
         self.reg[to as usize] = self.mem[addr as usize];
         1
     }
 
     pub(super) fn sw_hl(&mut self, from: Register) -> u8 {
-        println!("SW {from:#?}, {}", join(self.hl()));
+        cr8debug!(self, "SW {from:#?}, {}", join(self.hl()));
         self.mem[join(self.hl()) as usize] = self.reg[from as usize];
         1
     }
 
     pub(super) fn sw_imm16(&mut self, i: (u8, u8), from: Register) -> u8 {
-        println!("SW {from:#?}, {}", join(i));
+        cr8debug!(self, "SW {from:#?}, {}", join(i));
         self.mem[join(i) as usize] = self.reg[from as usize];
         3
     }
 
     pub(super) fn mov_reg(&mut self, to: Register, from: Register) -> u8 {
-        println!("MOV {to:#?}, {from:#?}");
+        cr8debug!(self, "MOV {to:#?}, {from:#?}");
 
         self.reg[to as usize] = self.reg[from as usize];
         2
     }
 
     pub(super) fn mov_imm8(&mut self, to: Register, imm8: u8) -> u8 {
-        println!("MOV {to:#?}, {imm8:#?}");
+        cr8debug!(self, "MOV {to:#?}, {imm8:#?}");
         self.reg[to as usize] = imm8;
         2
     }
@@ -55,7 +62,7 @@ impl CR8 {
 
         self.mem[join(self.sp()) as usize] = imm8;
 
-        println!("PUSHED: [{}] {}", join(self.sp()) - STACK, imm8);
+        cr8debug!(self, "PUSHED: [{}] {}", join(self.sp()) - STACK, imm8);
         2
     }
 
@@ -74,7 +81,12 @@ impl CR8 {
         self.reg[reg as usize] = self.mem[sptr as usize];
         self.mem[sptr as usize] = 0;
 
-        println!("POPPED: [{}] {}", sptr - STACK, self.reg[reg as usize]);
+        cr8debug!(
+            self,
+            "POPPED: [{}] {}",
+            sptr - STACK,
+            self.reg[reg as usize]
+        );
 
         self.set_sp(split(sptr - 1));
         1
@@ -82,14 +94,14 @@ impl CR8 {
 
     pub(super) fn jnz_imm8(&mut self, imm8: u8) -> u8 {
         if imm8 == 0 {
-            println!("No JNZ");
+            cr8debug!(self, "No JNZ");
             return 2;
         }
 
         self.mem[PROGRAM_COUNTER as usize] = self.reg[Register::L as usize];
         self.mem[(PROGRAM_COUNTER + 1) as usize] = self.reg[Register::H as usize];
 
-        println!("JNZ to {}", join(self.pc()));
+        cr8debug!(self, "JNZ to {}", join(self.pc()));
         0
     }
 
@@ -103,7 +115,7 @@ impl CR8 {
     }
 
     pub(super) fn in_imm8(&mut self, into: Register, port: u8) -> u8 {
-        println!("IN {into:#?}, {port:#?}");
+        cr8debug!(self, "IN {into:#?}, {port:#?}");
 
         if let Some(dev) = self.dev.get_mut(&port) {
             self.reg[into as usize] = dev.send(&self.reg, &self.mem);
@@ -120,7 +132,7 @@ impl CR8 {
     }
 
     pub(super) fn out_imm8(&mut self, port: u8, send: Register) -> u8 {
-        println!("OUT {send:#?}, {port:#?}");
+        cr8debug!(self, "OUT {send:#?}, {port:#?}");
         if let Some(dev) = self.dev.get_mut(&port) {
             dev.receive(&self.reg, &self.mem, self.reg[send as usize]);
         } else {
@@ -136,7 +148,7 @@ impl CR8 {
     }
 
     pub(super) fn cmp_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("CMP {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "CMP {lhs:#?}, {imm8:#?}");
 
         let diff = (self.reg[lhs as usize] as i16) - (imm8 as i16);
         let mut f = 0;
@@ -159,7 +171,7 @@ impl CR8 {
     }
 
     pub(super) fn adc_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("ADC {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "ADC {lhs:#?}, {imm8:#?}");
 
         let f = self.reg[Register::F as usize];
         let cf = (f >> 2) & 1;
@@ -181,7 +193,7 @@ impl CR8 {
     }
 
     pub(super) fn sbb_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("SBB {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "SBB {lhs:#?}, {imm8:#?}");
 
         let f = self.reg[Register::F as usize];
         let bf = (f >> 3) & 1;
@@ -203,7 +215,7 @@ impl CR8 {
     }
 
     pub(super) fn or_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("OR {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "OR {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] |= imm8;
         2
     }
@@ -214,7 +226,7 @@ impl CR8 {
     }
 
     pub(super) fn nor_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("NOR {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "NOR {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] = !(self.reg[lhs as usize] | imm8);
         2
     }
@@ -225,7 +237,7 @@ impl CR8 {
     }
 
     pub(super) fn and_imm8(&mut self, lhs: Register, imm8: u8) -> u8 {
-        println!("AND {lhs:#?}, {imm8:#?}");
+        cr8debug!(self, "AND {lhs:#?}, {imm8:#?}");
         self.reg[lhs as usize] &= imm8;
         2
     }

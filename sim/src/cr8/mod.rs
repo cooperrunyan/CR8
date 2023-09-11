@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use asm::reg::Register;
 use typed_builder::TypedBuilder;
@@ -31,21 +32,26 @@ fn split(hl: u16) -> (u8, u8) {
 
 #[derive(TypedBuilder)]
 pub struct CR8Config {
-    #[builder(default = 400)]
-    pub tick_rate: u64,
+    #[builder(default = Duration::from_millis(400))]
+    pub tickrate: Duration,
 
     #[builder(default = Vec::new())]
     pub with_devices: Vec<(u8, Box<dyn Device>)>,
 
     #[builder(default = Vec::new())]
     pub mem: Vec<u8>,
+
+    pub step: bool,
+    pub debug: bool,
 }
 
 pub struct CR8 {
     pub reg: [u8; 8],
     pub mem: [u8; 65536],
     pub dev: HashMap<u8, Box<dyn Device>>,
-    pub tick_rate: u64,
+    pub tickrate: Duration,
+    pub debug: bool,
+    pub step: bool,
 }
 
 impl CR8 {
@@ -53,8 +59,10 @@ impl CR8 {
         let mut cr8 = Self {
             reg: [0; 8],
             mem: [0; 65536],
-            tick_rate: sim_cfg.tick_rate,
+            tickrate: sim_cfg.tickrate,
             dev: HashMap::new(),
+            step: sim_cfg.step,
+            debug: sim_cfg.debug,
         };
 
         cr8.set_sp(split(STACK));

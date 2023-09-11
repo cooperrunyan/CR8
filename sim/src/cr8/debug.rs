@@ -2,6 +2,7 @@ use super::*;
 
 impl CR8 {
     pub fn debug(&self) {
+        println!("\n\n===== State: =====");
         println!("A: {}", self.reg[Register::A as usize]);
         println!("B: {}", self.reg[Register::B as usize]);
         println!("C: {}", self.reg[Register::C as usize]);
@@ -30,5 +31,6 @@ impl CR8 {
         println!("EF: {}", ef == 1);
         println!("CF: {}", cf == 1);
         println!("BF: {}", bf == 1);
+        println!("==================\n");
     }
 }
