@@ -97,7 +97,7 @@ impl Compiler {
         let mut tokens = vec![];
 
         while let Some(ch) = chars.next() {
-            tokens.push(match ch {
+            let next = match ch {
                 ANGLE_CLOSE => match chars.next() {
                     Some(ANGLE_CLOSE) => Token::RightShift,
                     x => panic!("Expected `>` after `>` got: {x:?}"),
@@ -141,7 +141,39 @@ impl Compiler {
                     }
 
                     let num = if let Some(b) = str.strip_prefix("0b") {
-                        i128::from_str_radix(b, 2)
+                        if b.len() > 16 {
+                            let mut split: Vec<String> = vec![];
+                            let mut skip = 0;
+                            for (i, ch) in b.chars().enumerate() {
+                                if skip > 0 {
+                                    skip -= 1;
+                                    continue;
+                                }
+                                let mut byt = String::new();
+                                byt.push(ch);
+                                byt.push(b.chars().nth(i + 1).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 2).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 3).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 4).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 5).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 6).unwrap_or(' '));
+                                byt.push(b.chars().nth(i + 7).unwrap_or(' '));
+                                split.push(byt.trim().to_string());
+                                skip = 7;
+                            }
+                            let split = split
+                                .into_iter()
+                                .map(|s| i128::from_str_radix(&s, 2).unwrap())
+                                .collect::<Vec<_>>();
+                            let (nums, last) = split.split_at(split.len() - 1);
+                            for num in nums {
+                                tokens.push(Token::Number(*num));
+                                tokens.push(Token::Comma);
+                            }
+                            Ok(*last.get(0).unwrap())
+                        } else {
+                            i128::from_str_radix(b, 2)
+                        }
                     } else if let Some(h) = str.strip_prefix("0x") {
                         i128::from_str_radix(h, 16)
                     } else {
@@ -192,7 +224,9 @@ impl Compiler {
                 DOLLAR => Token::Dollar,
                 DIRECTIVE => Token::Directive,
                 other => panic!("Unknown token: {other:#?}"),
-            })
+            };
+
+            tokens.push(next);
         }
 
         tokens
