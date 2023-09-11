@@ -104,7 +104,7 @@ ret []:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Devices
 #macro
-outi [i0, i1]:
+outb [i0, i1]:
   push %f
   mov %f, $i1
   out $i0, %f
@@ -112,13 +112,13 @@ outi [i0, i1]:
 
 #macro
 halt []:
-  outi &SIGNAL_PORT, &SIGHALT
+  outb &SYSCONTROL, &SIGHALT
 
 #macro
 peek [a0]:
-  outi &SIGNAL_PORT, &SIGPEEK
-  outi &SIGNAL_PORT, $a0l
-  outi &SIGNAL_PORT, $a0h
+  outb &SYSCONTROL, &SIGPEEK
+  outb &SYSCONTROL, $a0l
+  outb &SYSCONTROL, $a0h
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math

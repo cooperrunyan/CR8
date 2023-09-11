@@ -4,8 +4,6 @@
 #define GPRAM     0xC000
 #define STACK     0xFC00
 #define STACK_END 0xFEFF
-#define SP        0xFFFC
-#define PC        0xFFFE
 
 
 ; Psuedo Register addresses
@@ -21,7 +19,7 @@
 #define PSR8 0xFF08
 #define PSR9 0xFF09
 
-#define SIGNAL_PORT 0x00
+#define SYSCONTROL  0x00
 #define SIGNOP      0x00
 #define SIGHALT     0x01
 #define SIGPEEK     0x02

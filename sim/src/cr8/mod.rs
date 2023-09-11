@@ -4,7 +4,11 @@ use std::time::Duration;
 use asm::reg::Register;
 use typed_builder::TypedBuilder;
 
-use crate::device::{Control, Device};
+use crate::device::Device;
+
+use self::mem::Mem;
+
+pub mod mem;
 
 mod debug;
 mod exec;
@@ -13,11 +17,6 @@ mod probe;
 
 pub const STACK: u16 = 0xFC00;
 pub const STACK_END: u16 = 0xFEFF;
-pub const DEV_CONTROL: u8 = 0x00;
-pub const SIGNOP: u8 = 0x00;
-pub const SIGHALT: u8 = 0x01;
-pub const SIGPEEK: u8 = 0x02;
-pub const SIGDBG: u8 = 0x03;
 
 fn join((l, h): (u8, u8)) -> u16 {
     ((h as u16) << 8) | (l as u16)
@@ -40,52 +39,6 @@ pub struct CR8Config {
 
     pub step: bool,
     pub debug: bool,
-}
-
-#[derive(Debug)]
-pub struct Mem {
-    rom: [u8; 0x8000],
-    builtin_ram: [u8; 0x8000],
-    banks: Vec<[u8; 0x4000]>,
-}
-
-impl Default for Mem {
-    fn default() -> Self {
-        Self {
-            rom: [0; 0x8000],
-            builtin_ram: [0; 0x8000],
-            banks: vec![],
-        }
-    }
-}
-
-impl Mem {
-    pub fn get(&self, bank: u8, addr: u16) -> u8 {
-        if addr & 0b10000000_00000000 == 0 {
-            return self.rom[(addr & 0b01111111_11111111) as usize];
-        }
-        if addr & 0b01000000_00000000 == 0 && bank != 0 {
-            if self.banks.len() <= bank as usize - 1 {
-                panic!("Attempted to address nonexistent bank: {}", bank - 1);
-            }
-            return self.banks[bank as usize - 1][(addr & 0b00111111_11111111) as usize];
-        }
-        return self.builtin_ram[(addr & 0b01111111_11111111) as usize];
-    }
-
-    pub fn set(&mut self, bank: u8, addr: u16, value: u8) {
-        if addr & 0b10000000_00000000 == 0 {
-            return;
-        }
-        if addr & 0b01000000_00000000 == 0 && bank != 0 {
-            if self.banks.len() <= bank as usize - 1 {
-                panic!("Attempted to address nonexistent bank: {}", bank - 1);
-            }
-            self.banks[bank as usize - 1][(addr & 0b00111111_11111111) as usize] = value;
-        } else {
-            self.builtin_ram[(addr & 0b01111111_11111111) as usize] = value;
-        }
-    }
 }
 
 pub struct CR8 {
@@ -120,9 +73,7 @@ impl CR8 {
 
         cr8.set_sp(split(STACK));
 
-        cr8.memory.banks.push([0; 0x4000]); // VRAM
-
-        cr8.dev_add(DEV_CONTROL, Box::<Control>::default());
+        cr8.connect_devices();
 
         for (port, dev) in sim_cfg.with_devices {
             cr8.dev_add(port, dev)

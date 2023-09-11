@@ -3,6 +3,8 @@ use std::thread;
 
 use asm::{op::Operation, reg::Register};
 
+use crate::device::SYS_CONTROL;
+
 use super::{join, CR8};
 
 impl CR8 {
@@ -28,7 +30,7 @@ impl CR8 {
 
     fn cycle(&mut self) -> Result<bool, String> {
         use Operation::*;
-        if let Some(dev) = self.dev.get(&0) {
+        if let Some(dev) = self.dev.get(&SYS_CONTROL) {
             let status = dev.inspect();
 
             if status == 0x01 {

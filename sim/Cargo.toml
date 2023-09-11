@@ -8,3 +8,8 @@
 [dependencies]
   asm           = { path = "../asm" }
   typed-builder = "0.16"
+
+[features]
+  default    = ["syscontrol", "gfx"]
+  syscontrol = []
+  gfx        = []

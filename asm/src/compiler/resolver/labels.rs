@@ -1,4 +1,4 @@
-use crate::compiler::ast::{AstNode, Instruction, Label, Value};
+use crate::compiler::ast::{AstNode, Directive, Instruction, Label, Value};
 use crate::op::Operation;
 
 use super::Compiler;
@@ -21,6 +21,11 @@ impl Compiler {
                         Err(e) => panic!("Argument error for {op:#?}: {e:#?}. At {node:#?}"),
                     };
                     self.pc += size as usize;
+                }
+                AstNode::Directive(Directive::Rom(name, val)) => {
+                    let len = val.len();
+                    self.labels.insert(name.to_owned(), self.pc);
+                    self.pc += len;
                 }
                 oth => panic!("Unexpected {oth:#?}. At {node:#?}"),
             }

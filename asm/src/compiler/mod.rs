@@ -73,6 +73,7 @@ impl Compiler {
 
         for node in tree {
             match node {
+                AstNode::Directive(ast::Directive::Rom(_, mut val)) => self.bin.append(&mut val),
                 AstNode::Label(Label::Label(ln)) => self.last_label = ln,
                 AstNode::Instruction(Instruction::Native(op, args)) => {
                     let mut header = (op as u8) << 4;
@@ -119,7 +120,7 @@ impl Compiler {
                         }
                     }
                     match (op, regn, compiled_args.len()) {
-                        (LW, 1, 0) => header |= 0b00001000,
+                        (LW, 1, 2) => header |= 0b00001000,
                         (SW, 1, 2) => header |= 0b00001000,
                         (PUSH | JNZ, 0, 1) => header |= 0b00001000,
                         (MOV | OUT | IN | CMP | ADC | SBB | OR | NOR | AND, 1, 1) => {

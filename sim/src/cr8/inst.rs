@@ -14,28 +14,29 @@ macro_rules! cr8debug {
 impl CR8 {
     pub(super) fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> u8 {
         let addr = join(i);
-        cr8debug!(self, "LW {to:#?}, {addr:#?}");
+        cr8debug!(self, "LW {} {to:#?}, {addr:#?}", self.mb);
         self.reg[to as usize] = self.memory.get(self.mb, addr);
         3
     }
 
     pub(super) fn lw_hl(&mut self, to: Register) -> u8 {
         let addr = join(self.hl());
-        cr8debug!(self, "LW {to:#?}, {}", addr);
+        cr8debug!(self, "LW {} {to:#?}, {}", self.mb, addr);
         self.reg[to as usize] = self.memory.get(self.mb, addr);
         1
     }
 
     pub(super) fn sw_hl(&mut self, from: Register) -> u8 {
-        cr8debug!(self, "SW {from:#?}, {}", join(self.hl()));
+        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, join(self.hl()));
         self.memory
             .set(self.mb, join(self.hl()), self.reg[from as usize]);
         1
     }
 
     pub(super) fn sw_imm16(&mut self, i: (u8, u8), from: Register) -> u8 {
-        cr8debug!(self, "SW {from:#?}, {}", join(i));
-        self.memory.set(self.mb, join(i), self.reg[from as usize]);
+        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, join(i));
+        self.memory
+            .set(self.mb, join(i), self.reg[from as usize].clone());
         3
     }
 
