@@ -74,6 +74,11 @@ impl Compiler {
                                 parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(a.clone())));
                                 parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(a)));
                             },
+                            Value::Ident(Ident::Static(a)) => {
+                                parsed_args.insert(format!("{name}"), Value::Ident(Ident::Addr(a.clone())));
+                                parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(a.clone())));
+                                parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(a)));
+                            },
                             Value::Expression(expr) => {
                                 parsed_args.insert(format!("{name}"), Value::Expression(expr.clone()));
                                 parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(expr.clone())));

@@ -73,14 +73,16 @@ impl Runner {
         Ok(self)
     }
 
+    #[cfg(not(feature = "gfx"))]
     pub fn cycle(&mut self) -> Result<bool> {
         let mut cr8 = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
 
         if let Some(dev) = self.devices.get(DeviceID::SysCtrl) {
-            let status = dev
-                .lock()
-                .map_err(|_| anyhow!("Failed to lock mutex"))?
-                .send()?;
+            let status = {
+                dev.lock()
+                    .map_err(|_| anyhow!("Failed to lock mutex"))?
+                    .send()?
+            };
 
             if status >> 1 & 1 == 1 {
                 cr8.debug();
@@ -142,18 +144,18 @@ impl Runner {
 
         Ok(true)
     }
-}
 
-fn reg(byte: u8) -> Result<Register> {
-    match Register::try_from(byte) {
-        Ok(r) => Ok(r),
-        Err(_) => bail!("Invalid register: {byte}"),
+    pub(crate) fn reg(pc: u16, byte: u8) -> Result<Register> {
+        match Register::try_from(byte) {
+            Ok(r) => Ok(r),
+            Err(_) => bail!("Invalid register: {byte} at {pc}"),
+        }
     }
-}
 
-fn oper(byte: u8) -> Result<Operation> {
-    match Operation::try_from(byte) {
-        Ok(r) => Ok(r),
-        Err(_) => bail!("Invalid operation: {byte}"),
+    pub(crate) fn oper(pc: u16, byte: u8) -> Result<Operation> {
+        match Operation::try_from(byte) {
+            Ok(r) => Ok(r),
+            Err(_) => bail!("Invalid operation: {byte} at {pc}"),
+        }
     }
 }

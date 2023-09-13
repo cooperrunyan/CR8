@@ -117,10 +117,10 @@ impl CR8 {
 
     pub fn jnz_reg(&mut self, reg: Register) -> Result<u8> {
         let v = self.reg[reg as usize];
-        self.jnz_imm8(self.reg[reg as usize])?;
         if v == 0 {
             return Ok(1);
         }
+        self.jnz_imm8(self.reg[reg as usize])?;
         return Ok(0);
     }
 
