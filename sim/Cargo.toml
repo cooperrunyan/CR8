@@ -10,7 +10,8 @@
   asm           = { path = "../asm" }
   util_macros   = { path = "../utils/macros" }
   typed-builder = "0.16"
-  winit         = "0.28.6"
+  pixels        = "0.13"
+winit = "0.28.6"
 
 [features]
   default = ["sysctrl", "gfx"]

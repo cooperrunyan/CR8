@@ -1,7 +1,4 @@
-use std::io::stdin;
-
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Result};
@@ -13,23 +10,24 @@ use crate::cr8::{Joinable, Splittable, CR8, STACK};
 
 mod config;
 
+#[cfg(feature = "gfx")]
+mod gfx;
+
 #[derive(Default)]
 pub struct Runner {
     cr8: Arc<Mutex<CR8>>,
     devices: Devices,
     tickrate: Duration,
-    step: bool,
 }
 
 impl Runner {
-    pub fn new(tickrate: Duration, debug: bool, step: bool) -> Self {
+    pub fn new(tickrate: Duration, debug: bool) -> Self {
         let mut cr8 = CR8::new();
         cr8.set_sp(STACK.split());
         cr8.debug = debug;
 
         Self {
             tickrate,
-            step,
             devices: Devices::default(),
             cr8: Arc::new(Mutex::new(cr8)),
         }
@@ -49,17 +47,18 @@ impl Runner {
             c.memory.rom[..bin.len()].copy_from_slice(bin);
         }
 
-        self.devices.connect(self.cr8.clone());
+        self.devices.connect(self.cr8.clone())?;
 
         Ok(())
     }
 
-    pub fn run(&mut self) -> Result<()> {
+    #[cfg(not(feature = "gfx"))]
+    pub fn run(mut self) -> Result<Self> {
         if self.step {
             for _ in stdin().lines() {
                 let cnt = self.cycle()?;
                 if !cnt {
-                    return Ok(());
+                    return Ok(self);
                 }
             }
         } else {
@@ -71,10 +70,10 @@ impl Runner {
             }
         }
 
-        Ok(())
+        Ok(self)
     }
 
-    fn cycle(&mut self) -> Result<bool> {
+    pub fn cycle(&mut self) -> Result<bool> {
         let mut cr8 = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
 
         if let Some(dev) = self.devices.get(DeviceID::SysCtrl) {
@@ -92,14 +91,14 @@ impl Runner {
             }
         }
 
-        let inst = cr8.memory.get(cr8.mb, cr8.pc().join());
+        let inst = cr8.memory.get(0, cr8.pc().join());
 
         let op = oper(inst >> 4)?;
         let is_imm = (inst & 0b00001000) == 0b00001000;
         let reg_bits = inst & 0b00000111;
 
-        let b0: u8 = cr8.memory.get(cr8.mb, cr8.pc().join() + 1);
-        let b1: u8 = cr8.memory.get(cr8.mb, cr8.pc().join() + 2);
+        let b0: u8 = cr8.memory.get(0, cr8.pc().join() + 1);
+        let b1: u8 = cr8.memory.get(0, cr8.pc().join() + 2);
 
         use Operation as O;
 
@@ -133,13 +132,13 @@ impl Runner {
             (O::AND, true) => cr8.and_imm8(reg(reg_bits)?, b0),
             (O::AND, false) => cr8.and_reg(reg(reg_bits)?, reg(b0)?),
         };
+        self.devices.tick(&cr8)?;
 
         for _ in 0..ticks? {
             cr8.inc_pc();
-            self.devices.tick()?;
         }
 
-        thread::sleep(self.tickrate);
+        // thread::sleep(self.tickrate);
 
         Ok(true)
     }

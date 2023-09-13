@@ -149,7 +149,7 @@ impl CR8 {
         if let Some(dev) = devices.get(DeviceID::from(port)) {
             dev.lock()
                 .map_err(|_| anyhow!("Failed to lock mutex"))?
-                .receive(self.reg[send as usize])?;
+                .receive(self.reg[send as usize], &self)?;
         } else {
             self.debug();
             panic!("No device connected to port: {port}");

@@ -24,7 +24,7 @@ impl Mem {
         }
         if bank != 0 {
             return match self.banks.get(&bank) {
-                Some(bank) => bank[(addr & 0b00111111_11111111) as usize],
+                Some(bank) => bank[(addr & 0x3fff) as usize],
                 None => panic!("Bank {bank} does not exist"),
             };
         }
@@ -37,7 +37,7 @@ impl Mem {
         }
         if bank != 0 {
             match self.banks.get_mut(&bank) {
-                Some(bank) => bank[(addr & 0b00111111_11111111) as usize] = value,
+                Some(bank) => bank[(addr & 0x3fff) as usize] = value,
                 None => panic!("Bank {bank} does not exist"),
             }
         } else {

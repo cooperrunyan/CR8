@@ -19,8 +19,11 @@
 #define PSR8 0xFF08
 #define PSR9 0xFF09
 
-#define SYSCONTROL  0x00
-#define SIGNOP      0x00
-#define SIGHALT     0x01
-#define SIGPEEK     0x02
-#define SIGDBG      0x03
+#define SYSCTRL  0x00
+#define SIGNOP   0x00
+#define SIGHALT  0x01
+#define SIGPEEK  0x02
+#define SIGDBG   0x03
+
+#define GPU          0x01
+#define GPU_RENDER   0x01

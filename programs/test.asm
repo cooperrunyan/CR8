@@ -6,8 +6,8 @@ jmp [main]
 #include "<std>/math.asm"
 
 main:
-    mov %a, 8
-    mov %b, 16
+    render
+    jmp [main]
 
     halt
 

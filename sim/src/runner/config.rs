@@ -12,7 +12,6 @@ impl Runner {
         let mut file = String::new();
         let mut tickrate = Duration::ZERO;
         let mut debug = false;
-        let mut step = false;
 
         for (i, arg) in args.iter().enumerate() {
             match arg.as_str() {
@@ -32,9 +31,6 @@ impl Runner {
                 "-d" | "--debug" => {
                     debug = true;
                 }
-                "-s" | "--step" => {
-                    step = true;
-                }
                 _ => {}
             }
         }
@@ -48,7 +44,7 @@ impl Runner {
             Err(_) => panic!("Could not read input file"),
         };
 
-        let mut runner = Self::new(tickrate, debug, step);
+        let mut runner = Self::new(tickrate, debug);
         runner.load(&bin)?;
         Ok(runner)
     }

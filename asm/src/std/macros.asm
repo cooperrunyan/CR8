@@ -112,13 +112,25 @@ outb [i0, i1]:
 
 #macro
 halt []:
-  outb &SYSCONTROL, &SIGHALT
+  outb &SYSCTRL, &SIGHALT
 
 #macro
 peek [a0]:
-  outb &SYSCONTROL, &SIGPEEK
-  outb &SYSCONTROL, $a0l
-  outb &SYSCONTROL, $a0h
+  outb &SYSCTRL, &SIGPEEK
+  outb &SYSCTRL, $a0l
+  outb &SYSCTRL, $a0h
+
+#macro
+dbg []:
+  outb &SYSCTRL, &SIGDBG
+
+#macro
+gpu [i0]:
+  outb &GPU, $i0
+
+#macro
+render []:
+  gpu &GPU_RENDER
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math
