@@ -25,10 +25,10 @@ impl CR8 {
         }
         println!();
         println!();
-        println!("HL: {}", self.hl().join());
-        println!("[HL]: {}", self.memory.get(self.mb, self.hl().join()));
-        println!("SP: {}", self.sp().join() - STACK);
-        println!("[SP]: {}", self.memory.get(self.mb, self.sp().join()));
+        println!("HL: {}", self.hl());
+        println!("[HL]: {}", self.memory.get(self.mb, self.hl()));
+        println!("SP: {}", self.sp - STACK);
+        println!("[SP]: {}", self.memory.get(self.mb, self.sp));
 
         println!();
         println!("Memory banks:");

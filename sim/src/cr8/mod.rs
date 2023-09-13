@@ -35,10 +35,8 @@ impl Joinable for (u8, u8) {
 #[derive(Debug, Default)]
 pub struct CR8 {
     pub reg: [u8; 8],
-    pub pcl: u8,
-    pub pch: u8,
-    pub spl: u8,
-    pub sph: u8,
+    pub pc: u16,
+    pub sp: u16,
     pub mb: u8,
     pub memory: Mem,
     pub debug: bool,
@@ -48,7 +46,7 @@ impl CR8 {
     pub fn new() -> Self {
         let mut cr8 = Self::default();
 
-        cr8.set_sp(STACK.split());
+        cr8.sp = STACK;
 
         cr8
     }

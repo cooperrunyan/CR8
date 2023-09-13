@@ -121,7 +121,8 @@ impl Runner {
             }
         }
 
-        let pc = cr8.pc().join();
+        let pc = cr8.pc;
+
         let inst = cr8.memory.get(0, pc);
 
         let op = Runner::oper(pc, inst >> 4)?;
@@ -134,9 +135,9 @@ impl Runner {
         use Operation as O;
 
         let ticks = match (op, is_imm) {
-            (O::LW, true) => cr8.lw_imm16(Runner::reg(pc, reg_bits)?, (b0, b1)),
+            (O::LW, true) => cr8.lw_imm16(Runner::reg(pc, reg_bits)?, (b0, b1).join()),
             (O::LW, false) => cr8.lw_hl(Runner::reg(pc, reg_bits)?),
-            (O::SW, true) => cr8.sw_imm16((b0, b1), Runner::reg(pc, reg_bits)?),
+            (O::SW, true) => cr8.sw_imm16((b0, b1).join(), Runner::reg(pc, reg_bits)?),
             (O::SW, false) => cr8.sw_hl(Runner::reg(pc, reg_bits)?),
             (O::MOV, true) => cr8.mov_imm8(Runner::reg(pc, reg_bits)?, b0),
             (O::MOV, false) => cr8.mov_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
@@ -174,9 +175,7 @@ impl Runner {
 
         let ticks = ticks?;
 
-        for _ in 0..ticks {
-            cr8.inc_pc();
-        }
+        cr8.pc += ticks as u16;
 
         Ok((cr8.memory.get(1, target), ticks))
     }

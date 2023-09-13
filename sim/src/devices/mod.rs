@@ -3,9 +3,6 @@ use std::sync::{Arc, Mutex};
 
 use crate::cr8::CR8;
 
-#[cfg(feature = "gfx")]
-mod gfx;
-
 #[cfg(feature = "sysctrl")]
 mod sysctrl;
 
@@ -37,23 +34,11 @@ encodable! {
     pub enum DeviceID {
         else Unknown,
         SysCtrl(0x00),
-        Gfx(0x01),
     }
 }
 
 impl Devices {
     pub fn connect(&mut self, cr8: Arc<Mutex<CR8>>) -> Result<()> {
-        #[cfg(feature = "gfx")]
-        {
-            self.0.push((
-                DeviceID::Gfx,
-                Arc::new(Mutex::new(gfx::Gfx::new(cr8.clone()))),
-            ));
-
-            let mut cr8 = cr8.lock().map_err(|_| anyhow!("Bad lock"))?;
-            cr8.memory.banks.insert(1, [0; 0x4000]);
-        }
-
         #[cfg(feature = "sysctrl")]
         self.0.push((
             DeviceID::SysCtrl,

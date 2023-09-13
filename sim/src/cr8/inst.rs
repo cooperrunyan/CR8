@@ -3,7 +3,6 @@ use std::num::Wrapping;
 use anyhow::{anyhow, Result};
 use asm::reg::Register;
 
-use crate::cr8::{Joinable, Splittable};
 use crate::devices::{DeviceID, Devices};
 
 use super::{CR8, STACK, STACK_END};
@@ -16,31 +15,28 @@ macro_rules! cr8debug {
 }
 
 impl CR8 {
-    pub fn lw_imm16(&mut self, to: Register, i: (u8, u8)) -> Result<u8> {
-        let addr = i.join();
-        cr8debug!(self, "LW {} {to:#?}, {addr:#?}", self.mb);
-        self.reg[to as usize] = self.memory.get(self.mb, addr);
+    pub fn lw_imm16(&mut self, to: Register, i: u16) -> Result<u8> {
+        cr8debug!(self, "LW {} {to:#?}, {i:#?}", self.mb);
+        self.reg[to as usize] = self.memory.get(self.mb, i);
         Ok(3)
     }
 
     pub fn lw_hl(&mut self, to: Register) -> Result<u8> {
-        let addr = self.hl().join();
+        let addr = self.hl();
         cr8debug!(self, "LW {} {to:#?}, {}", self.mb, addr);
         self.reg[to as usize] = self.memory.get(self.mb, addr);
         Ok(1)
     }
 
     pub fn sw_hl(&mut self, from: Register) -> Result<u8> {
-        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, self.hl().join());
-        self.memory
-            .set(self.mb, self.hl().join(), self.reg[from as usize]);
+        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, self.hl());
+        self.memory.set(self.mb, self.hl(), self.reg[from as usize]);
         Ok(1)
     }
 
-    pub fn sw_imm16(&mut self, i: (u8, u8), from: Register) -> Result<u8> {
-        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, i.join());
-        self.memory
-            .set(self.mb, i.join(), self.reg[from as usize].clone());
+    pub fn sw_imm16(&mut self, i: u16, from: Register) -> Result<u8> {
+        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, i);
+        self.memory.set(self.mb, i, self.reg[from as usize].clone());
         Ok(3)
     }
 
@@ -58,19 +54,17 @@ impl CR8 {
     }
 
     pub fn push_imm8(&mut self, imm8: u8) -> Result<u8> {
-        let sptr = self.sp().join();
-
-        if sptr >= STACK_END {
+        if self.sp >= STACK_END {
             panic!("Stack overflow");
         }
 
-        self.set_sp((sptr + 1).split());
-        self.memory.set(self.mb, self.sp().join(), imm8);
+        self.sp += 1;
+        self.memory.set(self.mb, self.sp, imm8);
 
         cr8debug!(
             self,
             "PUSHED: [{}] {}",
-            self.sp().join() as i128 - STACK as i128,
+            self.sp as i128 - STACK as i128,
             imm8
         );
         Ok(2)
@@ -82,23 +76,21 @@ impl CR8 {
     }
 
     pub fn pop(&mut self, reg: Register) -> Result<u8> {
-        let sptr = self.sp().join();
-
-        if sptr < STACK {
+        if self.sp < STACK {
             panic!("Cannot pop empty stack");
         }
 
-        self.reg[reg as usize] = self.memory.get(self.mb, sptr);
-        self.memory.set(self.mb, sptr, 0);
+        self.reg[reg as usize] = self.memory.get(self.mb, self.sp);
+        self.memory.set(self.mb, self.sp, 0);
 
         cr8debug!(
             self,
             "POPPED: [{}] {}",
-            sptr - STACK,
+            self.sp - STACK,
             self.reg[reg as usize]
         );
 
-        self.set_sp((sptr - 1).split());
+        self.sp -= 1;
         Ok(1)
     }
 
@@ -108,10 +100,9 @@ impl CR8 {
             return Ok(2);
         }
 
-        self.pcl = self.reg[Register::L as usize];
-        self.pch = self.reg[Register::H as usize];
+        self.pc = self.hl();
 
-        cr8debug!(self, "JNZ to {}", self.pc().join());
+        cr8debug!(self, "JNZ to {}", self.pc);
         Ok(0)
     }
 
