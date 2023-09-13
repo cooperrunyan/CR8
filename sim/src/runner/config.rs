@@ -1,15 +1,12 @@
 use std::time::Duration;
 use std::{env, fs};
 
-pub struct Config {
-    pub bin: Vec<u8>,
-    pub tickrate: Duration,
-    pub debug: bool,
-    pub step: bool,
-}
+use anyhow::Result;
 
-impl Config {
-    pub fn from_argv() -> Self {
+use super::Runner;
+
+impl Runner {
+    pub fn from_argv() -> Result<Self> {
         let args: Vec<_> = env::args().collect();
 
         let mut file = String::new();
@@ -51,11 +48,8 @@ impl Config {
             Err(_) => panic!("Could not read input file"),
         };
 
-        Self {
-            bin,
-            tickrate,
-            debug,
-            step,
-        }
+        let mut runner = Self::new(tickrate, debug, step);
+        runner.load(&bin)?;
+        Ok(runner)
     }
 }

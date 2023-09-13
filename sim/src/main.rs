@@ -1,29 +1,11 @@
-#![feature(fn_traits)]
+use anyhow::Result;
+use sim::runner::Runner;
 
-mod config;
-mod cr8;
-mod device;
+fn main() -> Result<()> {
+    let mut runner = Runner::from_argv()?;
+    runner.run()?;
 
-use config::Config;
-use cr8::CR8;
+    runner.debug()?;
 
-use crate::cr8::CR8Config;
-
-fn main() {
-    let config = Config::from_argv();
-
-    let mut cr8 = CR8::new(
-        CR8Config::builder()
-            .tickrate(config.tickrate)
-            .mem(config.bin)
-            .debug(config.debug)
-            .step(config.step)
-            .build(),
-    );
-
-    match cr8.run() {
-        Err(msg) => panic!("Error: {msg}"),
-        _ => {}
-    };
-    cr8.debug()
+    Ok(())
 }

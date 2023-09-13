@@ -2,42 +2,44 @@ use super::*;
 
 impl CR8 {
     pub fn debug(&self) {
-        println!("\n\n===== State: =====");
+        println!("\n\n========== State ==========");
         println!("A: {}", self.reg[Register::A as usize]);
         println!("B: {}", self.reg[Register::B as usize]);
         println!("C: {}", self.reg[Register::C as usize]);
         println!("D: {}", self.reg[Register::D as usize]);
         println!("Z: {}", self.reg[Register::Z as usize]);
-        println!("HL: {}", join(self.hl()));
-        println!("[HL]: {}", self.memory.get(self.mb, join(self.hl())));
-        println!("SP: {}", join(self.sp()) - STACK);
-        println!("[SP]: {}", self.memory.get(self.mb, join(self.sp())));
-        println!();
-        println!("Devices:");
+        let f = self.reg[Register::F as usize];
 
-        for (port, dev) in self.dev.iter() {
-            println!("  {port}: {}", dev.inspect());
+        println!("F: {f}");
+        println!("  EMPTY BF CF EF LF");
+        print!("  ");
+        for i in (0..=7).rev() {
+            if (f >> i) & 1 == 1 {
+                print!("1");
+            } else {
+                print!("0");
+            }
+            if 7 - i >= 3 {
+                print!("  ");
+            }
         }
+        println!();
+        println!();
+        println!("HL: {}", self.hl().join());
+        println!("[HL]: {}", self.memory.get(self.mb, self.hl().join()));
+        println!("SP: {}", self.sp().join() - STACK);
+        println!("[SP]: {}", self.memory.get(self.mb, self.sp().join()));
 
         println!();
         println!("Memory banks:");
+        println!("  Builtin");
 
         for (bank, _) in self.memory.banks.iter().enumerate() {
             println!("  {}", bank + 1);
         }
 
         println!();
-        let f = self.reg[Register::F as usize];
-        let lf = f & 1;
-        let ef = (f >> 1) & 1;
-        let cf = (f >> 2) & 1;
-        let bf = (f >> 3) & 1;
 
-        println!();
-        println!("LF: {}", lf == 1);
-        println!("EF: {}", ef == 1);
-        println!("CF: {}", cf == 1);
-        println!("BF: {}", bf == 1);
-        println!("==================\n");
+        println!("===========================\n");
     }
 }

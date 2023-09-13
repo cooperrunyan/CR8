@@ -28,7 +28,7 @@ impl<'s> Lexer<'s> {
                 }
                 Token::Percent => {
                     let reg = word!("Unexpected symbol");
-                    let Ok(reg) = Register::try_from(reg.clone()) else {
+                    let Ok(reg) = Register::try_from(reg.as_str()) else {
                         return err!("Invalid register: {reg}");
                     };
 
