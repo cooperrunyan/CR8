@@ -25,8 +25,8 @@ impl Runner {
                     if args.len() <= i + 1 {
                         break;
                     }
-                    let tick = args[i + 1].parse::<u64>().unwrap();
-                    tickrate = Duration::from_millis(tick);
+
+                    tickrate = parse_duration(&args[i + 1]);
                 }
                 "-d" | "--debug" => {
                     debug = true;
@@ -47,5 +47,25 @@ impl Runner {
         let mut runner = Self::new(tickrate, debug);
         runner.load(&bin)?;
         Ok(runner)
+    }
+}
+
+fn parse_duration(inpt: &str) -> Duration {
+    if let Some(hz) = inpt.strip_suffix("hz") {
+        let (val, modif) = if let Some(as_khz) = hz.strip_suffix("k") {
+            (as_khz.parse::<f64>(), 1_000)
+        } else if let Some(as_mhz) = hz.strip_suffix("m") {
+            (as_mhz.parse::<f64>(), 1_000_000)
+        } else if let Some(as_ghz) = hz.strip_suffix("g") {
+            (as_ghz.parse::<f64>(), 1_000_000_000)
+        } else {
+            (hz.parse::<f64>(), 1)
+        };
+
+        let val = val.expect("Invalid speed value");
+        let per_sec = val * modif as f64;
+        Duration::from_secs_f64(1.0 / per_sec)
+    } else {
+        panic!("Expected hz for clock speed");
     }
 }

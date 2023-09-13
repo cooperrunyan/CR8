@@ -3,7 +3,7 @@ use asm::op::Operation;
 use std::{
     sync::{Arc, Mutex},
     thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use pixels::{Pixels, SurfaceTexture};
@@ -44,6 +44,7 @@ impl Runner {
             Pixels::new(WIDTH, HEIGHT, surface_texture)?
         };
 
+        let tickrate = Arc::new(self.tickrate);
         let runner = Arc::new(Mutex::new(self));
 
         let mut ticker = 0x8000_i64;
@@ -87,7 +88,9 @@ impl Runner {
                     }
                 }
 
-                let target = Duration::from_nanos(250) * ticks.into();
+                let tr = tickrate.clone();
+
+                let target = *tr * ticks as u32;
                 let elapsed = Instant::now().duration_since(start);
 
                 if elapsed < target {

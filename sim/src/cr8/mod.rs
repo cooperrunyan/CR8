@@ -1,9 +1,6 @@
-use asm::op::Operation;
 use asm::reg::Register;
 
 use self::mem::Mem;
-
-use anyhow::{anyhow, bail, Result};
 
 pub mod mem;
 
