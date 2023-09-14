@@ -26,17 +26,13 @@ impl CR8 {
         println!();
         println!();
         println!("HL: {}", self.hl());
-        println!("[HL]: {}", self.memory.get(self.mb, self.hl()));
+        println!("[HL]: {:?}", self.mem.get(self.hl()));
         println!("SP: {}", self.sp - STACK);
-        println!("[SP]: {}", self.memory.get(self.mb, self.sp));
+        println!("[SP]: {:?}", self.mem.get(self.sp));
 
         println!();
         println!("Memory banks:");
-        println!("  Builtin");
-
-        for (bank, _) in self.memory.banks.iter().enumerate() {
-            println!("  {}", bank + 1);
-        }
+        println!("{:?}", self.mem.banks);
 
         println!();
 

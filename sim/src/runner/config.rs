@@ -44,9 +44,7 @@ impl Runner {
             Err(_) => panic!("Could not read input file"),
         };
 
-        let mut runner = Self::new(tickrate, debug);
-        runner.load(&bin)?;
-        Ok(runner)
+        Ok(Self::new(&bin, tickrate, debug))
     }
 }
 

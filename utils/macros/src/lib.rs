@@ -108,3 +108,83 @@ macro_rules! impl_into_as {
         })*
     }
 }
+
+#[macro_export]
+macro_rules! define_banks {
+    ($idv:vis enum $id:ident, $v:vis struct $name:ident { $( $member:ident($val:literal) if $feature:literal,)* }) => {
+        #[allow(non_snake_case)]
+        #[derive(Default)]
+        $v struct $name {
+            $( #[cfg(feature = $feature)] $member: Bank, )*
+        }
+
+        encodable! {
+            $idv enum $id {
+                else UNKNOWN,
+                Builtin(0x00),
+                $( $member($val), )*
+            }
+        }
+
+        impl $id {
+            pub fn check(id: impl TryInto<Self> + Debug + Clone) -> Result<Self> {
+                let i = id.clone();
+                match id.try_into() {
+                    Ok(Self::Builtin) => Ok(Self::Builtin),
+                    $(
+                        #[cfg(feature = $feature)]
+                        Ok(Self::$member) => Ok(Self::$member),
+                    )*
+                    Ok(oth) => bail!("Memory bank: {oth:#?} is not connected"),
+                    _ => bail!("Memory bank: {i:#?} is not defined"),
+                }
+            }
+        }
+
+        impl Debug for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let mut d = f.debug_struct("{$name}");
+
+                d.field("Builtin", &0);
+
+                $(
+                    #[cfg(feature = $feature)]
+                    d.field("$member", &($id::$member as u8));
+                )*
+
+                d.finish()
+            }
+        }
+
+
+        impl<'b> $name {
+            pub fn get(&'b self, id: impl TryInto<$id> + Debug + Clone) -> Result<Option<&'b Bank>> {
+                let i = id.clone();
+                Ok(match id.try_into() {
+                    Ok($id::Builtin) => None,
+                    $(
+                        #[cfg(feature = $feature)]
+                        Ok($id::$member) => Some(&self.$member),
+                    )*
+                    Ok(oth) => bail!("Memory bank: {oth:#?} is not connected"),
+                    _ => bail!("Memory bank: {i:#?} is not defined"),
+                })
+            }
+
+            pub fn get_mut(&'b mut self, id: impl TryInto<$id> + Debug + Clone) -> Result<Option<&'b mut Bank>> {
+                let i = id.clone();
+                Ok(match id.try_into() {
+                    Ok($id::Builtin) => None,
+
+                    $(
+                        #[cfg(feature = $feature)]
+                        Ok($id::$member) => Some(&mut self.$member),
+                    )*
+
+                    Ok(oth) => bail!("Memory bank: {oth:#?} is not connected"),
+                    _ => bail!("Memory bank: {i:#?} is not defined"),
+                })
+            }
+        }
+    };
+}

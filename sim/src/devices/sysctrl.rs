@@ -35,7 +35,7 @@ impl Device for SysCtrl {
                 let l = self.peek_low_byte.unwrap();
 
                 let addr = ((h as u16) << 8) | l as u16;
-                println!("PEEK {addr}: [{}]", cr8.memory.get(cr8.mb, addr));
+                println!("PEEK {addr}: [{:?}]", cr8.mem.get(addr));
 
                 self.peeking = false;
                 self.peek_low_byte = None;

@@ -24,18 +24,11 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn new(tickrate: Duration, debug: bool) -> Self {
-        let mut cr8 = CR8::new();
-        cr8.sp = STACK;
-        cr8.debug = debug;
-
-        #[cfg(feature = "gfx")]
-        cr8.memory.banks.insert(1, [0; 0x4000]);
-
+    pub fn new(bin: &[u8], tickrate: Duration, debug: bool) -> Self {
         Self {
             tickrate,
             devices: Devices::default(),
-            cr8: Arc::new(Mutex::new(cr8)),
+            cr8: Arc::new(Mutex::new(CR8::new(bin).set_debug(debug).set_stack(STACK))),
         }
     }
 
@@ -44,17 +37,6 @@ impl Runner {
             .lock()
             .map_err(|_| anyhow!("Failed to get a lock"))?
             .debug();
-        Ok(())
-    }
-
-    pub fn load(&mut self, bin: &[u8]) -> Result<()> {
-        {
-            let mut c = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
-            c.memory.rom[..bin.len()].copy_from_slice(bin);
-        }
-
-        self.devices.connect(self.cr8.clone())?;
-
         Ok(())
     }
 

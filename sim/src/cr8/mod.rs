@@ -34,25 +34,29 @@ impl Joinable for (u8, u8) {
 
 #[derive(Debug, Default)]
 pub struct CR8 {
-    pub reg: [u8; 8],
+    pub(self) reg: [u8; 8],
     pub pc: u16,
     pub sp: u16,
-    pub mb: u8,
-    pub memory: Mem,
-    pub debug: bool,
+    pub mem: Mem,
+    pub(self) debug: bool,
 }
 
 impl CR8 {
-    pub fn new() -> Self {
-        let mut cr8 = Self::default();
-
-        cr8.sp = STACK;
-
-        cr8
-    }
-    pub fn load(&mut self, bin: &[u8]) {
-        for (i, byte) in bin.iter().enumerate() {
-            self.memory.rom[i] = *byte;
+    pub fn new(bin: &[u8]) -> Self {
+        Self {
+            mem: Mem::new(bin),
+            reg: [0; 8],
+            ..Default::default()
         }
+    }
+
+    pub fn set_debug(mut self, debug: bool) -> Self {
+        self.debug = debug;
+        self
+    }
+
+    pub fn set_stack(mut self, stack: u16) -> Self {
+        self.sp = stack;
+        self
     }
 }

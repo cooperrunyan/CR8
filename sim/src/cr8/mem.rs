@@ -1,47 +1,129 @@
-use std::collections::HashMap;
+use anyhow::{anyhow, bail, Result};
+use std::fmt::Debug;
+
+fn mask(idx: u16) -> usize {
+    (idx & 0x7fff) as usize
+}
+
+fn smallmask(idx: u16) -> usize {
+    (idx & 0x3fff) as usize
+}
+
+pub struct Bank([u8; 0x4000]);
+
+impl Default for Bank {
+    fn default() -> Self {
+        Self([0; 0x4000])
+    }
+}
+
+impl Bank {
+    pub fn get(&self, idx: u16) -> Option<u8> {
+        self.0.get(smallmask(idx)).map(|b| *b)
+    }
+
+    pub fn get_mut(&mut self, idx: u16) -> Option<&mut u8> {
+        self.0.get_mut(smallmask(idx))
+    }
+
+    pub fn set(&mut self, idx: u16, val: u8) -> Result<()> {
+        let byte = self.0.get_mut(smallmask(idx)).unwrap();
+        *byte = val;
+        Ok(())
+    }
+}
+
+define_banks! {
+    pub enum BankId,
+    pub struct BankCollection {
+        Vram(0x01) if "gfx",
+    }
+}
 
 #[derive(Debug)]
 pub struct Mem {
-    pub rom: [u8; 0x8000],
-    pub builtin_ram: [u8; 0x8000],
-    pub banks: HashMap<u8, [u8; 0x4000]>,
+    selected: BankId,
+    rom: [u8; 0x8000],
+    builtin_ram: [u8; 0x8000],
+    pub(super) banks: BankCollection,
 }
 
 impl Default for Mem {
     fn default() -> Self {
         Self {
+            selected: BankId::Builtin,
             rom: [0; 0x8000],
             builtin_ram: [0; 0x8000],
-            banks: HashMap::new(),
+            banks: BankCollection::default(),
         }
     }
 }
 
 impl Mem {
-    pub fn get(&self, bank: u8, addr: u16) -> u8 {
-        if addr & 0b10000000_00000000 == 0 {
-            return self.rom[(addr & 0b01111111_11111111) as usize];
+    pub fn new(bin: &[u8]) -> Self {
+        let mut rom = [0; 0x8000];
+        rom[..bin.len()].copy_from_slice(bin);
+
+        Self {
+            rom,
+            ..Default::default()
         }
-        if bank != 0 {
-            return match self.banks.get(&bank) {
-                Some(bank) => bank[(addr & 0x3fff) as usize],
-                None => panic!("Bank {bank} does not exist"),
-            };
-        }
-        return self.builtin_ram[(addr & 0b01111111_11111111) as usize];
     }
 
-    pub fn set(&mut self, bank: u8, addr: u16, value: u8) {
-        if addr & 0b10000000_00000000 == 0 {
-            return;
-        }
-        if bank != 0 {
-            match self.banks.get_mut(&bank) {
-                Some(bank) => bank[(addr & 0x3fff) as usize] = value,
-                None => panic!("Bank {bank} does not exist"),
-            }
+    pub fn select(&mut self, id: impl TryInto<BankId> + Debug + Clone) -> Result<()> {
+        self.selected = BankId::check(id)?;
+        Ok(())
+    }
+
+    pub fn get(&self, addr: u16) -> Result<u8> {
+        if addr >> 15 == 0 {
+            Ok(self.rom[mask(addr)])
         } else {
-            self.builtin_ram[(addr & 0b01111111_11111111) as usize] = value;
+            if addr >> 14 != 0 {
+                return Ok(self.builtin_ram[mask(addr)]);
+            }
+
+            use BankId as B;
+            match self.selected {
+                B::Builtin => Ok(self.builtin_ram[mask(addr)]),
+                oth => match self.banks.get(oth.clone()).map(|b| b.unwrap())?.get(addr) {
+                    Some(x) => Ok(x),
+                    None => bail!(
+                        "Address {addr:#?} as {:#?} not found in {oth:#?}.",
+                        smallmask(addr)
+                    ),
+                },
+            }
         }
+    }
+
+    pub fn get_mut(&mut self, addr: u16) -> Result<&mut u8> {
+        if addr >> 15 == 0 {
+            bail!("Cannot mutate ROM");
+        } else {
+            if addr >> 14 != 0 {
+                return Ok(&mut self.builtin_ram[mask(addr)]);
+            }
+
+            use BankId as B;
+            match self.selected {
+                B::Builtin => Ok(&mut self.builtin_ram[mask(addr)]),
+                oth => Ok(self
+                    .banks
+                    .get_mut(oth.clone())
+                    .map(|b| b.unwrap())?
+                    .get_mut(addr)
+                    .unwrap_or(Err(anyhow!(
+                        "Address {addr:#?} as {:#?} not found in {oth:#?}.",
+                        smallmask(addr)
+                    ))?)),
+            }
+        }
+    }
+
+    pub fn set(&mut self, addr: u16, val: u8) -> Result<()> {
+        let b = self.get_mut(addr)?;
+        *b = val;
+        Ok(())
     }
 }

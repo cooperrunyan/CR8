@@ -43,14 +43,14 @@ impl Runner {
 
         let pc = cr8.pc;
 
-        let inst = cr8.memory.get(0, pc);
+        let inst = cr8.mem.get(pc)?;
 
         let op = Self::oper(pc, inst >> 4)?;
         let is_imm = (inst & 0b00001000) == 0b00001000;
         let reg_bits = inst & 0b00000111;
 
-        let b0: u8 = cr8.memory.get(0, pc + 1);
-        let b1: u8 = cr8.memory.get(0, pc + 2);
+        let b0: u8 = cr8.mem.get(pc + 1).unwrap_or(0);
+        let b1: u8 = cr8.mem.get(pc + 2).unwrap_or(0);
 
         use Operation as O;
 

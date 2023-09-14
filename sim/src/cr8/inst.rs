@@ -16,27 +16,27 @@ macro_rules! cr8debug {
 
 impl CR8 {
     pub fn lw_imm16(&mut self, to: Register, i: u16) -> Result<u8> {
-        cr8debug!(self, "LW {} {to:#?}, {i:#?}", self.mb);
-        self.reg[to as usize] = self.memory.get(self.mb, i);
+        cr8debug!(self, "LW {to:#?}, {i:#?}");
+        self.reg[to as usize] = self.mem.get(i)?;
         Ok(3)
     }
 
     pub fn lw_hl(&mut self, to: Register) -> Result<u8> {
         let addr = self.hl();
-        cr8debug!(self, "LW {} {to:#?}, {}", self.mb, addr);
-        self.reg[to as usize] = self.memory.get(self.mb, addr);
+        cr8debug!(self, "LW {to:#?}, {}", addr);
+        self.reg[to as usize] = self.mem.get(addr)?;
         Ok(1)
     }
 
     pub fn sw_hl(&mut self, from: Register) -> Result<u8> {
-        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, self.hl());
-        self.memory.set(self.mb, self.hl(), self.reg[from as usize]);
+        cr8debug!(self, "SW {from:#?}, {}", self.hl());
+        self.mem.set(self.hl(), self.reg[from as usize])?;
         Ok(1)
     }
 
     pub fn sw_imm16(&mut self, i: u16, from: Register) -> Result<u8> {
-        cr8debug!(self, "SW {} {from:#?}, {}", self.mb, i);
-        self.memory.set(self.mb, i, self.reg[from as usize].clone());
+        cr8debug!(self, "SW {from:#?}, {}", i);
+        self.mem.set(i, self.reg[from as usize].clone())?;
         Ok(3)
     }
 
@@ -59,7 +59,7 @@ impl CR8 {
         }
 
         self.sp += 1;
-        self.memory.set(self.mb, self.sp, imm8);
+        self.mem.set(self.sp, imm8)?;
 
         cr8debug!(
             self,
@@ -80,8 +80,8 @@ impl CR8 {
             panic!("Cannot pop empty stack");
         }
 
-        self.reg[reg as usize] = self.memory.get(self.mb, self.sp);
-        self.memory.set(self.mb, self.sp, 0);
+        self.reg[reg as usize] = self.mem.get(self.sp)?;
+        self.mem.set(self.sp, 0)?;
 
         cr8debug!(
             self,
@@ -255,7 +255,7 @@ impl CR8 {
 
     pub fn set_mb(&mut self, bank: u8) -> Result<u8> {
         cr8debug!(self, "MB {bank:#?}");
-        self.mb = bank;
+        self.mem.select(bank)?;
         Ok(2)
     }
 }

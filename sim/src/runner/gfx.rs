@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use asm::op::Operation;
 use std::{
     sync::{Arc, Mutex},
@@ -123,14 +123,17 @@ impl Runner {
 
         let pc = cr8.pc;
 
-        let inst = cr8.memory.get(0, pc);
+        let inst = cr8
+            .mem
+            .get(pc)
+            .context("Could not find instruction at PC")?;
 
         let op = Runner::oper(pc, inst >> 4)?;
         let is_imm = (inst & 0b00001000) == 0b00001000;
         let reg_bits = inst & 0b00000111;
 
-        let b0: u8 = cr8.memory.get(0, pc + 1);
-        let b1: u8 = cr8.memory.get(0, pc + 2);
+        let b0 = cr8.mem.get(pc + 1).unwrap_or(0);
+        let b1 = cr8.mem.get(pc + 2).unwrap_or(0);
 
         use Operation as O;
 
@@ -177,6 +180,6 @@ impl Runner {
 
         cr8.pc += ticks as u16;
 
-        Ok((cr8.memory.get(1, target), ticks))
+        Ok((cr8.mem.get(target).unwrap_or(0), ticks))
     }
 }
