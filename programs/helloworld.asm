@@ -1,9 +1,8 @@
-#include "<std>/arch"
-#include "<std>/macro"
-
-
 mb 0x01
 jmp [f1]
+
+#include "<std>/gfx"
+#include "<std>/wait"
 
 #mem 128 F1 [
     0b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
@@ -27,69 +26,13 @@ jmp [f1]
     0b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
 ]
 
-#macro
-wait [a0]:
-    mov %b, $a0h
-    mov %a, $a0l
-    call [_wait]
-
-_wait:
-    .loop:
-        dec16 %a, %b
-        jnza [.loop], %a
-        jnza [.loop], %b
-        ret
-
-#macro
-frame [a0]:
-    mov %b, $a0h
-    mov %a, $a0l
-    call [_frame]
-
-_frame:
-    mov %c, 128
-
-    push %b
-    push %a
-    push [BRAM >> 8]
-    push [BRAM & 0x00FF]
-
-    jnza [.loop], %c
-    pop %a
-    pop %a
-    pop %a
-    pop %a
-    ret
-
-    .loop:
-        dec %c
-        pop %a
-        pop %b
-        pop %l
-        pop %h
-        lw %d
-        inc16 %l, %h
-        push %h
-        push %l
-        mov %l, %a
-        mov %h, %b
-        sw %d
-        inc16 %l, %h
-        push %h
-        push %l
-        jnza [.loop], %c
-        pop %a
-        pop %a
-        pop %a
-        pop %a
-        ret
 
 f1:
-    frame &F1
+    frame &F1, 128
     wait [0x2000]
     jmp [f2]
 
 f2:
-    frame &F2
+    frame &F2, 128
     wait [0x2000]
     jmp [f1]

@@ -37,8 +37,6 @@ impl Compiler {
                     self.resolve_directives(nodes);
 
                     self.files.push(f);
-
-                    self.resolve_macros();
                 }
                 AstNode::Directive(Directive::Define(k, v)) => {
                     if self.statics.contains_key(&k) {

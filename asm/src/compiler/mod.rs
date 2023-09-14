@@ -54,6 +54,9 @@ impl Compiler {
 
     pub fn compile(mut self) -> Vec<u8> {
         use Operation::*;
+
+        self.debug();
+
         self.resolve_macros();
         self.resolve_labels();
 
