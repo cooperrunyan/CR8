@@ -8,8 +8,6 @@ mod lexer;
 mod resolver;
 mod tokenizer;
 
-use phf::phf_map;
-
 use ast::{AstNode, Macro};
 use lexer::Lexer;
 
@@ -20,11 +18,7 @@ pub use config::Config;
 
 use self::config::Input;
 
-static STD: phf::Map<&'static str, &'static str> = phf_map! {
-    "<std>/arch.asm" => include_str!("../std/arch.asm"),
-    "<std>/macros.asm" => include_str!("../std/macros.asm"),
-    "<std>/math.asm" => include_str!("../std/math.asm"),
-};
+use super::std::STD;
 
 #[derive(Debug)]
 pub struct Compiler {
@@ -141,6 +135,11 @@ impl Compiler {
     pub fn push(&mut self, input: Input) {
         let (source, file) = match input {
             Input::File(f) => {
+                let f = if f.ends_with(".asm") {
+                    f
+                } else {
+                    format!("{f}.asm")
+                };
                 let Ok(source) = fs::read_to_string(&f) else {
                     err!("Failed to read {f}");
                 };

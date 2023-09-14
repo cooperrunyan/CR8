@@ -1,65 +1,11 @@
-#include "<std>/macros.asm"
+#include "<std>/macro/call"
+#include "<std>/macro/jmp"
+#include "<std>/macro/math/dec"
+#include "<std>/macro/math/add"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; MATH.asm
+; <std>/math/mul/mul16
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Shift
-lsh:
-    push %b
-    mov %z, %a
-    jnza [.loop], %b
-    jmp [.done]
-
-    .loop:
-        dec %b
-        add %z, %z
-        jnza [.loop], %b
-        jmp [.done]
-
-    .done:
-        pop %b
-        ret
-
-; Shift ab << c   ->  cdz
-lsh16:
-    push %a
-    push %c
-    mov %z, %a
-    mov %d, %b
-    jnza [.loop], %c
-    jmp [.done]
-
-    .loop:
-        dec %c
-        add %z, %z
-        adc %d, %d
-        adcc %a
-        jnza [.loop], %c
-        jmp [.done]
-
-    .done:
-        mov %c, %a
-        pop %c
-        pop %a
-        ret
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Multiply %a * %b -> %zd
-mul:
-    mov %z, 0
-    jnza [.loop], %a
-    ret
-
-    .loop:
-        dec %a
-        add %z, %b
-        adcc %d
-        jnza [.loop], %a
-        ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; 16 bit manipulation
 ; Multiply %ab * %cd -> %abcd
 ; Occupies PSR:
@@ -93,7 +39,7 @@ mul16:
     .loop_00:
         dec %z
         add %a, %c
-        adcc %b
+        adcf %b
         jnza [.loop_00], %z
         jmp [.done_00]
 
@@ -108,7 +54,7 @@ mul16:
     .loop_01:
         dec %z
         add %a, %c
-        adcc %b
+        adcf %b
         jnza [.loop_01], %z
         jmp [.done_01]
 
@@ -124,7 +70,7 @@ mul16:
     .loop_10:
         dec %z
         add %a, %d
-        adcc %b
+        adcf %b
         jnza [.loop_10], %z
         jmp [.done_10]
 
@@ -140,7 +86,7 @@ mul16:
     .loop_11:
         dec %z
         add %a, %d
-        adcc %b
+        adcf %b
         jnza [.loop_11], %z
         jmp [.done]
 
@@ -159,20 +105,20 @@ mul16:
         lw %b, [PSR2]
         lw %c, [PSR4]
         add %a, %b
-        adcc %d
+        adcf %d
         add %a, %c
-        adcc %d
+        adcf %d
         sw [PSR1], %a
         lw %a, [PSR3]
         lw %b, [PSR5]
         lw %c, [PSR6]
         add %a, %d
         mov %d, 0
-        adcc %d
+        adcf %d
         add %a, %b
-        adcc %d
+        adcf %d
         add %a, %c
-        adcc %d
+        adcf %d
         mov %c, %a
         lw %a, [PSR7]
         add %d, %a

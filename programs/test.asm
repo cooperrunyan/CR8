@@ -1,9 +1,9 @@
-#include "<std>/arch.asm"
-#include "<std>/macros.asm"
+#include "<std>/arch"
+#include "<std>/macro"
 
 jmp [main]
 
-#include "<std>/math.asm"
+#include "<std>/math"
 
 main:
     mov %a, 12

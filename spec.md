@@ -58,32 +58,51 @@
 | D    | `AND`     | `reg`, `reg/imm8`            | `reg = reg & reg/imm8`                   |
 | E    | `MB`      | `imm8`                       | `SYSTEM_REGISTER[MB] = imm8`             |
 
-## Built-in Macros
+> `*`: Updates FLAG register
 
-| Pnuemonic | Args       | Result                                    |
-| --------- | ---------- | ----------------------------------------- |
-| `LDA`     | `$0`, `$1` | `MOV l, $0`, `MOV h, $1`                  |
-| `SUB`     | `$0`, `$1` | SBB with no borrow                        |
-| `ADD`     | `$0`, `$1` | ADC with no carry                         |
-| `INC`     | `$0`       | Increment                                 |
-| `DEC`     | `$0`       | Decrement                                 |
-| `NAND`    | `$0`, `$1` | Logical NAND                              |
-| `NOT`     | `$0`       | Logical NOT                               |
-| `XOR`     | `$0`, `$1` | Logical XOR                               |
-| `XNOR`    | `$0`, `$1` | Logical XNOR                              |
-| `JMP`     | `$0`, `$1` | Unconditional jump                        |
-| `JEQ`     | `$0`, `$1` | Jump if Flags is equal to                 |
-| `JLT`     | `$0`, `$1` | Jump if Flags is less than                |
-| `JLE`     | `$0`, `$1` | Jump if Flags is less than or equal to    |
-| `JGT`     | `$0`, `$1` | Jump if Flags is greater than             |
-| `JGE`     | `$0`, `$1` | Jump if Flags is greater than or equal to |
-| `JNE`     | `$0`, `$1` | Jump if Flags is not equal                |
-| `CALL`    | `$0`, `$1` | Pushes PC to stack then jumps to `$0 $1`  |
-| `RET`     | None       | Pops H and L from stack, then jumps       |
-| `OUTB`    | `$0`, `$1` | `OUT` for immediates                      |
-| `HALT`    | None       | Send `SIGHALT` to Control                 |
+### STD Macros
 
-> `*`: Sets FLAG register
+| Pnuemonic | Args                         | Result                                    |
+| --------- | ---------------------------- | ----------------------------------------- |
+| `LDHL`    | `$a0`                        | `MOV l, $a0l`, `MOV h, $a0h`              |
+| `SUB`     | `$r0`, `$ir0`                | SBB with no borrow                        |
+| `SBBF`    | `$r0`,                       | SUB borrow flag from `$r0`                |
+| `SUB16`   | `$r0` ,`$r1`, `$ir0` ,`$ir1` | 16 bit Sub (L, H) - (L, H)                |
+| `ADD`     | `$r0`, `$ir0`                | ADC with no carry                         |
+| `ADCF`    | `$r0`,                       | ADD carry flag to `$r0`                   |
+| `ADD16`   | `$r0` ,`$r1`, `$ir0` ,`$ir1` | 16 bit Add (L, H) + (L, H)                |
+| `INC`     | `$r0`                        | Increment                                 |
+| `INC16`   | `$r0` ,`$r1`                 | 16 bit Increment (L, H)                   |
+| `DEC`     | `$r0`                        | Decrement                                 |
+| `DEC16`   | `$r0` ,`$r1`                 | 16 bit Decrement (L, H)                   |
+| `CLRF`    | None                         | Clear Flags register                      |
+| `CLRFC`   | None                         | Clear Carry flag                          |
+| `CLRFB`   | None                         | Clear Borrow flag                         |
+| `NAND`    | `$r0`, `$ir0`                | Logical NAND                              |
+| `NOT`     | `$r0`                        | Logical NOT                               |
+| `XOR`     | `$r0`, `$ir0`                | Logical XOR                               |
+| `XNOR`    | `$r0`, `$ir0`                | Logical XNOR                              |
+| `JMP`     | `$a0`                        | Unconditional jump                        |
+| `JNZA`    | `$a0`, `$r0`                 | JNZ to immediate address                  |
+| `JZ`      | `$a0`, `$r0`                 | JMP if zero to immediate address          |
+| `JEQ`     | `$a0`                        | Jump if Flags is equal to                 |
+| `JLT`     | `$a0`                        | Jump if Flags is less than                |
+| `JLE`     | `$a0`                        | Jump if Flags is less than or equal to    |
+| `JGT`     | `$a0`                        | Jump if Flags is greater than             |
+| `JGE`     | `$a0`                        | Jump if Flags is greater than or equal to |
+| `JNE`     | `$a0`                        | Jump if Flags is not equal                |
+| `CALL`    | `$a0`                        | Pushes PC to stack then jumps to `$a0`    |
+| `RET`     | None                         | Pops H and L from stack, then jumps       |
+| `SEND`    | `$r0`, `$ir0`                | `OUT` for immediates                      |
+| `HALT`    | None                         | Send `HALT` to SysControl                 |
+| `PEEK`    | `$a0`                        | Send `PEEK` to SysControl                 |
+| `PING`    | None                         | Send `PING` to SysControl                 |
+| `DBG`     | None                         | Send `DBG` to SysControl                  |
+
+> - `$a`: Address
+> - `$i`: Immediate (compile-time byte)
+> - `$r`: Register
+> - `$ir`: Immediate or Register
 
 ### Instruction Layout
 
@@ -108,13 +127,15 @@ Instructions are 1-4 bytes long. First byte of the instruction looks like:
 | `0xC000`      | `0xFBFF`    | ~13Kb | GP RAM                   |
 | `0xFC00`      | `0xFEFF`    | ~2Kb  | Stack + Psuedo-registers |
 
-## Memory Banks
+### Memory Banks
 
 - `0x00`: Builtin-memory
 - `0x01`: VRAM
 - Extensible
 
-## Controller
+## SysControl
 
-The simulator has a Control device at port 0x00 to communicate with the CR8.
-Right now it can only issue a HALT command to stop simulating.
+- `0x00`: Ping
+- `0x01`: Halt - Stops the machine
+- `0x02`: Peek - Prints memory address
+- `0x03`: Debug - Prints register states
