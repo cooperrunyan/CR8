@@ -1,8 +1,14 @@
 use asm::compiler::{Compiler, Config};
 
 fn main() {
+    env_logger::builder()
+        .format_timestamp(None)
+        .write_style(env_logger::WriteStyle::Always)
+        .format_target(false)
+        .init();
+
     let config = Config::from_argv();
-    let mut compiler = Compiler::new(&config);
+    let mut compiler = Compiler::new();
 
     compiler.push(config.input);
 

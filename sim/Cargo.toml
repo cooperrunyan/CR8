@@ -16,6 +16,6 @@
   log           = "0.4.20"
 
 [features]
-  default = ["sysctrl"]
+  default = ["sysctrl", "gfx"]
   sysctrl = []
   gfx     = []

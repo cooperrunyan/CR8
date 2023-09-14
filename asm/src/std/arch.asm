@@ -19,8 +19,8 @@
 #define PSR8 0xFF08
 #define PSR9 0xFF09
 
-#define SYSCTRL  0x00
-#define SIGNOP   0x00
-#define SIGHALT  0x01
-#define SIGPEEK  0x02
-#define SIGDBG   0x03
+#define CTRL      0x00
+#define CTRLPING  0x00
+#define CTRLHALT  0x01
+#define CTRLPEEK  0x02
+#define CTRLDBG   0x03

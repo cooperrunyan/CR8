@@ -10,39 +10,39 @@ use super::{CR8, STACK, STACK_END};
 
 impl CR8 {
     pub fn lw_imm16(&mut self, to: Register, i: u16) -> Result<u8> {
-        trace!("{}: LW {to:#?}, {i:#?}", self.pc);
+        trace!("{:04x}: LW {to:#?} {i:04x}", self.pc);
         self.reg[to as usize] = self.mem.get(i)?;
         Ok(3)
     }
 
     pub fn lw_hl(&mut self, to: Register) -> Result<u8> {
         let addr = self.hl();
-        trace!("{}: LW {to:#?}, {}", addr, self.pc);
+        trace!("{:04x}: LW {to:#?}, {:04x}", self.pc, addr,);
         self.reg[to as usize] = self.mem.get(addr)?;
         Ok(1)
     }
 
     pub fn sw_hl(&mut self, from: Register) -> Result<u8> {
-        trace!("{}: SW {from:#?}, {}", self.hl(), self.pc);
+        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, self.hl(),);
         self.mem.set(self.hl(), self.reg[from as usize])?;
         Ok(1)
     }
 
     pub fn sw_imm16(&mut self, i: u16, from: Register) -> Result<u8> {
-        trace!("{}: SW {from:#?}, {}", i, self.pc);
+        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, i,);
         self.mem.set(i, self.reg[from as usize].clone())?;
         Ok(3)
     }
 
     pub fn mov_reg(&mut self, to: Register, from: Register) -> Result<u8> {
-        trace!("{}: MOV {to:#?}, {from:#?}", self.pc);
+        trace!("{:04x}: MOV {to:#?}, {from:#?}", self.pc);
 
         self.reg[to as usize] = self.reg[from as usize];
         Ok(2)
     }
 
     pub fn mov_imm8(&mut self, to: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: MOV {to:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: MOV {to:#?}, {imm8:02x} | {imm8:?}", self.pc);
         self.reg[to as usize] = imm8;
         Ok(2)
     }
@@ -56,10 +56,10 @@ impl CR8 {
         self.mem.set(self.sp, imm8)?;
 
         trace!(
-            "{}: PUSHED: [{}] {}",
+            "{:04x}: PUSHED: [{:04x}] {:02x}",
+            self.pc,
             self.sp as i128 - STACK as i128,
             imm8,
-            self.pc
         );
         Ok(2)
     }
@@ -78,10 +78,10 @@ impl CR8 {
         self.mem.set(self.sp, 0)?;
 
         trace!(
-            "{}: POPPED: [{}] {}",
+            "{:04x}: POPPED: [{:04x}] {:?}",
+            self.pc,
             self.sp - STACK,
             self.reg[reg as usize],
-            self.pc
         );
 
         self.sp -= 1;
@@ -90,13 +90,15 @@ impl CR8 {
 
     pub fn jnz_imm8(&mut self, imm8: u8) -> Result<u8> {
         if imm8 == 0 {
-            trace!("{}: No JNZ", self.pc);
+            trace!("{:04x}: No JNZ", self.pc);
             return Ok(2);
         }
 
+        let old = self.pc;
+
         self.pc = self.hl();
 
-        trace!("{}: JNZ to {}", self.pc, self.pc);
+        trace!("{:04x}: JNZ to {:04x}", old, self.pc);
         Ok(0)
     }
 
@@ -110,7 +112,7 @@ impl CR8 {
     }
 
     pub fn in_imm8(&mut self, devices: &Devices, into: Register, port: u8) -> Result<u8> {
-        trace!("{}: IN {into:#?}, {port:#?}", self.pc);
+        trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc);
 
         if let Some(dev) = devices.get(DeviceID::from(port)) {
             self.reg[into as usize] = dev
@@ -130,7 +132,7 @@ impl CR8 {
     }
 
     pub fn out_imm8(&mut self, devices: &Devices, port: u8, send: Register) -> Result<u8> {
-        trace!("{}: OUT {send:#?}, {port:#?}", self.pc);
+        trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc);
         if let Some(dev) = devices.get(DeviceID::from(port)) {
             dev.lock()
                 .map_err(|_| anyhow!("Failed to lock mutex"))?
@@ -148,7 +150,7 @@ impl CR8 {
     }
 
     pub fn cmp_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: CMP {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: CMP {lhs:#?}, {imm8:02x}", self.pc);
 
         let diff = (self.reg[lhs as usize] as i16) - (imm8 as i16);
         let mut f = 0;
@@ -171,7 +173,7 @@ impl CR8 {
     }
 
     pub fn adc_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: ADC {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: ADC {lhs:#?}, {imm8:02x}", self.pc);
 
         let f = self.reg[Register::F as usize];
         let cf = (f >> 2) & 1;
@@ -193,7 +195,7 @@ impl CR8 {
     }
 
     pub fn sbb_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: SBB {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: SBB {lhs:#?}, {imm8:02x}", self.pc);
 
         let f = self.reg[Register::F as usize];
         let bf = (f >> 3) & 1;
@@ -215,7 +217,7 @@ impl CR8 {
     }
 
     pub fn or_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: OR {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: OR {lhs:#?}, {imm8:02x}", self.pc);
         self.reg[lhs as usize] |= imm8;
         Ok(2)
     }
@@ -226,7 +228,7 @@ impl CR8 {
     }
 
     pub fn nor_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: NOR {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: NOR {lhs:#?}, {imm8:02x}", self.pc);
         self.reg[lhs as usize] = !(self.reg[lhs as usize] | imm8);
         Ok(2)
     }
@@ -237,7 +239,7 @@ impl CR8 {
     }
 
     pub fn and_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{}: AND {lhs:#?}, {imm8:#?}", self.pc);
+        trace!("{:04x}: AND {lhs:#?}, {imm8:02x}", self.pc);
         self.reg[lhs as usize] &= imm8;
         Ok(2)
     }
@@ -248,7 +250,7 @@ impl CR8 {
     }
 
     pub fn set_mb(&mut self, bank: u8) -> Result<u8> {
-        trace!("{}: MB {bank:#?}", self.pc);
+        trace!("{:04x}: MB {bank:02x}", self.pc);
         self.mem.select(bank)?;
         Ok(2)
     }

@@ -1,5 +1,6 @@
 use std::num::ParseIntError;
 
+use log::trace;
 use regex::{Captures, Regex};
 
 use super::Compiler;
@@ -55,9 +56,7 @@ impl Compiler {
 
         let r = self.evaluate_grp(expr.to_string().as_str());
 
-        if self.debug.expr {
-            println!("[{orig}] -> {r:?}");
-        }
+        trace!("expr: [{orig}] -> {r:?}");
 
         r
     }

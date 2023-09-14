@@ -100,15 +100,15 @@ impl Compiler {
             let next = match ch {
                 ANGLE_CLOSE => match chars.next() {
                     Some(ANGLE_CLOSE) => Token::RightShift,
-                    x => panic!("Expected `>` after `>` got: {x:?}"),
+                    x => err!("Expected `>` after `>` got: {x:?}"),
                 },
                 ANGLE_OPEN => match chars.next() {
                     Some(ANGLE_OPEN) => Token::LeftShift,
-                    x => panic!("Expected `<` after `<` got: {x:?}"),
+                    x => err!("Expected `<` after `<` got: {x:?}"),
                 },
                 ESCAPE => {
                     let Some(_) = chars.peek() else {
-                        panic!("Expected a character after `\\`")
+                        err!("Expected a character after `\\`")
                     };
                     Token::Escape(chars.next().unwrap())
                 }
@@ -183,7 +183,7 @@ impl Compiler {
                     match num {
                         Ok(n) => Token::Number(n),
                         Err(e) => {
-                            panic!("Error at {file:?}\nInvalid number: {str:#?} \n\n{e}")
+                            err!("Error at {file:?}\nInvalid number: {str:#?} \n\n{e}")
                         }
                     }
                 }
@@ -223,7 +223,7 @@ impl Compiler {
                 PERCENT => Token::Percent,
                 DOLLAR => Token::Dollar,
                 DIRECTIVE => Token::Directive,
-                other => panic!("Unknown token: {other:#?}"),
+                other => err!("Unknown token: {other:#?}"),
             };
 
             tokens.push(next);

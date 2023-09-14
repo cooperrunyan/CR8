@@ -147,7 +147,7 @@ macro_rules! define_banks {
 
                 $(
                     #[cfg(feature = $feature)]
-                    write!(f, "      {}: {:#04X}\n", $member, $id::$member)?;
+                    write!(f, "      $member: {:#04x}\n", $id::$member as u8)?;
                 )*
 
                 write!(f, "")
@@ -198,7 +198,7 @@ macro_rules! err {
 #[macro_export]
 macro_rules! byte {
     ($name:expr, $val:expr) => {
-        format!("{}:  {:#04X} | {:#3} | {:08b}", $name, $val, $val, $val)
+        format!("{}:  {:#04x} | {:#3} | {:08b}", $name, $val, $val, $val)
     };
 }
 
@@ -206,7 +206,7 @@ macro_rules! byte {
 macro_rules! addr {
     ($name:expr, $val:expr, $pt:expr) => {
         format!(
-            "{}: {{ {:#06X} | {:#5} }}  =>  {:#3} | {:#04X}",
+            "{}: {{ {:#06x} | {:#5} }}  =>  {:#3} | {:#04x}",
             $name, $val, $val, $pt, $pt
         )
     };

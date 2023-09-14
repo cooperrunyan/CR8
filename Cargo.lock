@@ -119,6 +119,7 @@ version = "0.1.0"
 dependencies = [
  "env_logger",
  "lazy_static",
+ "log",
  "phf",
  "regex",
  "util_macros",

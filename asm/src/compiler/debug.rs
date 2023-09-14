@@ -1,45 +1,53 @@
+use log::{debug, trace};
 use std::collections::HashMap;
 
 use super::Compiler;
 
 impl Compiler {
     pub(crate) fn debug(&self) {
-        if self.debug.files {
-            self.debug_files()
-        }
-        if self.debug.macros {
-            self.debug_macros()
-        }
-        if self.debug.labels {
-            self.debug_labels()
-        }
-        if self.debug.bin {
-            self.debug_bin()
-        }
+        self.debug_labels();
+        self.debug_files();
+        self.debug_statics();
+        self.debug_macros();
+        self.debug_bin();
     }
 
     fn debug_files(&self) {
-        println!("\n===== Files Used: =====");
+        debug!("===== Files Used: =====");
         for file in self.files.iter() {
-            println!("  - {file}");
+            debug!("  - {file}");
         }
-        println!("=======================\n");
+        debug!("");
+    }
+
+    fn debug_statics(&self) {
+        debug!("======== Statics: ========");
+        for (k, v) in self.statics.iter() {
+            debug!("  - {}: {:#06X}", k, v);
+        }
+        debug!("");
     }
 
     fn debug_macros(&self) {
-        println!("\n===== Macros Declared: =====");
+        trace!("===== Macros Declared: =====");
         for (name, mac) in self.macros.iter() {
-            println!("  - {name}: {:?}", mac.args);
+            trace!("  - {name}: {:?}", mac.args);
         }
-        println!("============================\n");
+        trace!("");
     }
 
     fn debug_labels(&self) {
-        println!("\n===== Labels: =====");
-        for (name, location) in self.labels.iter() {
-            println!("  - {name}: {:?}", location);
+        debug!("===== Labels: =====");
+        let mut sorted: Vec<_> = self.labels.iter().collect();
+        sorted.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap());
+
+        for (name, location) in sorted {
+            if name.starts_with("#marker ") {
+                continue;
+            }
+            debug!("  - {name}: {:?}", location);
         }
-        println!("===================\n");
+        debug!("");
     }
 
     fn debug_bin(&self) {
@@ -49,14 +57,20 @@ impl Compiler {
             label_reverse_lookup.insert(*location, &name);
         }
 
-        println!("\n===== Binary: =====");
+        trace!("===== Binary: =====");
         for (location, byte) in self.bin.iter().enumerate() {
             if let Some(label) = label_reverse_lookup.get(&location) {
-                println!("{location}:  {byte}  -  {:?}", label);
+                if label.starts_with("#marker ") {
+                    trace!("  {location:04x}:  {byte:02x}  --  {label}");
+                } else {
+                    trace!("");
+                    trace!("{}:", label);
+                    trace!("  {location:04x}:  {byte:02x}");
+                }
             } else {
-                println!("{location}:  {byte}")
+                trace!("  {location:04x}:  {byte:02x}");
             }
         }
-        println!("===================\n");
+        trace!("");
     }
 }

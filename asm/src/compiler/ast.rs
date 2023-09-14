@@ -56,6 +56,7 @@ pub enum Directive {
     Rom(String, Vec<u8>),
     Define(String, u128),
     Import(String),
+    Marker(String),
 }
 
 #[derive(Debug)]

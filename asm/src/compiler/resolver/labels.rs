@@ -27,6 +27,9 @@ impl Compiler {
                     self.labels.insert(name.to_owned(), self.pc);
                     self.pc += len;
                 }
+                AstNode::Directive(Directive::Marker(name)) => {
+                    self.labels.insert(format!("#marker {}", name), self.pc);
+                }
                 oth => panic!("Unexpected {oth:#?}. At {node:#?}"),
             }
         }

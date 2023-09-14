@@ -28,6 +28,11 @@ impl<'s> Lexer<'s> {
                 let addr = num!("Expected address after #origin");
                 self.nodes.push(Directive::Origin(addr as u128).to_node());
             }
+            "marker" => {
+                space!("Syntax error");
+                let name = word!("Expected name after #marker");
+                self.nodes.push(Directive::Marker(name).to_node());
+            }
             "define" => {
                 space!("Syntax error");
                 let name = word!("Expected name for #define statement");

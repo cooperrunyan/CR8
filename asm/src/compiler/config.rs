@@ -5,7 +5,6 @@ use std::io::{self, Write};
 pub struct Config {
     pub input: Input,
     pub output: Output,
-    pub(super) debug: DebugInfo,
 }
 
 #[derive(Debug, Clone)]
@@ -39,20 +38,10 @@ impl Output {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
-pub struct DebugInfo {
-    pub(super) files: bool,
-    pub(super) labels: bool,
-    pub(super) macros: bool,
-    pub(super) expr: bool,
-    pub(super) bin: bool,
-}
-
 impl Config {
     pub fn from_argv() -> Self {
         let mut input: Option<Input> = None;
         let mut output = Output::None;
-        let mut debug = DebugInfo::default();
 
         for (i, arg) in std::env::args().enumerate() {
             match arg.as_str() {
@@ -65,24 +54,6 @@ impl Config {
                 "-o" | "--output" => {
                     output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
                 }
-                "-d" | "--debug" => match std::env::args().nth(i + 1) {
-                    None => {}
-                    Some(s) => match s.as_str() {
-                        "files" => debug.files = true,
-                        "macros" => debug.macros = true,
-                        "bin" => debug.bin = true,
-                        "labels" => debug.labels = true,
-                        "expr" => debug.expr = true,
-                        "all" => {
-                            debug.files = true;
-                            debug.macros = true;
-                            debug.bin = true;
-                            debug.expr = true;
-                            debug.labels = true;
-                        }
-                        _ => {}
-                    },
-                },
                 _ => {}
             }
         }
@@ -91,10 +62,6 @@ impl Config {
         }
         let input = input.unwrap();
 
-        Self {
-            input,
-            output,
-            debug,
-        }
+        Self { input, output }
     }
 }

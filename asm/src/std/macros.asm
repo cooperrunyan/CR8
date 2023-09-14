@@ -29,8 +29,8 @@ not [r0]:
 ; Control Flow
 #macro
 ldhl [a0]:
-  mov %l, $a0l
   mov %h, $a0h
+  mov %l, $a0l
 
 #macro
 jnza [a0, ir0]:
@@ -112,25 +112,21 @@ outb [i0, i1]:
 
 #macro
 halt []:
-  outb &SYSCTRL, &SIGHALT
+  outb &CTRL, &CTRLHALT
+
+#macro
+ping []:
+  outb &CTRL, &CTRLPING
 
 #macro
 peek [a0]:
-  outb &SYSCTRL, &SIGPEEK
-  outb &SYSCTRL, $a0l
-  outb &SYSCTRL, $a0h
+  outb &CTRL, &CTRLPEEK
+  outb &CTRL, $a0l
+  outb &CTRL, $a0h
 
 #macro
 dbg []:
-  outb &SYSCTRL, &SIGDBG
-
-#macro
-gpu [i0]:
-  outb &GPU, $i0
-
-#macro
-render []:
-  gpu &GPU_RENDER
+  outb &CTRL, &CTRLDBG
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Math

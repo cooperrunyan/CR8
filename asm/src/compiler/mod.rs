@@ -18,7 +18,7 @@ use crate::op::Operation;
 
 pub use config::Config;
 
-use self::config::{DebugInfo, Input};
+use self::config::Input;
 
 static STD: phf::Map<&'static str, &'static str> = phf_map! {
     "<std>/arch.asm" => include_str!("../std/arch.asm"),
@@ -28,7 +28,6 @@ static STD: phf::Map<&'static str, &'static str> = phf_map! {
 
 #[derive(Debug)]
 pub struct Compiler {
-    debug: DebugInfo,
     bin: Vec<u8>,
     tree: Vec<AstNode>,
     labels: HashMap<String, usize>,
@@ -43,9 +42,8 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    pub fn new(config: &Config) -> Self {
+    pub fn new() -> Self {
         Self {
-            debug: config.debug,
             bin: vec![],
             tree: vec![],
             labels: HashMap::new(),
@@ -84,11 +82,11 @@ impl Compiler {
                         match arg {
                             Value::AddrByte(AddrByte::High(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push((a >> 8) as u8),
-                                Err(e) => panic!("Unknown address: {a:#?}. {e:#?}"),
+                                Err(e) => err!("Unknown address: {a:#?}. {e:#?}"),
                             },
                             Value::AddrByte(AddrByte::Low(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push(a as u8),
-                                Err(e) => panic!("Unknown address: {a:#?}. {e:#?}"),
+                                Err(e) => err!("Unknown address: {a:#?}. {e:#?}"),
                             },
                             Value::Register(r) => {
                                 if regn > 0 {
@@ -106,10 +104,10 @@ impl Compiler {
                                         compiled_args.push((a >> 8) as u8);
                                     }
                                 }
-                                Err(()) => panic!("Unknown identifier: {id:#?}"),
+                                Err(()) => err!("Unknown identifier: {id:#?}"),
                             },
                             Value::Expression(exp) => match self.resolve_expr(&exp) {
-                                Err(e) => panic!("Failed to resolve: {exp:#?}. {e:#?}"),
+                                Err(e) => err!("Failed to resolve: {exp:#?}. {e:#?}"),
                                 Ok(v) => {
                                     compiled_args.push(v as u8);
                                     if op == LW || op == SW {
@@ -144,7 +142,7 @@ impl Compiler {
         let (source, file) = match input {
             Input::File(f) => {
                 let Ok(source) = fs::read_to_string(&f) else {
-                    panic!("Failed to read {f}");
+                    err!("Failed to read {f}");
                 };
                 (source, f)
             }
@@ -156,7 +154,7 @@ impl Compiler {
         let tokens = Compiler::tokenize(&source, &file);
         let nodes = match Lexer::new(tokens, &file).lex() {
             Ok(n) => n.nodes,
-            Err(e) => panic!("Error at file: {:?}\n{}", &file, e),
+            Err(e) => err!("Error at file: {:?}\n{}", &file, e),
         };
 
         self.resolve_directives(nodes);

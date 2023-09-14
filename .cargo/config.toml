@@ -1,2 +1,2 @@
 [env]
-  RUST_LOG = "sim=debug,asm"
+  RUST_LOG = "sim=debug,asm=debug"
