@@ -11,7 +11,6 @@ impl Runner {
 
         let mut file = String::new();
         let mut tickrate = Duration::ZERO;
-        let mut debug = false;
 
         for (i, arg) in args.iter().enumerate() {
             match arg.as_str() {
@@ -28,23 +27,20 @@ impl Runner {
 
                     tickrate = parse_duration(&args[i + 1]);
                 }
-                "-d" | "--debug" => {
-                    debug = true;
-                }
                 _ => {}
             }
         }
 
         if file.is_empty() {
-            panic!("Expected input file");
+            err!("Expected input file");
         }
 
         let bin = match fs::read(file.clone()) {
             Ok(i) => i,
-            Err(_) => panic!("Could not read input file"),
+            Err(_) => err!("Could not read input file"),
         };
 
-        Ok(Self::new(&bin, tickrate, debug))
+        Ok(Self::new(&bin, tickrate))
     }
 }
 
@@ -64,6 +60,6 @@ fn parse_duration(inpt: &str) -> Duration {
         let per_sec = val * modif as f64;
         Duration::from_secs_f64(1.0 / per_sec)
     } else {
-        panic!("Expected hz for clock speed");
+        err!("Expected hz for clock speed");
     }
 }

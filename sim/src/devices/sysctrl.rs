@@ -1,5 +1,6 @@
 use crate::cr8::CR8;
 use anyhow::Result;
+use log::{debug, warn};
 use std::sync::{Arc, Mutex};
 
 use super::Device;
@@ -35,7 +36,7 @@ impl Device for SysCtrl {
                 let l = self.peek_low_byte.unwrap();
 
                 let addr = ((h as u16) << 8) | l as u16;
-                println!("PEEK {addr}: [{:?}]", cr8.mem.get(addr));
+                debug!("PEEK {addr}: [{:?}]", cr8.mem.get(addr));
 
                 self.peeking = false;
                 self.peek_low_byte = None;
@@ -44,12 +45,12 @@ impl Device for SysCtrl {
 
         use SysCtrlSignal as SIG;
         match SIG::from(byte) {
-            SIG::NOP => println!("sysctrl recieved NOP message"),
+            SIG::NOP => warn!("sysctrl recieved NOP message"),
             SIG::HALT => self.state |= 0b00000001,
             SIG::PEEK => self.peeking = true,
             SIG::DBG => cr8.debug(),
 
-            SIG::UNKNOWN => println!("sysctrl recieved unknown {byte:#?} message"),
+            SIG::UNKNOWN => warn!("sysctrl recieved unknown {byte:#?} message"),
         };
         Ok(())
     }

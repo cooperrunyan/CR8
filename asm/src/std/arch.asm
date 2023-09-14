@@ -24,6 +24,3 @@
 #define SIGHALT  0x01
 #define SIGPEEK  0x02
 #define SIGDBG   0x03
-
-#define GPU          0x01
-#define GPU_RENDER   0x01

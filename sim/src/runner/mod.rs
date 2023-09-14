@@ -24,11 +24,15 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn new(bin: &[u8], tickrate: Duration, debug: bool) -> Self {
+    pub fn new(bin: &[u8], tickrate: Duration) -> Self {
+        let cr8 = Arc::new(Mutex::new(CR8::new(bin).set_stack(STACK)));
+        let mut devices = Devices::default();
+        devices.connect(cr8.clone());
+
         Self {
             tickrate,
-            devices: Devices::default(),
-            cr8: Arc::new(Mutex::new(CR8::new(bin).set_debug(debug).set_stack(STACK))),
+            devices,
+            cr8,
         }
     }
 

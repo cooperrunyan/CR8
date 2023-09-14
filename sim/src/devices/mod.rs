@@ -38,14 +38,12 @@ encodable! {
 }
 
 impl Devices {
-    pub fn connect(&mut self, cr8: Arc<Mutex<CR8>>) -> Result<()> {
+    pub fn connect(&mut self, cr8: Arc<Mutex<CR8>>) {
         #[cfg(feature = "sysctrl")]
         self.0.push((
             DeviceID::SysCtrl,
             Arc::new(Mutex::new(sysctrl::SysCtrl::new(cr8))),
         ));
-
-        Ok(())
     }
 
     pub fn get(&self, dev: DeviceID) -> Option<Arc<Mutex<dyn Device>>> {

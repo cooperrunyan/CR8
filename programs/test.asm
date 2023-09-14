@@ -6,8 +6,11 @@ jmp [main]
 #include "<std>/math.asm"
 
 main:
-    render
-    jmp [main]
+    mov %a, 12
+    mov %b, 14
+    call [mul]
+
+    dbg
 
     halt
 

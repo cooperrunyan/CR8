@@ -80,7 +80,7 @@
 | `JNE`     | `$0`, `$1` | Jump if Flags is not equal                |
 | `CALL`    | `$0`, `$1` | Pushes PC to stack then jumps to `$0 $1`  |
 | `RET`     | None       | Pops H and L from stack, then jumps       |
-| `OUTI`    | `$0`, `$1` | `OUT` for immediates                      |
+| `OUTB`    | `$0`, `$1` | `OUT` for immediates                      |
 | `HALT`    | None       | Send `SIGHALT` to Control                 |
 
 > `*`: Sets FLAG register
@@ -101,10 +101,12 @@ Instructions are 1-4 bytes long. First byte of the instruction looks like:
 
 ## Memory Layout
 
-| Start Address | End Address | Size | Purpose    |
-| ------------- | ----------- | ---- | ---------- |
-| `0x0000`      | `0x7FFF`    | 32Kb | ROM        |
-| `0x8000`      | `0xFFFF`    | 32Kb | Banked RAM |
+| Start Address | End Address | Size  | Purpose                  |
+| ------------- | ----------- | ----- | ------------------------ |
+| `0x0000`      | `0x7FFF`    | 32Kb  | ROM                      |
+| `0x8000`      | `0xBFFF`    | 16Kb  | Banked RAM               |
+| `0xC000`      | `0xFBFF`    | ~13Kb | GP RAM                   |
+| `0xFC00`      | `0xFEFF`    | ~2Kb  | Stack + Psuedo-registers |
 
 ## Memory Banks
 

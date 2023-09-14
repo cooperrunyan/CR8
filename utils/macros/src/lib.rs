@@ -143,16 +143,14 @@ macro_rules! define_banks {
 
         impl Debug for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                let mut d = f.debug_struct("{$name}");
-
-                d.field("Builtin", &0);
+                write!(f, "      Builtin: 0x00\n")?;
 
                 $(
                     #[cfg(feature = $feature)]
-                    d.field("$member", &($id::$member as u8));
+                    write!(f, "      {}: {:#04X}\n", $member, $id::$member)?;
                 )*
 
-                d.finish()
+                write!(f, "")
             }
         }
 
@@ -186,5 +184,30 @@ macro_rules! define_banks {
                 })
             }
         }
+    };
+}
+
+#[macro_export]
+macro_rules! err {
+    ($msg:expr $(,$args:expr)*) => {{
+        log::error!($msg $(,$args)*);
+        panic!($msg $(,$args)*)}
+    }
+}
+
+#[macro_export]
+macro_rules! byte {
+    ($name:expr, $val:expr) => {
+        format!("{}:  {:#04X} | {:#3} | {:08b}", $name, $val, $val, $val)
+    };
+}
+
+#[macro_export]
+macro_rules! addr {
+    ($name:expr, $val:expr, $pt:expr) => {
+        format!(
+            "{}: {{ {:#06X} | {:#5} }}  =>  {:#3} | {:#04X}",
+            $name, $val, $val, $pt, $pt
+        )
     };
 }

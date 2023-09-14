@@ -38,7 +38,6 @@ pub struct CR8 {
     pub pc: u16,
     pub sp: u16,
     pub mem: Mem,
-    pub(self) debug: bool,
 }
 
 impl CR8 {
@@ -48,11 +47,6 @@ impl CR8 {
             reg: [0; 8],
             ..Default::default()
         }
-    }
-
-    pub fn set_debug(mut self, debug: bool) -> Self {
-        self.debug = debug;
-        self
     }
 
     pub fn set_stack(mut self, stack: u16) -> Self {

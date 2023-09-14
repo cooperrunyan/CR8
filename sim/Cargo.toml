@@ -12,11 +12,10 @@
   typed-builder = "0.16"
   pixels        = "0.13"
   winit         = "0.28.6"
+  env_logger    = "0.10.0"
+  log           = "0.4.20"
 
 [features]
-  default = ["sysctrl", "gfx"]
+  default = ["sysctrl"]
   sysctrl = []
   gfx     = []
-
-[profile.release]
-  debug = true
