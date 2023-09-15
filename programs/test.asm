@@ -1,19 +1,22 @@
-#include "<std>/arch"
-#include "<std>/macro"
-
+mb 0x01
 jmp [main]
 
-#include "<std>/math"
+#include "<std>"
+#include "./test.asm"
 
 main:
-    mov %a, 12
-    mov %b, 14
+    frame [TEST], [0x2000]
 
-    #marker call
-    call [mul]
+    mov %a, 0xff
+    ldhl [0x9000]
+    sw %a
+    ldhl [0x8001]
+    sw %a
 
     #marker debug
     dbg
+
+    jmp [main]
 
     #marker halt
     halt

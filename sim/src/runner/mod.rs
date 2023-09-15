@@ -1,12 +1,12 @@
+use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Result};
-
-use asm::{op::Operation, reg::Register};
+use anyhow::{anyhow, Context, Result};
 
 use super::devices::Devices;
 use crate::cr8::{CR8, STACK};
+use crate::devices::DeviceID;
 
 mod config;
 
@@ -44,17 +44,29 @@ impl Runner {
         Ok(())
     }
 
-    pub(crate) fn reg(pc: u16, byte: u8) -> Result<Register> {
-        match Register::try_from(byte) {
-            Ok(r) => Ok(r),
-            Err(_) => bail!("Invalid register: {byte} at {pc}"),
-        }
-    }
+    pub fn cycle(&mut self) -> Result<u8> {
+        let mut cr8 = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
 
-    pub(crate) fn oper(pc: u16, byte: u8) -> Result<Operation> {
-        match Operation::try_from(byte) {
-            Ok(r) => Ok(r),
-            Err(_) => bail!("Invalid operation: {byte} at {pc}"),
+        if let Some(dev) = self.devices.get(DeviceID::SysCtrl) {
+            let status = {
+                dev.lock()
+                    .map_err(|_| anyhow!("Failed to lock mutex"))?
+                    .send()?
+            };
+
+            if status >> 1 & 1 == 1 {
+                cr8.debug();
+            }
+
+            if status == 0x01 {
+                exit(0);
+            }
         }
+
+        let ticks = cr8
+            .cycle(&self.devices)
+            .context(format!("Cycle failed at {:#06x?}", cr8.pc))?;
+
+        Ok(ticks)
     }
 }

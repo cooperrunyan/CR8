@@ -2,52 +2,71 @@
 #include "<std>/macro/call"
 #include "<std>/macro/jmp"
 #include "<std>/macro/math/add"
+#include "<std>/macro"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/gfx/frame
 
 ; CALLER MUST SET mb 1
 ; Draws bytes from ROM to VRAM
-; Can be shortcut called with the macro: `frame [IMG], 128`
 
 #macro
-frame [a0, ir0]:
-    mov %b, $a0h
+clrvram [a0, a1]:
     mov %a, $a0l
-    mov %c, $ir0
-    call [drawframe]
+    mov %b, $a0h
+    mov %c, $a1l
+    mov %d, $a1h
+    call [_clrvram]
 
-drawframe:
-    push %b
-    push %a
-    push [BRAM >> 8]
-    push [BRAM & 0x00FF]
-
-    jnza [.loop], %c
-    jmp [.done]
+; ab: From
+; cd: To
+_clrvram:
+    sub16 %c, %d, %a, %b ; Length to clear
+    mov %z, 0
 
     .loop:
-        dec %c
-        pop %a
-        pop %b
-        pop %l
-        pop %h
-        lw %d
-        inc16 %l, %h
-        push %h
-        push %l
         mov %l, %a
         mov %h, %b
-        sw %d
-        inc16 %l, %h
-        push %h
-        push %l
+        sw %z
+        inc16 %a, %b
+        dec16 %c, %d
         jnza [.loop], %c
-        jmp [.done]
+        jnza [.loop], %d
+        ret
 
-    .done:
-        pop %a
-        pop %a
-        pop %a
-        pop %a
+; ab: Frame address
+; cd: Write location
+; [PSR0][PSR1]: Frame length
+frmwof:
+    .loop:
+        mov %l, %a
+        mov %h, %b
+        lw %z
+        #marker inc
+        inc16 %l, %h
+        #marker moval
+        mov %a, %l
+        mov %b, %h
+        #marker movlc
+        mov %l, %c
+        #marker movld
+        mov %h, %d
+        #marker movswz
+        sw %z
+        #marker incinh
+        inc16 %l, %h
+        #marker pushc
+        push %l ; c
+        #marker pushd
+        push %h ; d
+        lw %c, [PSR0]
+        lw %d, [PSR1]
+        dec16 %c, %d
+        sw [PSR0], %c
+        sw [PSR1], %d
+        mov %z, %c
+        or %z, %d
+        pop %d
+        pop %c
+        jnza [.loop], %z
         ret

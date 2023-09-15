@@ -1,5 +1,4 @@
-use anyhow::{anyhow, Context, Result};
-use asm::op::Operation;
+use anyhow::Result;
 use std::{
     sync::{Arc, Mutex},
     thread,
@@ -14,12 +13,13 @@ use winit::{
     window::WindowBuilder,
 };
 
-use crate::{cr8::Joinable, devices::DeviceID};
+use crate::cr8::mem::{BANK_LEN, RAM_START};
 
 use super::Runner;
 
-const WIDTH: u32 = 128;
-const HEIGHT: u32 = 128;
+const WIDTH: u32 = 256;
+const HEIGHT: u32 = 256;
+const SCALE: f64 = 4.0;
 
 impl Runner {
     pub fn run(self) -> Result<Self> {
@@ -28,7 +28,7 @@ impl Runner {
 
         let window = {
             let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
-            let scaled_size = LogicalSize::new(WIDTH as f64 * 4.0, HEIGHT as f64 * 4.0);
+            let scaled_size = LogicalSize::new(WIDTH as f64 * SCALE, HEIGHT as f64 * SCALE);
             WindowBuilder::new()
                 .with_title("CR8")
                 .with_inner_size(scaled_size)
@@ -47,40 +47,43 @@ impl Runner {
         let tickrate = Arc::new(self.tickrate);
         let runner = Arc::new(Mutex::new(self));
 
-        let mut ticker = 0x8000_i64;
+        let mut ticker = RAM_START;
 
         event_loop.run(move |event, _, control_flow| {
-            ticker += 1;
             let start = Instant::now();
-
-            if ticker > 0xC000 {
-                ticker = 0x8000;
-            }
 
             if let Event::RedrawRequested(_) = event {
                 let runner = runner.clone();
-                let (byte, ticks) = {
+                let ticks = {
                     let mut runner = runner.lock().unwrap();
-                    runner.cycle(ticker as u16).unwrap()
+                    runner.cycle().unwrap()
                 };
 
-                let i = ticker - 0x8000;
+                let byte = {
+                    let runner = runner.lock().unwrap();
+                    let cr8 = runner.cr8.lock().unwrap();
+                    cr8.mem.get_vram(ticker as u16).unwrap_or(0)
+                };
+
+                let i = ticker - RAM_START;
 
                 let frame = pixels.frame_mut();
 
-                if (i + 1) * 32 > 0xffff {
-                    return window.request_redraw();
-                }
-
                 for j in 0..8 {
                     let v = if byte >> (7 - j) & 1 == 1 { 0xff } else { 0 };
-                    frame[((i * 32) + j * 4) as usize] = v;
-                    frame[(((i * 32) + j * 4) + 1) as usize] = v;
-                    frame[(((i * 32) + j * 4) + 2) as usize] = v;
-                    frame[(((i * 32) + j * 4) + 3) as usize] = 255;
+                    frame.get_mut(((i * 32) + j * 4) as usize).map(|b| *b = v);
+                    frame
+                        .get_mut(((i * 32) + j * 4 + 1) as usize)
+                        .map(|b| *b = v);
+                    frame
+                        .get_mut(((i * 32) + j * 4 + 2) as usize)
+                        .map(|b| *b = v);
+                    frame
+                        .get_mut(((i * 32) + j * 4 + 3) as usize)
+                        .map(|b| *b = 255);
                 }
 
-                if ticker == 0x8000 {
+                if ticker == RAM_START {
                     if let Err(err) = pixels.render() {
                         println!("ERROR: {err:#?}");
                         *control_flow = ControlFlow::Exit;
@@ -97,89 +100,14 @@ impl Runner {
                     thread::sleep(target - elapsed);
                 }
 
+                ticker += 1;
+
+                if ticker >= RAM_START + BANK_LEN {
+                    ticker = RAM_START;
+                }
+
                 window.request_redraw();
             }
         });
-    }
-
-    pub fn cycle(&mut self, target: u16) -> Result<(u8, u8)> {
-        let mut cr8 = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
-
-        if let Some(dev) = self.devices.get(DeviceID::SysCtrl) {
-            let status = {
-                dev.lock()
-                    .map_err(|_| anyhow!("Failed to lock mutex"))?
-                    .send()?
-            };
-
-            if status >> 1 & 1 == 1 {
-                cr8.debug();
-            }
-
-            if status == 0x01 {
-                return Ok((0, 0));
-            }
-        }
-
-        let pc = cr8.pc;
-
-        let inst = cr8
-            .mem
-            .get(pc)
-            .context("Could not find instruction at PC")?;
-
-        let op = Runner::oper(pc, inst >> 4)?;
-        let is_imm = (inst & 0b00001000) == 0b00001000;
-        let reg_bits = inst & 0b00000111;
-
-        let b0 = cr8.mem.get(pc + 1).unwrap_or(0);
-        let b1 = cr8.mem.get(pc + 2).unwrap_or(0);
-
-        use Operation as O;
-
-        let ticks = match (op, is_imm) {
-            (O::LW, true) => cr8.lw_imm16(Runner::reg(pc, reg_bits)?, (b0, b1).join()),
-            (O::LW, false) => cr8.lw_hl(Runner::reg(pc, reg_bits)?),
-            (O::SW, true) => cr8.sw_imm16((b0, b1).join(), Runner::reg(pc, reg_bits)?),
-            (O::SW, false) => cr8.sw_hl(Runner::reg(pc, reg_bits)?),
-            (O::MOV, true) => cr8.mov_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::MOV, false) => cr8.mov_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::PUSH, true) => cr8.push_imm8(b0),
-            (O::PUSH, false) => cr8.push_reg(Runner::reg(pc, reg_bits)?),
-            (O::POP, _) => cr8.pop(Runner::reg(pc, reg_bits)?),
-            (O::MB, _) => cr8.set_mb(b0),
-            (O::JNZ, true) => cr8.jnz_imm8(b0),
-            (O::JNZ, false) => cr8.jnz_reg(Runner::reg(pc, reg_bits)?),
-            (O::IN, true) => cr8.in_imm8(&self.devices, Runner::reg(pc, reg_bits)?, b0),
-            (O::IN, false) => cr8.in_reg(
-                &self.devices,
-                Runner::reg(pc, reg_bits)?,
-                Runner::reg(pc, b0)?,
-            ),
-            (O::OUT, true) => cr8.out_imm8(&self.devices, b0, Runner::reg(pc, reg_bits)?),
-            (O::OUT, false) => cr8.out_reg(
-                &self.devices,
-                Runner::reg(pc, reg_bits)?,
-                Runner::reg(pc, b0)?,
-            ),
-            (O::CMP, true) => cr8.cmp_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::CMP, false) => cr8.cmp_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::ADC, true) => cr8.adc_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::ADC, false) => cr8.adc_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::SBB, true) => cr8.sbb_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::SBB, false) => cr8.sbb_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::OR, true) => cr8.or_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::OR, false) => cr8.or_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::NOR, true) => cr8.nor_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::NOR, false) => cr8.nor_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-            (O::AND, true) => cr8.and_imm8(Runner::reg(pc, reg_bits)?, b0),
-            (O::AND, false) => cr8.and_reg(Runner::reg(pc, reg_bits)?, Runner::reg(pc, b0)?),
-        };
-
-        let ticks = ticks?;
-
-        cr8.pc += ticks as u16;
-
-        Ok((cr8.mem.get(target).unwrap_or(0), ticks))
     }
 }

@@ -53,8 +53,8 @@ macro_rules! encodable {
     }) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         $v enum $n {
-            $def,
             $($member,)*
+            $def,
         }
 
         impl From<u8> for $n {
@@ -62,6 +62,15 @@ macro_rules! encodable {
                 match value {
                     $( $val => $n::$member, )*
                     _ => $n::$def,
+                }
+            }
+        }
+
+        impl Into<u8> for $n {
+            fn into(self) -> u8 {
+                match self {
+                    $n::$def => 0xff,
+                    $( $n::$member => $val, )*
                 }
             }
         }
@@ -73,8 +82,8 @@ macro_rules! encodable {
     }) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         $v enum $n {
-            $def,
             $($member,)*
+            $def,
         }
 
         impl From<u8> for $n {
@@ -135,7 +144,7 @@ macro_rules! define_banks {
                         #[cfg(feature = $feature)]
                         Ok(Self::$member) => Ok(Self::$member),
                     )*
-                    Ok(oth) => bail!("Memory bank: {oth:#?} is not connected"),
+                    Ok(oth) => bail!("Memory bank: {i:#?} is not connected"),
                     _ => bail!("Memory bank: {i:#?} is not defined"),
                 }
             }
@@ -147,7 +156,7 @@ macro_rules! define_banks {
 
                 $(
                     #[cfg(feature = $feature)]
-                    write!(f, "      $member: {:#04x}\n", $id::$member as u8)?;
+                    write!(f, "      {:?}: {:#04x}\n", $id::$member, Into::<u8>::into($id::$member))?;
                 )*
 
                 write!(f, "")

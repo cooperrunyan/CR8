@@ -14,6 +14,12 @@ jnza [a0, ir0]:
     jnz $ir0
 
 #macro
+jnz16 [a0, r0, ir0]:
+    or $r0, $ir0
+    ldhl $a0
+    jnz $r0
+
+#macro
 jmp [a0]:
     ldhl $a0
     jnz 1

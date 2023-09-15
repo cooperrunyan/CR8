@@ -4,6 +4,7 @@ pub static STD: phf::Map<&'static str, &'static str> = phf_map! {
     "<std>" => include_str!("std/mod.asm"),
     "<std>/arch" => include_str!("std/arch.asm"),
     "<std>/macro" => include_str!("std/macro/mod.asm"),
+    "<std>/macro/util" => include_str!("std/macro/util.asm"),
     "<std>/macro/math" => include_str!("std/macro/math/mod.asm"),
     "<std>/macro/math/add" => include_str!("std/macro/math/add.asm"),
     "<std>/macro/math/sub" => include_str!("std/macro/math/sub.asm"),

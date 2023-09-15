@@ -10,8 +10,8 @@ sub [r0, ir0]:
 
 #macro
 sub16 [r0, r1, ir0, ir1]:
-    sub %a, $ir0
-    sbb %b, $ir1
+    sub $r0, $ir0
+    sbb $r1, $ir1
 
 #macro
 sbbf [r0]:

@@ -10,8 +10,8 @@ add [r0, ir0]:
 
 #macro
 add16 [r0, r1, ir0, ir1]:
-    add %a, $ir0
-    adc %b, $ir1
+    add $r0, $ir0
+    adc $r1, $ir1
 
 #macro
 adcf [r0]:

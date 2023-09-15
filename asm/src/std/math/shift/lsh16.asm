@@ -1,7 +1,7 @@
 #include "<std>/macro/call"
 #include "<std>/macro/jmp"
 #include "<std>/macro/math/add"
-#include "<std>/macro/math/dec"
+#include "<std>/macro/math/sub"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/math/shift/lsh16
