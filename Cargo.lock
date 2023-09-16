@@ -117,6 +117,7 @@ dependencies = [
 name = "asm"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "env_logger",
  "lazy_static",
  "log",

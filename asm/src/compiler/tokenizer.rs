@@ -1,7 +1,11 @@
+use std::iter::{Enumerate, Peekable};
+use std::str::Chars;
+use std::sync::Arc;
+
 use super::Compiler;
+use anyhow::{bail, Context, Result};
 
 const UNDERSCORE: char = '_';
-const ESCAPE: char = '\\';
 const PERIOD: char = '.';
 const COMMA: char = ',';
 const COLON: char = ':';
@@ -28,34 +32,62 @@ const SPACE: char = ' ';
 const NEW_LINE: char = '\n';
 const DIRECTIVE: char = '#';
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) enum Token {
-    Word(String),
-    String(String),
-    Number(i128),
-    Escape(char),
-    Comma,
-    Colon,
-    MustacheOpen,
-    MustacheClose,
-    BracketOpen,
-    BracketClose,
-    ParenOpen,
-    ParenClose,
-    Equal,
-    LeftShift,
-    RightShift,
-    Add,
-    Sub,
-    Ampersand,
-    Pipe,
-    Mul,
-    Div,
-    Percent,
-    Dollar,
-    Space,
-    NewLine,
-    Directive,
+#[derive(Debug)]
+pub(crate) struct TokenMeta {
+    pub(crate) token: Token,
+    pub(crate) path: Arc<String>,
+    pub(crate) line: usize,
+    pub(crate) col: usize,
+}
+macro_rules! isable {
+    ($v:vis enum $n:ident {
+        $($member:ident($is:ident $(, $inner:ty, $x:pat)?),)*
+    }) => {
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        $v enum $n {
+            $($member $( ($inner) )? ,)*
+        }
+
+        #[allow(dead_code)]
+        impl $n {
+            $(pub fn $is(&self) -> bool {
+                match &self {
+                    $n::$member$(($x))? => true,
+                    _ => false
+                }
+            })*
+        }
+    }
+}
+
+isable! {
+    pub enum Token {
+        Word(is_word, String, _),
+        String(is_str, String, _),
+        Number(is_num, i128, _),
+        Comma(is_comma),
+        Colon(is_colon),
+        MustacheOpen(is_mustache_open),
+        MustacheClose(is_mustache_close),
+        BracketOpen(is_brack_open),
+        BracketClose(is_bracket_close),
+        ParenOpen(is_paren_open),
+        ParenClose(is_paren_close),
+        Equal(is_equal),
+        LeftShift(is_left_shift),
+        RightShift(is_right_shift),
+        Add(is_add),
+        Sub(is_sub),
+        Ampersand(is_ampersand),
+        Pipe(is_pipe),
+        Mul(is_mul),
+        Div(is_div),
+        Percent(is_percent),
+        Dollar(is_dollar),
+        Space(is_space),
+        NewLine(is_newline),
+        Directive(is_directive),
+    }
 }
 
 impl ToString for Token {
@@ -64,7 +96,6 @@ impl ToString for Token {
             Self::Word(v) => v.to_string(),
             Self::String(v) => v.to_string(),
             Self::Number(v) => v.to_string(),
-            Self::Escape(v) => v.to_string(),
             Self::Comma => COMMA.to_string(),
             Self::Colon => COLON.to_string(),
             Self::MustacheOpen => MUSTACHE_OPEN.to_string(),
@@ -92,143 +123,135 @@ impl ToString for Token {
 }
 
 impl Compiler {
-    pub(crate) fn tokenize<'s>(text: &'s str, file: &'s str) -> Vec<Token> {
-        let mut chars = text.chars().peekable();
+    pub(crate) fn tokenize(file: String, path: Arc<String>) -> Result<Vec<TokenMeta>> {
+        let mut chars = file.chars().enumerate().peekable();
+        let mut lines = 0;
+        let mut last_line = 0;
         let mut tokens = vec![];
 
-        while let Some(ch) = chars.next() {
-            let next = match ch {
-                ANGLE_CLOSE => match chars.next() {
-                    Some(ANGLE_CLOSE) => Token::RightShift,
-                    x => err!("Expected `>` after `>` got: {x:?}"),
-                },
-                ANGLE_OPEN => match chars.next() {
-                    Some(ANGLE_OPEN) => Token::LeftShift,
-                    x => err!("Expected `<` after `<` got: {x:?}"),
-                },
-                ESCAPE => {
-                    let Some(_) = chars.peek() else {
-                        err!("Expected a character after `\\`")
-                    };
-                    Token::Escape(chars.next().unwrap())
-                }
-                SPACE => {
-                    while Some(&SPACE) == chars.peek() {
-                        chars.next();
-                    }
-                    Token::Space
-                }
-                'A'..='Z' | 'a'..='z' | UNDERSCORE | PERIOD => {
-                    let mut word = String::new();
-                    word.push(ch);
+        while let Some((i, ch)) = chars.next() {
+            let line = lines;
+            let col = i - last_line;
+            let token = tokenize_next(&mut chars, i, ch, &mut lines, &mut last_line)
+                .context(format!("Error at {path}:{}:{}", line + 1, col + 1))?;
 
-                    while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | &UNDERSCORE | &PERIOD) =
-                        chars.peek()
-                    {
-                        word.push(chars.next().unwrap());
-                    }
-                    Token::Word(word)
-                }
-                '0'..='9' => {
-                    let mut str = String::new();
-                    str.push(ch);
-
-                    while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | &UNDERSCORE) = chars.peek() {
-                        let next = chars.next().unwrap();
-                        if next != UNDERSCORE {
-                            str.push(next);
-                        }
-                    }
-
-                    let num = if let Some(b) = str.strip_prefix("0b") {
-                        if b.len() > 16 {
-                            let mut split: Vec<String> = vec![];
-                            let mut skip = 0;
-                            for (i, ch) in b.chars().enumerate() {
-                                if skip > 0 {
-                                    skip -= 1;
-                                    continue;
-                                }
-                                let mut byt = String::new();
-                                byt.push(ch);
-                                byt.push(b.chars().nth(i + 1).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 2).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 3).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 4).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 5).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 6).unwrap_or(' '));
-                                byt.push(b.chars().nth(i + 7).unwrap_or(' '));
-                                split.push(byt.trim().to_string());
-                                skip = 7;
-                            }
-                            let split = split
-                                .into_iter()
-                                .map(|s| i128::from_str_radix(&s, 2).unwrap())
-                                .collect::<Vec<_>>();
-                            let (nums, last) = split.split_at(split.len() - 1);
-                            for num in nums {
-                                tokens.push(Token::Number(*num));
-                                tokens.push(Token::Comma);
-                            }
-                            Ok(*last.get(0).unwrap())
-                        } else {
-                            i128::from_str_radix(b, 2)
-                        }
-                    } else if let Some(h) = str.strip_prefix("0x") {
-                        i128::from_str_radix(h, 16)
-                    } else {
-                        str.parse::<i128>()
-                    };
-
-                    match num {
-                        Ok(n) => Token::Number(n),
-                        Err(e) => {
-                            err!("Error at {file:?}\nInvalid number: {str:#?} \n\n{e}")
-                        }
-                    }
-                }
-
-                NEW_LINE => Token::NewLine,
-                COMMA => Token::Comma,
-                COLON => Token::Colon,
-                SEMI_COLON => {
-                    while chars.peek() != Some(&NEW_LINE) {
-                        chars.next();
-                    }
-                    Token::Space
-                }
-                MUSTACHE_OPEN => Token::MustacheOpen,
-                MUSTACHE_CLOSE => Token::MustacheClose,
-                BRACKET_OPEN => Token::BracketOpen,
-                BRACKET_CLOSE => Token::BracketClose,
-                PAREN_OPEN => Token::ParenOpen,
-                PAREN_CLOSE => Token::ParenClose,
-                DOUBLE_QUOTE => {
-                    let mut str = String::new();
-                    while let Some(ch) = chars.next() {
-                        if ch == DOUBLE_QUOTE {
-                            break;
-                        }
-                        str.push(ch)
-                    }
-                    Token::String(str)
-                }
-                EQUAL => Token::Equal,
-                ADD => Token::Add,
-                SUB => Token::Sub,
-                AMPERSAND => Token::Ampersand,
-                PIPE => Token::Pipe,
-                MUL => Token::Mul,
-                DIV => Token::Div,
-                PERCENT => Token::Percent,
-                DOLLAR => Token::Dollar,
-                DIRECTIVE => Token::Directive,
-                other => err!("Unknown token: {other:#?}"),
-            };
-
-            tokens.push(next);
+            tokens.push(TokenMeta {
+                token,
+                path: path.clone(),
+                line,
+                col,
+            });
         }
 
-        tokens
+        Ok(tokens)
     }
+}
+
+fn tokenize_next(
+    chars: &mut Peekable<Enumerate<Chars>>,
+    i: usize,
+    ch: char,
+    lines: &mut usize,
+    last_line: &mut usize,
+) -> Result<Token> {
+    let next = match ch {
+        ANGLE_CLOSE => match chars.next() {
+            Some((_, ANGLE_CLOSE)) => Token::RightShift,
+            x => bail!("Expected `>` after `>` got: {x:?}"),
+        },
+        ANGLE_OPEN => match chars.next() {
+            Some((_, ANGLE_OPEN)) => Token::LeftShift,
+            x => bail!("Expected `<` after `<` got: {x:?}"),
+        },
+        SPACE => {
+            while Some(SPACE) == chars.peek().map(|t| t.1) {
+                chars.next();
+            }
+            Token::Space
+        }
+        'A'..='Z' | 'a'..='z' | UNDERSCORE | PERIOD => {
+            let mut s = String::new();
+            s.push(ch);
+
+            while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | UNDERSCORE | PERIOD) =
+                chars.peek().map(|t| t.1)
+            {
+                s.push(chars.next().unwrap().1);
+            }
+            Token::Word(s)
+        }
+        '0'..='9' => {
+            let mut str = String::new();
+            str.push(ch);
+
+            while let Some('A'..='Z' | 'a'..='z' | '0'..='9' | UNDERSCORE) =
+                chars.peek().map(|t| t.1)
+            {
+                let next = chars.next().map(|t| t.1).unwrap();
+                if next != UNDERSCORE {
+                    str.push(next);
+                }
+            }
+
+            let num = {
+                if let Some(b) = str.strip_prefix("0b") {
+                    i128::from_str_radix(b, 2)
+                } else if let Some(h) = str.strip_prefix("0x") {
+                    i128::from_str_radix(h, 16)
+                } else {
+                    str.parse::<i128>()
+                }
+            };
+
+            match num {
+                Ok(n) => Token::Number(n),
+                Err(_) => bail!("Invalid number: {str:#?}"),
+            }
+        }
+
+        NEW_LINE => {
+            *last_line = i;
+            *lines += 1;
+            Token::NewLine
+        }
+        COMMA => Token::Comma,
+        COLON => Token::Colon,
+        SEMI_COLON => {
+            while chars.peek().map(|t| t.1) != Some(NEW_LINE) {
+                chars.next();
+            }
+            Token::Space
+        }
+        DOUBLE_QUOTE => {
+            let mut s = String::new();
+            while let Some(x) = chars.peek().map(|t| t.1) {
+                if x == DOUBLE_QUOTE {
+                    chars.next();
+                    break;
+                }
+                s.push(x);
+                chars.next();
+            }
+            Token::String(s)
+        }
+        MUSTACHE_OPEN => Token::MustacheOpen,
+        MUSTACHE_CLOSE => Token::MustacheClose,
+        BRACKET_OPEN => Token::BracketOpen,
+        BRACKET_CLOSE => Token::BracketClose,
+        PAREN_OPEN => Token::ParenOpen,
+        PAREN_CLOSE => Token::ParenClose,
+        EQUAL => Token::Equal,
+        ADD => Token::Add,
+        SUB => Token::Sub,
+        AMPERSAND => Token::Ampersand,
+        PIPE => Token::Pipe,
+        MUL => Token::Mul,
+        DIV => Token::Div,
+        PERCENT => Token::Percent,
+        DOLLAR => Token::Dollar,
+        DIRECTIVE => Token::Directive,
+        oth => bail!(format!("Unexpected: {oth:#?}")),
+    };
+
+    Ok(next)
 }

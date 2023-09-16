@@ -2,34 +2,37 @@ use crate::compiler::ast::{Ident, Instruction, Label, ToNode, ToValue, Value};
 use crate::compiler::tokenizer::Token;
 use crate::{op::Operation, reg::Register};
 
+use anyhow::{anyhow, bail, Result};
+
 use super::Lexer;
 
-impl<'s> Lexer<'s> {
-    pub(super) fn lex_word(&mut self, word: String) -> Result<(), String> {
-        defnext!(self, word, Word(x));
-
-        if self.tokens.peek() == Some(&Token::Colon) {
-            self.nodes.push(Label::from(word).to_node());
-            self.tokens.next();
-            return Ok(());
-        }
+impl Lexer {
+    pub(super) fn lex_word(&mut self, word: String) -> Result<()> {
+        match self.tokens.peek().map(|x| x.token.clone()) {
+            Some(Token::Colon) => {
+                self.nodes.push(Label::from(word).to_node());
+                self.tokens.next();
+                return Ok(());
+            }
+            _ => {}
+        };
         let inst = word;
         let mut args = vec![];
-        while let Some(next) = self.tokens.next() {
-            match next {
+        while_next!(self, next, {
+            match next.token {
                 Token::Space => continue,
                 Token::Dollar => {
-                    let arg = word!("Expected word after '$'");
+                    let arg = expect!(self, "Expected word after '$'", Word(x));
                     args.push(Ident::MacroArg(arg).to_value());
                 }
                 Token::Ampersand => {
-                    let stat = word!("Expected static after '&'");
+                    let stat = expect!(self, "Expected static after '&'", Word(x));
                     args.push(Ident::Static(stat).to_value());
                 }
                 Token::Percent => {
-                    let reg = word!("Unexpected symbol");
+                    let reg = expect!(self, "Unexpected symbol", Word(x));
                     let Ok(reg) = Register::try_from(reg.as_str()) else {
-                        return err!("Invalid register: {reg}");
+                        bail!("Invalid register: {reg}");
                     };
 
                     args.push(reg.to_value());
@@ -37,19 +40,19 @@ impl<'s> Lexer<'s> {
                 Token::Number(n) => args.push(n.to_value()),
                 Token::BracketOpen => {
                     let mut expr = String::new();
-                    while let Some(next) = self.tokens.next() {
-                        match next {
+                    while_next!(self, next, {
+                        match next.token {
                             Token::BracketClose => break,
                             oth => expr.push_str(&oth.to_string()),
                         }
-                    }
+                    });
                     args.push(Value::Expression(expr))
                 }
                 Token::Comma => continue,
                 Token::NewLine => break,
-                oth => err!("Unexpected value {oth:#?} after {inst:#?}")?,
+                oth => bail!("Unexpected value {oth:#?} after {inst:#?}"),
             }
-        }
+        });
 
         if let Ok(op) = Operation::try_from(inst.as_str()) {
             self.nodes.push(Instruction::Native(op, args).to_node());

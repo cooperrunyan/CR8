@@ -1,4 +1,6 @@
+use anyhow::Result;
 use std::fs;
+use std::sync::Arc;
 
 use super::Compiler;
 use crate::compiler::ast::Directive;
@@ -6,49 +8,63 @@ use crate::compiler::lexer::Lexer;
 use crate::compiler::{AstNode, STD};
 
 impl Compiler {
-    pub(crate) fn resolve_directives(&mut self, nodes: Vec<AstNode>) {
+    pub(crate) fn resolve_directives(&mut self, nodes: Vec<AstNode>) -> Result<()> {
         for node in nodes {
             match node {
                 AstNode::Directive(Directive::Import(f)) => {
-                    if self.files.contains(&f) {
+                    let mut ex = false;
+                    for fexisting in self.files.iter() {
+                        if fexisting.as_str() == f.as_str() {
+                            ex = true;
+                            break;
+                        }
+                    }
+                    if ex {
                         continue;
                     }
+                    let file = {
+                        let file = if f.starts_with("<std>") {
+                            if let Some(file) = STD.get(&f) {
+                                file.to_string()
+                            } else {
+                                panic!("Attempted to import non-existent <std> file: {f:#?}")
+                            }
+                        } else {
+                            if let Ok(file) = fs::read_to_string(&f) {
+                                file
+                            } else {
+                                panic!("Unresolved import: {f:#?}")
+                            }
+                        };
 
-                    let file = if f.starts_with("<std>") {
-                        if let Some(file) = STD.get(&f) {
-                            file.to_string()
-                        } else {
-                            panic!("Attempted to import non-existent <std> file: {f:#?}")
-                        }
-                    } else {
-                        if let Ok(file) = fs::read_to_string(&f) {
-                            file
-                        } else {
-                            panic!("Unresolved import: {f:#?}")
-                        }
+                        self.files.push(Arc::new(f));
+                        file
                     };
 
-                    let tokens = Compiler::tokenize(&file, &f);
-                    let nodes = match Lexer::new(tokens, &f).lex() {
-                        Ok(n) => n.nodes,
-                        Err(e) => panic!("Error at file: {}\n{}", &f, e),
+                    let nodes = {
+                        let f = self.files.last().unwrap();
+
+                        let tokens = Compiler::tokenize(file, f.clone())?;
+                        let nodes = match Lexer::new(tokens, f.clone()).lex() {
+                            Ok(n) => n.nodes,
+                            Err(e) => err!("Error at file: {:?}\n{}", &f, e),
+                        };
+                        nodes
                     };
 
-                    self.resolve_directives(nodes);
-
-                    self.files.push(f);
+                    self.resolve_directives(nodes)?;
                 }
                 AstNode::Directive(Directive::Define(k, v)) => {
                     if self.statics.contains_key(&k) {
                         panic!("Error: attempted to define {k} twice");
                     }
-                    self.statics.insert(k, v);
+                    self.statics.insert(k.to_string(), v);
                 }
                 AstNode::Directive(Directive::Dynamic(k, v)) => {
                     if self.ram_locations.contains_key(&k) {
                         panic!("Error: attempted to set #dyn {k:#?} twice");
                     }
-                    self.ram_locations.insert(k, self.ram_length);
+                    self.ram_locations.insert(k.to_string(), self.ram_length);
                     self.ram_length += v;
                 }
                 AstNode::Directive(Directive::Origin(v)) => {
@@ -59,10 +75,12 @@ impl Compiler {
                         panic!("Error: attempted to set macro {:#?} twice", m.name);
                     }
 
-                    self.macros.insert(m.name.clone(), m);
+                    self.macros.insert(m.name.to_string(), m);
                 }
                 oth => self.tree.push(oth),
             }
         }
+
+        Ok(())
     }
 }

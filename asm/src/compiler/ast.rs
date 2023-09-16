@@ -105,9 +105,9 @@ pub enum Value {
     Ident(Ident),
 }
 
-to_value! {Register, Value::Register}
 to_value! {AddrByte, Value::AddrByte}
 to_value! {Ident, Value::Ident}
+to_value! {Register, Value::Register}
 to_value! {i128, Value::Immediate}
 
 #[derive(Debug, Clone)]
@@ -121,5 +121,4 @@ pub enum Ident {
     Static(String),
     Addr(String),
     MacroArg(String),
-    PC,
 }

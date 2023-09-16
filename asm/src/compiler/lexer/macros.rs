@@ -1,35 +1,57 @@
-macro_rules! ignore_space {
-    ($tkns:expr) => {
-        if $tkns.peek() == Some(&Token::Space) {
-            $tkns.next();
+macro_rules! while_peek {
+    ($self:ident, $n:ident, $do:block) => {
+        while let Some($n) = $self.tokens.peek() {
+            let $n = $n.token.clone();
+            $do;
+            $self.tokens.next();
         }
     };
 }
 
-macro_rules! ignore_line_space {
-    ($tkns:expr) => {
-        while $tkns.peek() == Some(&Token::Space) || $tkns.peek() == Some(&Token::NewLine) {
-            $tkns.next();
+macro_rules! while_next {
+    ($self:ident, $n:ident, $do:block) => {
+        while let Some($n) = $self.tokens.next() {
+            $do
         }
     };
 }
 
-macro_rules! err {
-    ($err:expr $(, $arg:expr )*) => {
-        Err(format!($err $(, $arg)*))
-    }
+macro_rules! ignore {
+    ($self:ident, $p:pat) => {
+        while_peek!($self, n, {
+            match n {
+                $p => {}
+                _ => break,
+            }
+        });
+    };
 }
 
-macro_rules! defnext {
-    ($self:ident, $name:ident, $t:ident$(($a:ident))?) => {
-        macro_rules! $name {
-            ($err:expr) => {{
-                let w = match $self.tokens.next() {
-                    Some(Token::$t $(($a))?) => ($($a)?),
-                    _ => Err(format!($err))?,
-                };
-                w
-            }};
+macro_rules! next {
+    ($self:ident) => {
+        match $self.tokens.next() {
+            Some(t) => t,
+            _ => bail!("Expected token but found none"),
         }
+    };
+}
+macro_rules! expect {
+    ($self:ident, $msg:expr, match $is:ident $( | $oneof:ident)*) => {
+        {
+            let next = next!($self);
+            if next.token.$is() {
+                next.token
+            }
+            $(else if next.token.$oneof() { next.token })*
+            else { Err(anyhow!($msg).context(format!("File: {}:{}:{}", next.path, next.line + 1, next.col + 1)))? }
+        }
+    };
+    ($self:ident, $msg:expr, $t:ident($inner:ident)) => {
+        {
+            let next = next!($self);
+            match next.token {
+            Token::$t($inner) => $inner,
+            _ => Err(anyhow!($msg).context(format!("File: {}:{}:{}", next.path, next.line + 1, next.col + 1)))?
+        }}
     };
 }

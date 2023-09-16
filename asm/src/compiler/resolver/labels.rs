@@ -9,7 +9,7 @@ impl Compiler {
             match node {
                 AstNode::Label(Label::Label(ln)) => {
                     self.last_label = ln.to_string();
-                    self.labels.insert(ln.to_owned(), self.pc);
+                    self.labels.insert(ln.to_string(), self.pc);
                 }
                 AstNode::Label(Label::SubLabel(sub)) => {
                     self.labels
@@ -24,7 +24,7 @@ impl Compiler {
                 }
                 AstNode::Directive(Directive::Rom(name, val)) => {
                     let len = val.len();
-                    self.labels.insert(name.to_owned(), self.pc);
+                    self.labels.insert(name.to_string(), self.pc);
                     self.pc += len;
                 }
                 AstNode::Directive(Directive::Marker(name)) => {

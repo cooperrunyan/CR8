@@ -1,6 +1,7 @@
+use anyhow::Result;
 use asm::compiler::{Compiler, Config};
 
-fn main() {
+fn main() -> Result<()> {
     env_logger::builder()
         .format_timestamp(None)
         .write_style(env_logger::WriteStyle::Always)
@@ -10,7 +11,9 @@ fn main() {
     let config = Config::from_argv();
     let mut compiler = Compiler::new();
 
-    compiler.push(config.input);
+    compiler.push(config.input)?;
 
-    let _ = config.output.write(&compiler.compile());
+    let _ = config.output.write(&compiler.compile()?);
+
+    Ok(())
 }

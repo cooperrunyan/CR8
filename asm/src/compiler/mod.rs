@@ -1,5 +1,7 @@
+use anyhow::{bail, Result};
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 
 mod ast;
 mod config;
@@ -27,7 +29,7 @@ pub struct Compiler {
     labels: HashMap<String, usize>,
     last_label: String,
     pc: usize,
-    files: Vec<String>,
+    files: Vec<Arc<String>>,
     macros: HashMap<String, Macro>,
     statics: HashMap<String, u128>,
     ram_locations: HashMap<String, u128>,
@@ -52,7 +54,7 @@ impl Compiler {
         }
     }
 
-    pub fn compile(mut self) -> Vec<u8> {
+    pub fn compile(mut self) -> Result<Vec<u8>> {
         use Operation::*;
 
         self.debug();
@@ -79,11 +81,11 @@ impl Compiler {
                         match arg {
                             Value::AddrByte(AddrByte::High(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push((a >> 8) as u8),
-                                Err(e) => err!("Unknown address: {a:#?}. {e:#?}"),
+                                Err(e) => bail!("Unknown address: {a:#?}. {e:#?}"),
                             },
                             Value::AddrByte(AddrByte::Low(a)) => match self.resolve_expr(&a) {
                                 Ok(a) => compiled_args.push(a as u8),
-                                Err(e) => err!("Unknown address: {a:#?}. {e:#?}"),
+                                Err(e) => bail!("Unknown address: {a:#?}. {e:#?}"),
                             },
                             Value::Register(r) => {
                                 if regn > 0 {
@@ -101,10 +103,10 @@ impl Compiler {
                                         compiled_args.push((a >> 8) as u8);
                                     }
                                 }
-                                Err(()) => err!("Unknown identifier: {id:#?}"),
+                                Err(()) => bail!("Unknown identifier: {id:#?}"),
                             },
                             Value::Expression(exp) => match self.resolve_expr(&exp) {
-                                Err(e) => err!("Failed to resolve: {exp:#?}. {e:#?}"),
+                                Err(e) => bail!("Failed to resolve: {exp:#?}. {e:#?}"),
                                 Ok(v) => {
                                     compiled_args.push(v as u8);
                                     if op == LW || op == SW {
@@ -132,33 +134,38 @@ impl Compiler {
 
         self.debug();
 
-        self.bin
+        Ok(self.bin)
     }
 
-    pub fn push(&mut self, input: Input) {
-        let (source, file) = match input {
-            Input::File(f) => {
-                let f = if f.ends_with(".asm") {
-                    f
-                } else {
-                    format!("{f}.asm")
-                };
-                let Ok(source) = fs::read_to_string(&f) else {
-                    err!("Failed to read {f}");
-                };
-                (source, f)
-            }
-            Input::Raw(s) => (s, "raw".to_string()),
+    pub fn push(&mut self, input: Input) -> Result<()> {
+        let source = {
+            let (source, file) = match input {
+                Input::File(f) => {
+                    let f = if f.ends_with(".asm") {
+                        f
+                    } else {
+                        format!("{f}.asm")
+                    };
+                    let Ok(source) = fs::read_to_string(&f) else {
+                        bail!("Failed to read {f}");
+                    };
+                    (source, f)
+                }
+                Input::Raw(s) => (s, "raw".to_string()),
+            };
+
+            self.files.push(Arc::new(file));
+            source
+        };
+        let nodes = {
+            let file = self.files.last().unwrap();
+
+            let tokens = Compiler::tokenize(source, file.clone())?;
+            Lexer::new(tokens, file.clone()).lex()?.nodes
         };
 
-        self.files.push(file.clone());
+        self.resolve_directives(nodes)?;
 
-        let tokens = Compiler::tokenize(&source, &file);
-        let nodes = match Lexer::new(tokens, &file).lex() {
-            Ok(n) => n.nodes,
-            Err(e) => err!("Error at file: {:?}\n{}", &file, e),
-        };
-
-        self.resolve_directives(nodes);
+        Ok(())
     }
 }

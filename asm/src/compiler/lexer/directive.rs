@@ -3,79 +3,77 @@ use crate::compiler::ast::Macro;
 use crate::compiler::ast::MacroArg;
 use crate::compiler::ast::ToNode;
 
+use anyhow::{anyhow, bail, Result};
+
 use super::AstNode;
 use super::Lexer;
 use super::Token;
 
-impl<'s> Lexer<'s> {
-    pub(crate) fn lex_directive(&mut self) -> Result<(), String> {
-        defnext!(self, word, Word(x));
-        defnext!(self, num, Number(x));
-        defnext!(self, stri, String(x));
-        defnext!(self, brackopen, BracketOpen);
-        defnext!(self, space, Space);
-        defnext!(self, colon, Colon);
-
-        let directive = word!("Expected directive after: '#'");
+impl Lexer {
+    pub(crate) fn lex_directive(&mut self) -> Result<()> {
+        let directive = expect!(self, "Expected directive after: '#'", Word(x));
         match directive.as_str() {
             "include" => {
-                space!("Syntax error");
-                let path = stri!("Expected path after #include statement");
+                expect!(self, "Syntax error", match is_space);
+                let path = expect!(self, "Expected path after #include statement", String(x));
                 self.nodes.push(Directive::Import(path).to_node());
             }
             "origin" => {
-                space!("Syntax error");
-                let addr = num!("Expected address after #origin");
+                expect!(self, "Syntax error", match is_space);
+                let addr = expect!(self, "Expected address after #origin", Number(x));
                 self.nodes.push(Directive::Origin(addr as u128).to_node());
             }
             "marker" => {
-                space!("Syntax error");
-                let name = word!("Expected name after #marker");
+                expect!(self, "Syntax error", match is_space);
+                let name = expect!(self, "Expected name after #marker", Word(x));
                 self.nodes.push(Directive::Marker(name).to_node());
             }
             "define" => {
-                space!("Syntax error");
-                let name = word!("Expected name for #define statement");
-                space!("Syntax error");
-                let val = num!("Expected value for #define statement");
+                expect!(self, "Syntax error", match is_space);
+                let name = expect!(self, "Expected name for #define statement", Word(x));
+                expect!(self, "Syntax error", match is_space);
+                let val = expect!(self, "Expected value for #define statement", Number(x));
                 self.nodes
                     .push(Directive::Define(name, val as u128).to_node());
             }
             "dyn" | "mem" => {
-                space!("Syntax error");
+                expect!(self, "Syntax error", match is_space);
 
-                let len = match self.tokens.next() {
-                    Some(Token::Word(s)) => match s.as_str() {
+                let next =
+                    expect!(self, "Expected length after '#{directive:?}'", match is_num | is_word);
+
+                let len = match next {
+                    Token::Word(w) => match w.as_str() {
                         "byte" => 1,
                         "word" => 2,
-                        t => err!("Invalid type for #{directive:?} definition: {t}")?,
+                        _ => bail!("Expected length after '#{directive:?}'"),
                     },
-                    Some(Token::Number(l)) => l,
-                    _ => err!("Expected length after '#{directive:?}'")?,
+                    Token::Number(l) => l,
+                    _ => bail!("Expected length after '#{directive:?}'"),
                 };
 
-                space!("Syntax error");
+                expect!(self, "Syntax error", match is_space);
 
-                let name = word!("Expected name after '#{directive:?}'");
+                let name = expect!(self, "Expected name after '#{directive:?}'", Word(x));
 
                 if directive == "mem" {
-                    space!("Syntax error");
+                    expect!(self, "Syntax error", match is_space);
 
                     let mut val = vec![];
                     if len == 1 {
-                        let v = num!("Expected value after #mem assignment");
+                        let v = expect!(self, "Expected value after #mem assignment", Number(x));
                         val.push(v as u8);
                     } else if len == 2 {
-                        let v = num!("Expected value after #mem assignment");
+                        let v = expect!(self, "Expected value after #mem assignment", Number(x));
                         val.push(v as u8);
                         val.push((v >> 8) as u8);
                     } else {
-                        brackopen!("Expected '[0, 0, ...]' for #mem assignments longer than 2");
-                        while let Some(next_num) = self.tokens.next() {
-                            match next_num {
+                        expect!(self, "Expected '[0, 0, ...]' for #mem assignments longer than 2", match is_brack_open);
+                        while_next!(self, next_num, {
+                            match next_num.token {
                                 Token::Number(n) => {
                                     val.push(n as u8);
-                                    while let Some(next_num) = self.tokens.peek() {
+                                    while_peek!(self, next_num, {
                                         match next_num {
                                             Token::Comma => break,
                                             Token::BracketClose => break,
@@ -83,23 +81,23 @@ impl<'s> Lexer<'s> {
                                                 self.tokens.next();
                                             }
                                             other => {
-                                                err!("Expected [0, 0, 0, ...], got: {other:?}")?
+                                                bail!("Expected [0, 0, 0, ...], got: {other:?}")
                                             }
                                         }
-                                    }
+                                    });
                                 }
                                 Token::Comma | Token::NewLine | Token::Space => continue,
                                 Token::BracketClose => break,
-                                other => err!("Expected [0, 0, 0, ...], got: {other:?}")?,
+                                other => bail!("Expected [0, 0, 0, ...], got: {other:?}"),
                             }
-                        }
+                        });
                     }
 
                     if val.len() != len as usize {
-                        err!(
+                        bail!(
                             "Expected {name} to be {len} bytes long, got {} bytes",
                             val.len()
-                        )?
+                        );
                     }
 
                     self.nodes.push(Directive::Rom(name, val).to_node())
@@ -109,16 +107,16 @@ impl<'s> Lexer<'s> {
                 }
             }
             "macro" => {
-                ignore_line_space!(self.tokens);
-                let name = word!("Expected macro name");
-                ignore_space!(self.tokens);
-                brackopen!("Expected macro args");
-                ignore_space!(self.tokens);
+                ignore!(self, Token::NewLine | Token::Space);
+                let name = expect!(self, "Expected macro name", Word(x));
+                ignore!(self, Token::Space);
+                expect!(self, "Expected macro args", match is_brack_open);
+                ignore!(self, Token::Space);
 
                 let mut args = vec![];
-                while let Some(next) = self.tokens.next() {
-                    ignore_space!(self.tokens);
-                    match next {
+                while_next!(self, next, {
+                    ignore!(self, Token::Space);
+                    match next.token {
                         Token::Word(arg) => {
                             if arg.starts_with("ir") {
                                 args.push(MacroArg::ImmReg(arg))
@@ -129,32 +127,33 @@ impl<'s> Lexer<'s> {
                             } else if arg.starts_with('a') {
                                 args.push(MacroArg::Addr(arg))
                             } else {
-                                err!("Macro arg should start with 'i' 'ir' 'r' or 'a' to signify its type")?
+                                bail!("Macro arg should start with 'i' 'ir' 'r' or 'a' to signify its type")
                             }
                         }
                         Token::Comma => continue,
                         Token::BracketClose => break,
-                        oth => err!("Unexpected value: {oth:?}")?,
+                        oth => bail!("Unexpected value: {oth:?}"),
                     }
-                }
+                });
 
-                colon!("Invalid macro syntax");
+                expect!(self, "Invalid macro syntax", match is_colon);
 
                 let mut body = vec![];
 
-                while let Some(next) = self.tokens.next() {
-                    match next {
+                while_next!(self, next, {
+                    match next.token.clone() {
                         Token::NewLine => {
-                            if self.tokens.peek() == Some(&Token::NewLine) {
-                                break;
-                            }
-                            body.push(Token::NewLine);
+                            match self.tokens.peek().map(|x| x.token.clone()) {
+                                Some(Token::NewLine) => break,
+                                _ => {}
+                            };
+                            body.push(next);
                         }
-                        oth => body.push(oth),
+                        _ => body.push(next),
                     }
-                }
+                });
 
-                let mac_nodes = Lexer::new(body, self.file)
+                let mac_nodes = Lexer::new(body, self.file.clone())
                     .lex()?
                     .nodes
                     .into_iter()
@@ -169,7 +168,7 @@ impl<'s> Lexer<'s> {
 
                 self.nodes.push(Macro::new(name, args, mac_nodes).to_node())
             }
-            _ => err!("Invalid directive: '#{directive}'")?,
+            _ => bail!("Invalid directive: '#{directive}'"),
         };
         Ok(())
     }

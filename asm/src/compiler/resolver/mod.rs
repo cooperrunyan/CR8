@@ -17,7 +17,6 @@ impl Compiler {
         match ident {
             Ident::Addr(a) => self.resolve_expr(&a).map_err(|_| ()),
             Ident::Static(s) => self.resolve_static(&s),
-            Ident::PC => Ok(self.pc as i128),
             _ => Err(()),
         }
     }
