@@ -42,22 +42,14 @@ frmwof:
         mov %l, %a
         mov %h, %b
         lw %z
-        #marker inc
         inc16 %l, %h
-        #marker moval
         mov %a, %l
         mov %b, %h
-        #marker movlc
         mov %l, %c
-        #marker movld
         mov %h, %d
-        #marker movswz
         sw %z
-        #marker incinh
         inc16 %l, %h
-        #marker pushc
         push %l ; c
-        #marker pushd
         push %h ; d
         lw %c, [PSR0]
         lw %d, [PSR1]

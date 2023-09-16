@@ -23,11 +23,6 @@ impl Lexer {
                 let addr = expect!(self, "Expected address after #origin", Number(x));
                 self.nodes.push(Directive::Origin(addr as u128).to_node());
             }
-            "marker" => {
-                expect!(self, "Syntax error", match is_space);
-                let name = expect!(self, "Expected name after #marker", Word(x));
-                self.nodes.push(Directive::Marker(name).to_node());
-            }
             "define" => {
                 expect!(self, "Syntax error", match is_space);
                 let name = expect!(self, "Expected name for #define statement", Word(x));

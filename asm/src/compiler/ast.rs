@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{op::Operation, reg::Register};
 
 macro_rules! impl_conv {
@@ -56,7 +58,6 @@ pub enum Directive {
     Rom(String, Vec<u8>),
     Define(String, u128),
     Import(String),
-    Marker(String),
 }
 
 #[derive(Debug)]
@@ -90,10 +91,45 @@ pub enum MacroArg {
     Addr(String),
 }
 
+impl Display for MacroArg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Addr(a) | Self::ImmReg(a) | Self::Immediate(a) | Self::Register(a) => {
+                f.write_fmt(format_args!("{a}"))
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum Instruction {
     Native(Operation, Vec<Value>),
     Macro(String, Vec<Value>),
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let args = match self {
+            Self::Native(i, a) => {
+                f.write_fmt(format_args!("{i} "))?;
+                a
+            }
+            Self::Macro(m, a) => {
+                f.write_fmt(format_args!("{m} "))?;
+                a
+            }
+        };
+
+        for (i, arg) in args.iter().enumerate() {
+            f.write_fmt(format_args!("{arg}"))?;
+
+            if i != args.len() - 1 {
+                f.write_str(", ")?
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -103,6 +139,24 @@ pub enum Value {
     Register(Register),
     AddrByte(AddrByte),
     Ident(Ident),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::AddrByte(a) => a.fmt(f),
+            Self::Ident(a) => a.fmt(f),
+            Self::Register(r) => f.write_fmt(format_args!("%{r}")),
+            Self::Immediate(i) => {
+                if *i > 0xff {
+                    f.write_fmt(format_args!("{i:#06x}"))
+                } else {
+                    f.write_fmt(format_args!("{i:#04x}"))
+                }
+            }
+            Self::Expression(e) => f.write_fmt(format_args!("[{e}]")),
+        }
+    }
 }
 
 to_value! {AddrByte, Value::AddrByte}
@@ -116,9 +170,26 @@ pub enum AddrByte {
     High(String),
 }
 
+impl Display for AddrByte {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Low(a) => f.write_fmt(format_args!("[{a} & 0x00FF]")),
+            Self::High(a) => f.write_fmt(format_args!("[{a} >> 8]")),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Ident {
     Static(String),
     Addr(String),
     MacroArg(String),
+}
+
+impl Display for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Addr(a) | Self::MacroArg(a) | Self::Static(a) => f.write_str(&a),
+        }
+    }
 }

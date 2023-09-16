@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::fs;
 use std::sync::Arc;
 
@@ -27,13 +27,13 @@ impl Compiler {
                             if let Some(file) = STD.get(&f) {
                                 file.to_string()
                             } else {
-                                panic!("Attempted to import non-existent <std> file: {f:#?}")
+                                bail!("Attempted to import non-existent <std> file: {f:#?}")
                             }
                         } else {
                             if let Ok(file) = fs::read_to_string(&f) {
                                 file
                             } else {
-                                panic!("Unresolved import: {f:#?}")
+                                bail!("Unresolved import: {f:#?}")
                             }
                         };
 
@@ -45,24 +45,20 @@ impl Compiler {
                         let f = self.files.last().unwrap();
 
                         let tokens = Compiler::tokenize(file, f.clone())?;
-                        let nodes = match Lexer::new(tokens, f.clone()).lex() {
-                            Ok(n) => n.nodes,
-                            Err(e) => err!("Error at file: {:?}\n{}", &f, e),
-                        };
-                        nodes
+                        Lexer::new(tokens, f.clone()).lex()?.nodes
                     };
 
                     self.resolve_directives(nodes)?;
                 }
                 AstNode::Directive(Directive::Define(k, v)) => {
                     if self.statics.contains_key(&k) {
-                        panic!("Error: attempted to define {k} twice");
+                        bail!("Error: attempted to define {k} twice");
                     }
                     self.statics.insert(k.to_string(), v);
                 }
                 AstNode::Directive(Directive::Dynamic(k, v)) => {
                     if self.ram_locations.contains_key(&k) {
-                        panic!("Error: attempted to set #dyn {k:#?} twice");
+                        bail!("Error: attempted to set #dyn {k:#?} twice");
                     }
                     self.ram_locations.insert(k.to_string(), self.ram_length);
                     self.ram_length += v;
@@ -72,7 +68,7 @@ impl Compiler {
                 }
                 AstNode::Directive(Directive::Macro(m)) => {
                     if self.macros.contains_key(&m.name) {
-                        panic!("Error: attempted to set macro {:#?} twice", m.name);
+                        bail!("Error: attempted to set macro {:#?} twice", m.name);
                     }
 
                     self.macros.insert(m.name.to_string(), m);

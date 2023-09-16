@@ -27,6 +27,15 @@ macro_rules! encodable {
                 }
             }
         }
+
+        impl std::fmt::Display for $n {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $( $n::$member => f.write_str($str), )*
+                }
+            }
+        }
+
     };
     ($v:vis enum $n:ident {
         $($member:ident($val:literal),)*

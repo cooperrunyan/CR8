@@ -26,6 +26,7 @@ use super::std::STD;
 pub struct Compiler {
     bin: Vec<u8>,
     tree: Vec<AstNode>,
+    markers: HashMap<usize, String>,
     labels: HashMap<String, usize>,
     last_label: String,
     pc: usize,
@@ -42,6 +43,7 @@ impl Compiler {
         Self {
             bin: vec![],
             tree: vec![],
+            markers: HashMap::new(),
             labels: HashMap::new(),
             last_label: String::new(),
             pc: 0,
@@ -73,6 +75,15 @@ impl Compiler {
                 AstNode::Directive(ast::Directive::Rom(_, mut val)) => self.bin.append(&mut val),
                 AstNode::Label(Label::Label(ln)) => self.last_label = ln,
                 AstNode::Instruction(Instruction::Native(op, args)) => {
+                    let mut marker = format!("{op} ");
+                    for (i, arg) in args.iter().enumerate() {
+                        marker.push_str(&format!("{arg}"));
+                        if i != args.len() - 1 {
+                            marker.push_str(&format!(", "));
+                        }
+                    }
+                    self.markers.insert(self.bin.len(), marker);
+
                     let mut header = (op as u8) << 4;
                     let mut compiled_args: Vec<u8> = vec![];
                     let mut regn = 0;

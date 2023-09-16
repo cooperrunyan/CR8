@@ -1,9 +1,9 @@
 use super::*;
-use log::debug;
+use log::info;
 
 impl CR8 {
     pub fn debug(&self) {
-        debug!(
+        info!(
             "\n{}",
             format!(
                 r#"
