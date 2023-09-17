@@ -16,7 +16,8 @@ impl Lexer {
             "include" => {
                 expect!(self, "Syntax error", match is_space);
                 let path = expect!(self, "Expected path after #include statement", String(x));
-                self.nodes.push(Directive::Import(path).to_node());
+                self.nodes
+                    .push(Directive::Import(path, self.file.clone()).to_node());
             }
             "origin" => {
                 expect!(self, "Syntax error", match is_space);

@@ -1,5 +1,7 @@
 use log::{debug, info, log_enabled, Level};
+use path_absolutize::Absolutize;
 use std::collections::HashMap;
+use std::env;
 
 use super::Compiler;
 
@@ -17,8 +19,17 @@ impl Compiler {
 
     fn debug_files(&self) {
         info!("===== Files Used: =====");
+        let mut pwd = env::current_dir().unwrap().display().to_string();
+        pwd.push('/');
         for file in self.files.iter() {
-            info!("  - {file}");
+            info!(
+                "  - {}",
+                file.absolutize()
+                    .unwrap()
+                    .display()
+                    .to_string()
+                    .replace(&pwd, "")
+            );
         }
         info!("");
     }

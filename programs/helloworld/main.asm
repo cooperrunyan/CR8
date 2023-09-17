@@ -5,8 +5,8 @@ jmp [hello]
 #include "<std>/gfx"
 #include "<std>/wait"
 
-#include "programs/helloworld/images/HELLO.asm"
-#include "programs/helloworld/images/WORLD.asm"
+#include "./images/HELLO"
+#include "./images/WORLD"
 
 #define WAIT 0x2000
 #define OFFSET 0x0400

@@ -1,4 +1,5 @@
 use std::iter::{Enumerate, Peekable};
+use std::path::PathBuf;
 use std::str::Chars;
 use std::sync::Arc;
 
@@ -35,7 +36,7 @@ const DIRECTIVE: char = '#';
 #[derive(Debug)]
 pub(crate) struct TokenMeta {
     pub(crate) token: Token,
-    pub(crate) path: Arc<String>,
+    pub(crate) path: Arc<PathBuf>,
     pub(crate) line: usize,
     pub(crate) col: usize,
 }
@@ -123,7 +124,7 @@ impl ToString for Token {
 }
 
 impl Compiler {
-    pub(crate) fn tokenize(file: String, path: Arc<String>) -> Result<Vec<TokenMeta>> {
+    pub(crate) fn tokenize(file: String, path: Arc<PathBuf>) -> Result<Vec<TokenMeta>> {
         let mut chars = file.chars().enumerate().peekable();
         let mut lines = 0;
         let mut last_line = 0;
@@ -133,7 +134,7 @@ impl Compiler {
             let line = lines;
             let col = i - last_line;
             let token = tokenize_next(&mut chars, i, ch, &mut lines, &mut last_line)
-                .context(format!("Error at {path}:{}:{}", line + 1, col + 1))?;
+                .context(format!("Error at {path:?}:{}:{}", line + 1, col + 1))?;
 
             tokens.push(TokenMeta {
                 token,

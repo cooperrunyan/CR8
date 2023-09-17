@@ -1,6 +1,8 @@
 use anyhow::{bail, Result};
+use path_absolutize::*;
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 mod ast;
@@ -30,7 +32,7 @@ pub struct Compiler {
     labels: HashMap<String, usize>,
     last_label: String,
     pc: usize,
-    files: Vec<Arc<String>>,
+    files: Vec<Arc<PathBuf>>,
     macros: HashMap<String, Macro>,
     statics: HashMap<String, u128>,
     ram_locations: HashMap<String, u128>,
@@ -148,31 +150,83 @@ impl Compiler {
         Ok(self.bin)
     }
 
-    pub fn push(&mut self, input: Input) -> Result<()> {
-        let source = {
-            let (source, file) = match input {
-                Input::File(f) => {
-                    let f = if f.ends_with(".asm") {
-                        f
+    pub fn push(&mut self, input: Input, from: Arc<PathBuf>) -> Result<()> {
+        let content = {
+            let (content, path) = match input {
+                Input::File(path) => {
+                    if path.starts_with("<std>") {
+                        for included in self.files.iter() {
+                            if included.clone() == PathBuf::from(&path).into() {
+                                return Ok(());
+                            }
+                        }
+                        if let Some(content) = STD.get(&path) {
+                            (content.to_string(), path.into())
+                        } else {
+                            bail!("Attempted to import non-existent std file: {path:#?}");
+                        }
                     } else {
-                        format!("{f}.asm")
-                    };
-                    let Ok(source) = fs::read_to_string(&f) else {
-                        bail!("Failed to read {f}");
-                    };
-                    (source, f)
+                        let pb = PathBuf::from(&path);
+                        let real = if pb.exists() && pb.is_file() {
+                            pb
+                        } else {
+                            let possibilities = vec![
+                                from.parent().unwrap_or(&from).join(&pb),
+                                from.parent()
+                                    .unwrap_or(&from)
+                                    .join(&pb)
+                                    .with_extension("asm"),
+                                from.parent().unwrap_or(&from).join(&pb).join("mod.asm"),
+                                from.parent().unwrap_or(&from).join(&pb).join("main.asm"),
+                                pb.with_extension("asm"),
+                                pb.join("main.asm"),
+                                pb.join("mod.asm"),
+                                pb,
+                            ];
+
+                            let mut found = None;
+
+                            for possible in possibilities.iter() {
+                                if possible.exists() && possible.is_file() {
+                                    found = Some(possible.to_owned());
+                                    break;
+                                }
+                            }
+                            match found {
+                                Some(p) => p,
+                                None => {
+                                    let attempted = possibilities
+                                        .into_iter()
+                                        .map(|p| {
+                                            p.absolutize()
+                                                .map(|p| p.to_str().unwrap_or("").to_string())
+                                                .unwrap_or(String::new())
+                                        })
+                                        .collect::<Vec<_>>();
+                                    bail!("Could not locate {path} in any of: \n  {attempted:#?}");
+                                }
+                            }
+                        };
+
+                        if let Ok(file) = fs::read_to_string(&real) {
+                            (file, real)
+                        } else {
+                            bail!("Failed to read {real:?}");
+                        }
+                    }
                 }
-                Input::Raw(s) => (s, "raw".to_string()),
+
+                Input::Raw(s) => (s, "raw".into()),
             };
 
-            self.files.push(Arc::new(file));
-            source
+            self.files.push(Arc::new(path));
+            content
         };
         let nodes = {
-            let file = self.files.last().unwrap();
+            let path = self.files.last().unwrap();
 
-            let tokens = Compiler::tokenize(source, file.clone())?;
-            Lexer::new(tokens, file.clone()).lex()?.nodes
+            let tokens = Compiler::tokenize(content, path.clone())?;
+            Lexer::new(tokens, path.clone()).lex()?.nodes
         };
 
         self.resolve_directives(nodes)?;

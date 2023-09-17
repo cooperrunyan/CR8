@@ -43,7 +43,7 @@ macro_rules! expect {
                 next.token
             }
             $(else if next.token.$oneof() { next.token })*
-            else { Err(anyhow!($msg).context(format!("File: {}:{}:{}", next.path, next.line + 1, next.col + 1)))? }
+            else { Err(anyhow!($msg).context(format!("File: {:?}:{}:{}", next.path, next.line + 1, next.col + 1)))? }
         }
     };
     ($self:ident, $msg:expr, $t:ident($inner:ident)) => {
@@ -51,7 +51,7 @@ macro_rules! expect {
             let next = next!($self);
             match next.token {
             Token::$t($inner) => $inner,
-            _ => Err(anyhow!($msg).context(format!("File: {}:{}:{}", next.path, next.line + 1, next.col + 1)))?
+            _ => Err(anyhow!($msg).context(format!("File: {:?}:{}:{}", next.path, next.line + 1, next.col + 1)))?
         }}
     };
 }

@@ -1,54 +1,16 @@
 use anyhow::{bail, Result};
-use std::fs;
-use std::sync::Arc;
 
 use super::Compiler;
 use crate::compiler::ast::Directive;
-use crate::compiler::lexer::Lexer;
-use crate::compiler::{AstNode, STD};
+use crate::compiler::config::Input;
+use crate::compiler::AstNode;
 
 impl Compiler {
     pub(crate) fn resolve_directives(&mut self, nodes: Vec<AstNode>) -> Result<()> {
         for node in nodes {
             match node {
-                AstNode::Directive(Directive::Import(f)) => {
-                    let mut ex = false;
-                    for fexisting in self.files.iter() {
-                        if fexisting.as_str() == f.as_str() {
-                            ex = true;
-                            break;
-                        }
-                    }
-                    if ex {
-                        continue;
-                    }
-                    let file = {
-                        let file = if f.starts_with("<std>") {
-                            if let Some(file) = STD.get(&f) {
-                                file.to_string()
-                            } else {
-                                bail!("Attempted to import non-existent <std> file: {f:#?}")
-                            }
-                        } else {
-                            if let Ok(file) = fs::read_to_string(&f) {
-                                file
-                            } else {
-                                bail!("Unresolved import: {f:#?}")
-                            }
-                        };
-
-                        self.files.push(Arc::new(f));
-                        file
-                    };
-
-                    let nodes = {
-                        let f = self.files.last().unwrap();
-
-                        let tokens = Compiler::tokenize(file, f.clone())?;
-                        Lexer::new(tokens, f.clone()).lex()?.nodes
-                    };
-
-                    self.resolve_directives(nodes)?;
+                AstNode::Directive(Directive::Import(f, from)) => {
+                    self.push(Input::File(f), from)?;
                 }
                 AstNode::Directive(Directive::Define(k, v)) => {
                     if self.statics.contains_key(&k) {

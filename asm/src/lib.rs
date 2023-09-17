@@ -1,3 +1,5 @@
+#![feature(absolute_path)]
+
 #[macro_use]
 extern crate lazy_static;
 

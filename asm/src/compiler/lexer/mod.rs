@@ -1,5 +1,6 @@
 use anyhow::{bail, Context, Result};
 use std::iter::Peekable;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::vec::IntoIter;
 
@@ -16,12 +17,12 @@ mod word;
 #[derive(Debug)]
 pub(crate) struct Lexer {
     tokens: Peekable<IntoIter<TokenMeta>>,
-    file: Arc<String>,
+    file: Arc<PathBuf>,
     pub nodes: Vec<AstNode>,
 }
 
 impl Lexer {
-    pub(crate) fn new(tokens: Vec<TokenMeta>, file: Arc<String>) -> Self {
+    pub(crate) fn new(tokens: Vec<TokenMeta>, file: Arc<PathBuf>) -> Self {
         Self {
             tokens: tokens.into_iter().peekable(),
             file,
@@ -34,13 +35,13 @@ impl Lexer {
             match token.token {
                 Token::Space | Token::NewLine => continue,
                 Token::Directive => self.lex_directive().context(format!(
-                    "Error at file {}:{}:{}",
+                    "Error at file {:?}:{}:{}",
                     token.path,
                     token.line + 1,
                     token.col
                 ))?,
                 Token::Word(word) => self.lex_word(word).context(format!(
-                    "Error at file {}:{}:{}",
+                    "Error at file {:?}:{}:{}",
                     token.path,
                     token.line + 1,
                     token.col

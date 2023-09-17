@@ -1,4 +1,6 @@
 use std::fmt::Display;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::{op::Operation, reg::Register};
 
@@ -57,7 +59,7 @@ pub enum Directive {
     Dynamic(String, u128),
     Rom(String, Vec<u8>),
     Define(String, u128),
-    Import(String),
+    Import(String, Arc<PathBuf>),
 }
 
 #[derive(Debug)]
