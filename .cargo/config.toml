@@ -1,0 +1,7 @@
+[alias]
+  sim = "run --bin sim --"
+  asm = "run --bin asm --"
+  png = "run --bin png --"
+
+[env]
+  RUST_LOG = "sim=debug,asm=debug"

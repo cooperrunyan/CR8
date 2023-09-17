@@ -1,5 +1,5 @@
 [workspace]
-  members  = ["asm", "sim", "utils/macros", "utils/png"]
+  members  = ["asm", "sim", "sim/web", "utils/macros", "utils/png"]
   resolver = "2"
 
 [profile.release]

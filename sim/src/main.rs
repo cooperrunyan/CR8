@@ -1,8 +1,9 @@
 use anyhow::Result;
-use env_logger::Env;
-use sim::runner::Runner;
-
 fn main() -> Result<()> {
+    use env_logger::Env;
+    use sim::runner::Runner;
+    use std::thread;
+
     env_logger::builder()
         .format_timestamp(None)
         .write_style(env_logger::WriteStyle::Always)
@@ -10,8 +11,10 @@ fn main() -> Result<()> {
         .parse_env(Env::new().default_filter_or("sim=info"))
         .init();
 
-    let runner = Runner::from_argv()?;
-    runner.run()?;
+    let mut runner = Runner::from_argv()?;
 
-    Ok(())
+    loop {
+        let ticks = runner.cycle()?;
+        thread::sleep(runner.tickrate * ticks as u32);
+    }
 }

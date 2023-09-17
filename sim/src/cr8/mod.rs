@@ -1,4 +1,6 @@
-use anyhow::{bail, Result};
+use std::sync::RwLock;
+
+use anyhow::{anyhow, bail, Result};
 use asm::op::Operation;
 use asm::reg::Register;
 
@@ -36,59 +38,57 @@ impl Joinable for (u8, u8) {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CR8 {
     pub(self) reg: [u8; 8],
     pub pc: u16,
     pub sp: u16,
-    pub mem: Mem,
 }
 
 impl CR8 {
-    pub fn new(bin: &[u8]) -> Self {
+    pub fn new() -> Self {
         Self {
-            mem: Mem::new(bin),
             reg: [0; 8],
-            ..Default::default()
+            pc: 0,
+            sp: STACK,
         }
     }
 
-    pub fn set_stack(mut self, stack: u16) -> Self {
-        self.sp = stack;
-        self
-    }
-
-    pub fn cycle(&mut self, dev: &Devices) -> Result<u8> {
+    pub fn cycle(&mut self, mem: &RwLock<Mem>, dev: &RwLock<Devices>) -> Result<u8> {
         let pc = self.pc;
 
-        let inst = self.mem.get(pc)?;
+        let (inst, b0, b1) = {
+            let mem = mem.read().map_err(|_| anyhow!("Read error"))?;
+            (
+                mem.get(pc)?,
+                mem.get(pc + 1).unwrap_or(0),
+                mem.get(pc + 2).unwrap_or(0),
+            )
+        };
 
         let op = oper(pc, inst >> 4)?;
         let is_imm = (inst & 0b00001000) == 0b00001000;
         let reg_bits = inst & 0b00000111;
 
-        let b0 = self.mem.get(pc + 1).unwrap_or(0);
-        let b1 = self.mem.get(pc + 2).unwrap_or(0);
-
         use Operation as O;
 
         let ticks = match (op, is_imm) {
-            (O::LW, true) => self.lw_imm16(reg(pc, reg_bits)?, (b0, b1).join()),
-            (O::LW, false) => self.lw_hl(reg(pc, reg_bits)?),
-            (O::SW, true) => self.sw_imm16((b0, b1).join(), reg(pc, reg_bits)?),
-            (O::SW, false) => self.sw_hl(reg(pc, reg_bits)?),
+            (O::LW, true) => self.lw_imm16(mem, reg(pc, reg_bits)?, (b0, b1).join()),
+            (O::LW, false) => self.lw_hl(mem, reg(pc, reg_bits)?),
+            (O::SW, true) => self.sw_imm16(mem, (b0, b1).join(), reg(pc, reg_bits)?),
+            (O::SW, false) => self.sw_hl(mem, reg(pc, reg_bits)?),
             (O::MOV, true) => self.mov_imm8(reg(pc, reg_bits)?, b0),
             (O::MOV, false) => self.mov_reg(reg(pc, reg_bits)?, reg(pc, b0)?),
-            (O::PUSH, true) => self.push_imm8(b0),
-            (O::PUSH, false) => self.push_reg(reg(pc, reg_bits)?),
-            (O::POP, _) => self.pop(reg(pc, reg_bits)?),
-            (O::MB, _) => self.set_mb(b0),
+            (O::PUSH, true) => self.push_imm8(mem, b0),
+            (O::PUSH, false) => self.push_reg(mem, reg(pc, reg_bits)?),
+            (O::POP, _) => self.pop(mem, reg(pc, reg_bits)?),
+            (O::MB, _) => self.set_mb(mem, b0),
             (O::JNZ, true) => self.jnz_imm8(b0),
             (O::JNZ, false) => self.jnz_reg(reg(pc, reg_bits)?),
             (O::IN, true) => self.in_imm8(dev, reg(pc, reg_bits)?, b0),
             (O::IN, false) => self.in_reg(dev, reg(pc, reg_bits)?, reg(pc, b0)?),
-            (O::OUT, true) => self.out_imm8(dev, b0, reg(pc, reg_bits)?),
-            (O::OUT, false) => self.out_reg(dev, reg(pc, reg_bits)?, reg(pc, b0)?),
+            (O::OUT, true) => self.out_imm8(mem, dev, b0, reg(pc, reg_bits)?),
+            (O::OUT, false) => self.out_reg(mem, dev, reg(pc, reg_bits)?, reg(pc, b0)?),
             (O::CMP, true) => self.cmp_imm8(reg(pc, reg_bits)?, b0),
             (O::CMP, false) => self.cmp_reg(reg(pc, reg_bits)?, reg(pc, b0)?),
             (O::ADC, true) => self.adc_imm8(reg(pc, reg_bits)?, b0),

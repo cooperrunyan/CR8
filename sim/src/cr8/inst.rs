@@ -1,36 +1,41 @@
 use log::trace;
 use std::num::Wrapping;
+use std::sync::RwLock;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use asm::reg::Register;
 
-use crate::devices::{DeviceID, Devices};
+use crate::devices::Devices;
 
+use super::mem::Mem;
 use super::{CR8, STACK, STACK_END};
 
 impl CR8 {
-    pub fn lw_imm16(&mut self, to: Register, i: u16) -> Result<u8> {
+    pub fn lw_imm16(&mut self, mem: &RwLock<Mem>, to: Register, i: u16) -> Result<u8> {
         trace!("{:04x}: LW {to:#?} {i:04x}", self.pc);
-        self.reg[to as usize] = self.mem.get(i)?;
+        self.reg[to as usize] = {
+            let mem = mem.read().unwrap();
+            mem.get(i)?
+        };
         Ok(3)
     }
 
-    pub fn lw_hl(&mut self, to: Register) -> Result<u8> {
-        let addr = self.hl();
-        trace!("{:04x}: LW {to:#?}, {:04x}", self.pc, addr,);
-        self.reg[to as usize] = self.mem.get(addr)?;
+    pub fn lw_hl(&mut self, mem: &RwLock<Mem>, to: Register) -> Result<u8> {
+        trace!("{:04x}: LW {to:#?}, {:04x}", self.pc, self.hl());
+        self.lw_imm16(mem, to, self.hl())?;
         Ok(1)
     }
 
-    pub fn sw_hl(&mut self, from: Register) -> Result<u8> {
-        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, self.hl(),);
-        self.mem.set(self.hl(), self.reg[from as usize])?;
+    pub fn sw_hl(&mut self, mem: &RwLock<Mem>, from: Register) -> Result<u8> {
+        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, self.hl());
+        self.sw_imm16(mem, self.hl(), from)?;
         Ok(1)
     }
 
-    pub fn sw_imm16(&mut self, i: u16, from: Register) -> Result<u8> {
-        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, i,);
-        self.mem.set(i, self.reg[from as usize].clone())?;
+    pub fn sw_imm16(&mut self, mem: &RwLock<Mem>, i: u16, from: Register) -> Result<u8> {
+        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, i);
+        let mut mem = mem.write().unwrap();
+        mem.set(i, self.reg[from as usize].clone())?;
         Ok(3)
     }
 
@@ -47,13 +52,17 @@ impl CR8 {
         Ok(2)
     }
 
-    pub fn push_imm8(&mut self, imm8: u8) -> Result<u8> {
+    pub fn push_imm8(&mut self, mem: &RwLock<Mem>, imm8: u8) -> Result<u8> {
         if self.sp >= STACK_END {
             err!("Stack overflow");
         }
 
         self.sp += 1;
-        self.mem.set(self.sp, imm8)?;
+
+        {
+            let mut mem = mem.write().unwrap();
+            mem.set(self.sp, imm8)?;
+        };
 
         trace!(
             "{:04x}: PUSHED: [{:04x}] {:02x}",
@@ -64,18 +73,21 @@ impl CR8 {
         Ok(2)
     }
 
-    pub fn push_reg(&mut self, reg: Register) -> Result<u8> {
-        self.push_imm8(self.reg[reg as usize])?;
+    pub fn push_reg(&mut self, mem: &RwLock<Mem>, reg: Register) -> Result<u8> {
+        self.push_imm8(mem, self.reg[reg as usize])?;
         Ok(1)
     }
 
-    pub fn pop(&mut self, reg: Register) -> Result<u8> {
+    pub fn pop(&mut self, mem: &RwLock<Mem>, reg: Register) -> Result<u8> {
         if self.sp < STACK {
             err!("Cannot pop empty stack");
         }
 
-        self.reg[reg as usize] = self.mem.get(self.sp)?;
-        self.mem.set(self.sp, 0)?;
+        {
+            let mut mem = mem.write().unwrap();
+            self.reg[reg as usize] = mem.get(self.sp)?;
+            mem.set(self.sp, 0)?;
+        };
 
         trace!(
             "{:04x}: POPPED: [{:04x}] {:?}",
@@ -111,41 +123,40 @@ impl CR8 {
         return Ok(0);
     }
 
-    pub fn in_imm8(&mut self, devices: &Devices, into: Register, port: u8) -> Result<u8> {
+    pub fn in_imm8(&mut self, dev: &RwLock<Devices>, into: Register, port: u8) -> Result<u8> {
         trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc);
-
-        if let Some(dev) = devices.get(DeviceID::from(port)) {
-            self.reg[into as usize] = dev
-                .lock()
-                .map_err(|_| anyhow!("Failed to lock mutex"))?
-                .send()?;
-        } else {
-            self.debug();
-            err!("No device connected to port: {port}");
-        }
+        let devices = dev.read().unwrap();
+        self.reg[into as usize] = devices.receive(port)?;
         Ok(2)
     }
 
-    pub fn in_reg(&mut self, devices: &Devices, into: Register, port: Register) -> Result<u8> {
-        self.in_imm8(devices, into, self.reg[port as usize])?;
+    pub fn in_reg(&mut self, dev: &RwLock<Devices>, into: Register, port: Register) -> Result<u8> {
+        self.in_imm8(dev, into, self.reg[port as usize])?;
         Ok(2)
     }
 
-    pub fn out_imm8(&mut self, devices: &Devices, port: u8, send: Register) -> Result<u8> {
+    pub fn out_imm8(
+        &mut self,
+        mem: &RwLock<Mem>,
+        dev: &RwLock<Devices>,
+        port: u8,
+        send: Register,
+    ) -> Result<u8> {
         trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc);
-        if let Some(dev) = devices.get(DeviceID::from(port)) {
-            dev.lock()
-                .map_err(|_| anyhow!("Failed to lock mutex"))?
-                .receive(self.reg[send as usize], &self)?;
-        } else {
-            self.debug();
-            err!("No device connected to port: {port}");
-        }
+        let mut devices = dev.write().unwrap();
+        let mem = mem.read().unwrap();
+        devices.send(&self, &mem, port, self.reg[send as usize])?;
         Ok(2)
     }
 
-    pub fn out_reg(&mut self, devices: &Devices, port: Register, send: Register) -> Result<u8> {
-        self.out_imm8(devices, self.reg[port as usize], send)?;
+    pub fn out_reg(
+        &mut self,
+        mem: &RwLock<Mem>,
+        dev: &RwLock<Devices>,
+        port: Register,
+        send: Register,
+    ) -> Result<u8> {
+        self.out_imm8(mem, dev, self.reg[port as usize], send)?;
         Ok(2)
     }
 
@@ -249,9 +260,10 @@ impl CR8 {
         Ok(2)
     }
 
-    pub fn set_mb(&mut self, bank: u8) -> Result<u8> {
+    pub fn set_mb(&mut self, mem: &RwLock<Mem>, bank: u8) -> Result<u8> {
         trace!("{:04x}: MB {bank:02x}", self.pc);
-        self.mem.select(bank)?;
+        let mut mem = mem.write().unwrap();
+        mem.select(bank)?;
         Ok(2)
     }
 }

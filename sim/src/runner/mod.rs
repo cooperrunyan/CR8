@@ -1,70 +1,60 @@
 use std::process::exit;
-use std::sync::{Arc, Mutex};
+use std::sync::RwLock;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
 
 use super::devices::Devices;
-use crate::cr8::{CR8, STACK};
-use crate::devices::DeviceID;
+use crate::cr8::mem::Mem;
+use crate::cr8::CR8;
 
 mod config;
 
-#[cfg(not(feature = "gfx"))]
-mod base;
-
-#[cfg(feature = "gfx")]
-mod gfx;
-
-#[derive(Default)]
 pub struct Runner {
-    cr8: Arc<Mutex<CR8>>,
-    devices: Devices,
-    tickrate: Duration,
+    pub mem: RwLock<Mem>,
+    pub cr8: RwLock<CR8>,
+    pub devices: RwLock<Devices>,
+    pub tickrate: Duration,
 }
 
 impl Runner {
     pub fn new(bin: &[u8], tickrate: Duration) -> Self {
-        let cr8 = Arc::new(Mutex::new(CR8::new(bin).set_stack(STACK)));
-        let mut devices = Devices::default();
-        devices.connect(cr8.clone());
+        let mem = RwLock::new(Mem::new(bin));
+        let devices = RwLock::new(Devices::default());
+        let cr8 = RwLock::new(CR8::new());
 
         Self {
             tickrate,
             devices,
             cr8,
+            mem,
         }
     }
 
     pub fn debug(&self) -> Result<()> {
-        self.cr8
-            .lock()
-            .map_err(|_| anyhow!("Failed to get a lock"))?
-            .debug();
+        let mem = self.mem.read().map_err(|_| anyhow!("Mutex"))?;
+        self.cr8.read().unwrap().debug(&mem);
         Ok(())
     }
 
     pub fn cycle(&mut self) -> Result<u8> {
-        let mut cr8 = self.cr8.lock().map_err(|_| anyhow!("Mutex poisoned"))?;
+        {
+            let dev = self.devices.read().map_err(|_| anyhow!("Mutex poisoned"))?;
 
-        if let Some(dev) = self.devices.get(DeviceID::SysCtrl) {
-            let status = {
-                dev.lock()
-                    .map_err(|_| anyhow!("Failed to lock mutex"))?
-                    .send()?
-            };
+            let status = dev.sysctrl.state;
 
             if status >> 1 & 1 == 1 {
-                cr8.debug();
+                self.debug()?;
             }
 
             if status == 0x01 {
                 exit(0);
             }
         }
+        let mut cr8 = self.cr8.write().unwrap();
 
         let ticks = cr8
-            .cycle(&self.devices)
+            .cycle(&self.mem, &self.devices)
             .context(format!("Cycle failed at {:#06x?}", cr8.pc))?;
 
         Ok(ticks)

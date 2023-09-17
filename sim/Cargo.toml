@@ -6,16 +6,12 @@
   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-  anyhow        = "1.0.75"
   asm           = { path = "../asm" }
   util_macros   = { path = "../utils/macros" }
+  anyhow        = "1.0.75"
   typed-builder = "0.16"
-  pixels        = "0.13"
-  winit         = "0.28.6"
   env_logger    = "0.10.0"
   log           = "0.4.20"
 
 [features]
-  default = ["sysctrl", "gfx"]
-  sysctrl = []
-  gfx     = []
+  gfx = []
