@@ -41,6 +41,7 @@ impl Compiler {
                             match next {
                             Value::Immediate(v) => parsed_args.insert(name.to_string(),  Value::Immediate(v)),
                             Value::Ident(id) => parsed_args.insert(name.to_string(), Value::Ident(id)),
+                            Value::Expression(e) => parsed_args.insert(name.to_string(), Value::Expression(e)),
                             _ => panic!("Expected an immediate value at {mac_name:#?} argument {i}. Received: {next:#?}")
                         };
                         }

@@ -5,27 +5,30 @@ jmp [hello]
 #include "<std>/gfx"
 #include "<std>/wait"
 
-#include "programs/helloworld/images/hello.asm"
-#include "programs/helloworld/images/world.asm"
+#include "programs/helloworld/images/HELLO.asm"
+#include "programs/helloworld/images/WORLD.asm"
+
+#define WAIT 0x2000
+#define OFFSET 0x0400
 
 hello:
     mov16 %a, %b, [HELLO]
     mov16 %c, %d, [BRAM]
-    swi [PSR0], 0x40
-    swi [PSR1], 0x06
+    swi [PSR0], [HELLO_SZL]
+    swi [PSR1], [HELLO_SZH]
     call [frmwof]
-    wait [0x2000]
-    clrvram [BRAM], [BRAM + 0x0640]
+    wait [WAIT]
+    clrvram [BRAM], [BRAM + HELLO_SZ]
 
     jmp [world]
 
 world:
     mov16 %a, %b, [WORLD]
-    mov16 %c, %d, [BRAM + 0x0400]
-    swi [PSR0], 0x40
-    swi [PSR1], 0x06
+    mov16 %c, %d, [BRAM + OFFSET]
+    swi [PSR0], [WORLD_SZL]
+    swi [PSR1], [WORLD_SZH]
     call [frmwof]
-    wait [0x2000]
-    clrvram [BRAM + 0x0400], [BRAM + 0x0400 + 0x0640]
+    wait [WAIT]
+    clrvram [BRAM + OFFSET], [BRAM + OFFSET + WORLD_SZ]
 
     jmp [hello]

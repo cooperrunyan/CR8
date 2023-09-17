@@ -3,15 +3,19 @@ use std::fs;
 
 fn main() {
     let args = args().collect::<Vec<_>>();
-    let name = args.get(1).expect("Expected a name");
-    let input = args.get(2).expect("Expected input file");
-    let output = args.get(3).expect("Expected output file");
+    let input = args.get(1).expect("Expected input file");
+    let dindx = input.rfind(".").expect("Expected a '.' in file path");
+    let slindx = input.rfind("/").map(|i| i + 1).unwrap_or(0);
+
+    let name = &input[slindx..dindx].to_ascii_uppercase();
 
     let img = image::open(input).expect("Failed to open input image");
+    let w = img.width() * 8;
+    let h = img.height() * 8;
 
     let img = img.to_rgb8();
 
-    let mut asm = String::new();
+    let mut bytes = String::new();
     let mut len = 0;
 
     for x in img.chunks_exact(24).into_iter() {
@@ -25,8 +29,42 @@ fn main() {
                 byte |= 1 << (7 - j);
             };
         }
-        asm.push_str(&format!("{:#010b}, ", byte));
+        bytes.push_str(&format!("{:#04X},", byte));
+        if len % 32 == 0 {
+            bytes.push_str("\n    ");
+        }
     }
 
-    fs::write(output, format!("#mem {len} {name} [ {asm} ]")).unwrap();
+    let def = format!(
+        r#"#define {name}_W {w:#06X}
+#define {name}_WL {:#04X}
+#define {name}_WH {:#04X}
+#define {name}_H {h:#06X}
+#define {name}_HL {:#04X}
+#define {name}_HH {:#04X}
+#define {name}_SZ {len:#06X}
+#define {name}_SZH {:#04X}
+#define {name}_SZL {:#04X}"#,
+        (w >> 8) as u8,
+        w as u8,
+        (h >> 8) as u8,
+        h as u8,
+        (len >> 8) as u8,
+        len as u8,
+    );
+
+    println!("{def}");
+
+    fs::write(
+        format!("./{name}.asm"),
+        format!(
+            r#"; Generated with "utils/png"
+
+{def}
+#mem {len:#06X} {name} [
+    {bytes}]
+"#
+        ),
+    )
+    .unwrap();
 }
