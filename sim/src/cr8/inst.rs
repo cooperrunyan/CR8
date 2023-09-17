@@ -125,7 +125,7 @@ impl CR8 {
 
     pub fn in_imm8(&mut self, dev: &RwLock<Devices>, into: Register, port: u8) -> Result<u8> {
         trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc);
-        let devices = dev.read().unwrap();
+        let mut devices = dev.write().unwrap();
         self.reg[into as usize] = devices.receive(port)?;
         Ok(2)
     }

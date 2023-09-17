@@ -6,11 +6,15 @@ use crate::cr8::CR8;
 
 use self::sysctrl::SysCtrl;
 
-mod sysctrl;
+pub mod sysctrl;
+
+#[cfg(feature = "keyboard")]
+pub mod keyboard;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceId {
     SysControl,
+    Keyboard,
 }
 
 impl TryFrom<u8> for DeviceId {
@@ -18,6 +22,7 @@ impl TryFrom<u8> for DeviceId {
     fn try_from(value: u8) -> std::result::Result<Self, Self::Error> {
         match value {
             0x00 => Ok(Self::SysControl),
+            0x01 => Ok(Self::Keyboard),
             _ => Err(()),
         }
     }
@@ -27,6 +32,7 @@ impl Into<u8> for DeviceId {
     fn into(self) -> u8 {
         match self {
             Self::SysControl => 0x00,
+            Self::Keyboard => 0x01,
         }
     }
 }
@@ -34,6 +40,8 @@ impl Into<u8> for DeviceId {
 #[derive(Debug, Default)]
 pub struct Devices {
     pub sysctrl: SysCtrl,
+    #[cfg(feature = "keyboard")]
+    pub keyboard: keyboard::Keyboard,
 }
 
 impl Devices {
@@ -44,15 +52,27 @@ impl Devices {
         to: impl TryInto<DeviceId> + Debug + Copy,
         byte: u8,
     ) -> Result<()> {
+        #[allow(unreachable_patterns)]
         match to.try_into() {
             Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, cr8, mem),
+
+            #[cfg(feature = "keyboard")]
+            Ok(DeviceId::Keyboard) => Ok(()),
+
+            Ok(d) => bail!("Device {d:?} not connected"),
             Err(_) => bail!("Unknown device: {to:?}"),
         }
     }
 
-    pub fn receive(&self, to: impl TryInto<DeviceId> + Debug + Copy) -> Result<u8> {
+    pub fn receive(&mut self, to: impl TryInto<DeviceId> + Debug + Copy) -> Result<u8> {
+        #[allow(unreachable_patterns)]
         match to.try_into() {
             Ok(DeviceId::SysControl) => self.sysctrl.send(),
+
+            #[cfg(feature = "keyboard")]
+            Ok(DeviceId::Keyboard) => Ok(self.keyboard.flush()),
+
+            Ok(d) => bail!("Device {d:?} not connected"),
             Err(_) => bail!("Unknown device: {to:?}"),
         }
     }

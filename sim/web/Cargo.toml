@@ -13,6 +13,10 @@
     'Element',
     'HtmlCanvasElement',
     'Window',
+    'KeyboardEvent',
   ] }
   wasm-bindgen = "0.2.87"
-  sim = { path = "..", features = ["gfx"] }
+  sim = { path = "..", features = ["gfx", "keyboard"] }
+  gloo-events = "0.2.0"
+  wasm-logger = "0.2.0"
+log = "0.4.20"
