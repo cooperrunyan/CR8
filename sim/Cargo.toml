@@ -14,5 +14,7 @@
   log           = "0.4.20"
 
 [features]
+  default  = []
   gfx      = []
   keyboard = []
+  jit      = ["asm/full"]

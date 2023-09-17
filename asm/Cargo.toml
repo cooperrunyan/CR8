@@ -6,11 +6,15 @@
   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-  lazy_static = "1.4.0"
-  util_macros = { path = "../utils/macros" }
-  phf         = { version = "0.11.2", features = ["macros"] }
-  regex       = "1.9.3"
-  env_logger  = "0.10.0"
-  log         = "0.4.20"
-  anyhow      = "1.0.75"
-path-absolutize = "3.1.1"
+  lazy_static     = "1.4.0"
+  util_macros     = { path = "../utils/macros" }
+  phf             = { version = "0.11.2", features = ["macros"] }
+  regex           = "1.9.3"
+  env_logger      = "0.10.0"
+  log             = "0.4.20"
+  anyhow          = "1.0.75"
+  path-absolutize = "3.1.1"
+
+[features]
+  default = ["full"]
+  full    = []

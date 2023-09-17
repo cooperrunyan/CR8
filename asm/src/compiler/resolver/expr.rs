@@ -5,7 +5,7 @@ use regex::{Captures, Regex};
 
 use super::Compiler;
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref EXPR_RE: Regex = Regex::new(r"\[([^\]]*)\]").unwrap();
     static ref SPACE_RE: Regex = Regex::new(r"\s*").unwrap();
     static ref SYM_RE: Regex = Regex::new(r"\&?[\w_\.][\.\w\d_]*").unwrap();

@@ -1,10 +1,10 @@
 #![feature(absolute_path)]
 
-#[macro_use]
-extern crate lazy_static;
-
 pub mod op;
 pub mod reg;
+
+#[cfg(feature = "full")]
 mod std;
 
+#[cfg(feature = "full")]
 pub mod compiler;

@@ -32,16 +32,17 @@ impl Runner {
     }
 
     pub fn debug(&self) -> Result<()> {
-        let mem = self.mem.read().map_err(|_| anyhow!("Mutex"))?;
+        let mem = self.mem.read().map_err(|_| anyhow!("Poisoned"))?;
         self.cr8.read().unwrap().debug(&mem);
         Ok(())
     }
 
     pub fn cycle(&mut self) -> Result<u8> {
         {
-            let dev = self.devices.read().map_err(|_| anyhow!("Mutex poisoned"))?;
-
-            let status = dev.sysctrl.state;
+            let status = {
+                let dev = self.devices.read().map_err(|_| anyhow!("Poisoned"))?;
+                dev.sysctrl.state
+            };
 
             if status >> 1 & 1 == 1 {
                 self.debug()?;

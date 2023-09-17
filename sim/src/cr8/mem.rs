@@ -59,7 +59,7 @@ pub struct Mem {
     selected: BankId,
     rom: [u8; ROM_LEN],
     builtin_ram: [u8; RAM_LEN],
-    pub(super) banks: BankCollection,
+    pub banks: BankCollection,
 }
 
 impl Default for Mem {

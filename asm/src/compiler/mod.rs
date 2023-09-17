@@ -18,9 +18,7 @@ use lexer::Lexer;
 use crate::compiler::ast::{AddrByte, Instruction, Label, Value};
 use crate::op::Operation;
 
-pub use config::Config;
-
-use self::config::Input;
+pub use config::*;
 
 use super::std::STD;
 
@@ -60,8 +58,6 @@ impl Compiler {
 
     pub fn compile(mut self) -> Result<Vec<u8>> {
         use Operation::*;
-
-        self.debug();
 
         self.resolve_macros();
         self.resolve_labels();

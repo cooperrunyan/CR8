@@ -36,7 +36,9 @@ impl Compiler {
 
     fn debug_statics(&self) {
         info!("======== Statics: ========");
-        for (k, v) in self.statics.iter() {
+        let mut sorted: Vec<_> = self.statics.iter().collect();
+        sorted.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
+        for (k, v) in sorted {
             info!("  - {}: {:#06X}", k, v);
         }
         info!("");

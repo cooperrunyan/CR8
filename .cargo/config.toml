@@ -1,6 +1,6 @@
 [alias]
-  sim = "run --bin sim --"
-  asm = "run --bin asm --"
+  sim = "run --bin sim --no-default-features -F jit -- -r 4ghz -i"
+  asm = "run --bin asm -- -o target/test.bin -i"
   png = "run --bin png --"
 
 [env]
