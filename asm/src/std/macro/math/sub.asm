@@ -3,26 +3,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/math/sub
 
-#macro
-sub [r0, ir0]:
+#macro sub (r0, ir0) {
     clrfb
     sbb $r0, $ir0
+}
 
-#macro
-sub16 [r0, r1, ir0, ir1]:
+#macro sub16 (r0, r1, ir0, ir1) {
     sub $r0, $ir0
     sbb $r1, $ir1
+}
 
-#macro
-sbbf [r0]:
-    sbb $r0, 0
+#macro sbbf (r0): sbb $r0, 0
+#macro dec (r0): sub $r0, 1
 
-#macro
-dec [r0]:
-    sub $r0, 1
-
-#macro
-dec16 [r0, r1]:
+#macro dec16 (r0, r1) {
     clrfb
     dec $r0
     sbbf $r1
+}

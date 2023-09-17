@@ -1,15 +1,18 @@
-mb 0x01
-jmp [hello]
-
 #include "<std>/macro"
 #include "<std>/gfx"
 #include "<std>/wait"
+#include "<std>"
 
 #include "./images/HELLO"
 #include "./images/WORLD"
 
 #define WAIT 0x2000
 #define OFFSET 0x0400
+
+#init {
+    mb 0x01
+    jmp [hello]
+}
 
 hello:
     mov16 %a, %b, [HELLO]

@@ -10,13 +10,13 @@
 ; CALLER MUST SET mb 1
 ; Draws bytes from ROM to VRAM
 
-#macro
-clrvram [a0, a1]:
+#macro clrvram (a0, a1) {
     mov %a, $a0l
     mov %b, $a0h
     mov %c, $a1l
     mov %d, $a1h
     call [_clrvram]
+}
 
 ; ab: From
 ; cd: To

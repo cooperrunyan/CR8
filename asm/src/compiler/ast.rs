@@ -55,6 +55,7 @@ impl From<String> for Label {
 #[derive(Debug)]
 pub enum Directive {
     Macro(Macro),
+    Preamble(Vec<AstNode>),
     Origin(u128),
     Dynamic(String, u128),
     Rom(String, Vec<u8>),

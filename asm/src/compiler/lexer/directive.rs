@@ -32,6 +32,31 @@ impl Lexer {
                 self.nodes
                     .push(Directive::Define(name, val as u128).to_node());
             }
+            "init" => {
+                let mut init = vec![];
+                let mut open = false;
+                while_next!(self, next, {
+                    match &next.token {
+                        Token::MustacheOpen => open = true,
+                        Token::MustacheClose => {
+                            if open {
+                                break;
+                            }
+                        }
+                        Token::NewLine => {
+                            if !open {
+                                break;
+                            }
+                            init.push(next);
+                        }
+                        _ => init.push(next),
+                    };
+                });
+
+                let init_nodes = Lexer::new(init, self.file.clone()).lex()?.nodes;
+                self.nodes
+                    .push(AstNode::Directive(Directive::Preamble(init_nodes)))
+            }
             "dyn" | "mem" => {
                 expect!(self, "Syntax error", match is_space);
 
@@ -106,7 +131,7 @@ impl Lexer {
                 ignore!(self, Token::NewLine | Token::Space);
                 let name = expect!(self, "Expected macro name", Word(x));
                 ignore!(self, Token::Space);
-                expect!(self, "Expected macro args", match is_brack_open);
+                expect!(self, "Expected macro args", match is_paren_open);
                 ignore!(self, Token::Space);
 
                 let mut args = vec![];
@@ -127,25 +152,38 @@ impl Lexer {
                             }
                         }
                         Token::Comma => continue,
-                        Token::BracketClose => break,
+                        Token::ParenClose => break,
                         oth => bail!("Unexpected value: {oth:?}"),
                     }
                 });
 
-                expect!(self, "Invalid macro syntax", match is_colon);
-
                 let mut body = vec![];
+                let mut mustached = false;
+                let mut coloned = false;
 
                 while_next!(self, next, {
-                    match next.token.clone() {
-                        Token::NewLine => {
-                            match self.tokens.peek().map(|x| x.token.clone()) {
-                                Some(Token::NewLine) => break,
-                                _ => {}
-                            };
+                    match &next.token {
+                        Token::MustacheOpen => mustached = true,
+                        Token::MustacheClose => {
+                            if mustached {
+                                break;
+                            }
                             body.push(next);
                         }
-                        _ => body.push(next),
+                        Token::Colon => coloned = true,
+                        Token::NewLine => {
+                            if coloned {
+                                break;
+                            }
+                            body.push(next);
+                        }
+                        Token::Space => body.push(next),
+                        _ => {
+                            if !coloned && !mustached {
+                                bail!("Bad macro syntax. Expected either mustache open to signify a block or colon to signify inline");
+                            }
+                            body.push(next);
+                        }
                     }
                 });
 

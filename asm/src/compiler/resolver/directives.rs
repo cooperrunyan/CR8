@@ -12,6 +12,13 @@ impl Compiler {
                 AstNode::Directive(Directive::Import(f, from)) => {
                     self.push(Input::File(f), from)?;
                 }
+                AstNode::Directive(Directive::Preamble(block)) => {
+                    if self.preamble.is_some() {
+                        bail!("Attempted to set init twice");
+                    }
+
+                    self.preamble = Some(block);
+                }
                 AstNode::Directive(Directive::Define(k, v)) => {
                     if self.statics.contains_key(&k) {
                         bail!("Error: attempted to define {k} twice");

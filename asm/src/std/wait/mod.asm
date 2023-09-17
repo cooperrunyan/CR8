@@ -7,11 +7,11 @@
 
 ; Can be shortcut called with the macro: `wait [TICKS]`
 
-#macro
-wait [a0]:
+#macro wait (a0) {
     mov %b, $a0h
     mov %a, $a0l
     call [_wait]
+}
 
 _wait:
     .loop:

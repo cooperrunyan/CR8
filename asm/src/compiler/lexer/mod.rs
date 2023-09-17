@@ -35,16 +35,16 @@ impl Lexer {
             match token.token {
                 Token::Space | Token::NewLine => continue,
                 Token::Directive => self.lex_directive().context(format!(
-                    "Error at file {:?}:{}:{}",
+                    "File {:?}:{}:{}",
                     token.path,
                     token.line + 1,
-                    token.col
+                    token.col + 1
                 ))?,
                 Token::Word(word) => self.lex_word(word).context(format!(
-                    "Error at file {:?}:{}:{}",
+                    "File {:?}:{}:{}",
                     token.path,
                     token.line + 1,
-                    token.col
+                    token.col + 1
                 ))?,
                 oth => bail!("Unexpected symbol: {oth:?}"),
             }

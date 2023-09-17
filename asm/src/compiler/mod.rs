@@ -26,6 +26,7 @@ use super::std::STD;
 pub struct Compiler {
     bin: Vec<u8>,
     tree: Vec<AstNode>,
+    preamble: Option<Vec<AstNode>>,
     markers: HashMap<usize, String>,
     labels: HashMap<String, usize>,
     last_label: String,
@@ -47,6 +48,7 @@ impl Compiler {
             labels: HashMap::new(),
             last_label: String::new(),
             pc: 0,
+            preamble: None,
             files: vec![],
             macros: HashMap::new(),
             statics: HashMap::new(),
@@ -58,6 +60,13 @@ impl Compiler {
 
     pub fn compile(mut self) -> Result<Vec<u8>> {
         use Operation::*;
+
+        if let Some(mut preamble) = self.preamble {
+            let mut old = self.tree;
+            preamble.append(&mut old);
+            self.tree = preamble;
+            self.preamble = None;
+        }
 
         self.resolve_macros();
         self.resolve_labels();
