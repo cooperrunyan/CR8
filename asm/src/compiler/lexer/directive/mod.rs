@@ -18,10 +18,11 @@ impl Lexer {
                 self.nodes
                     .push(Directive::Import(path, self.file.clone()).to_node());
             }
-            "origin" => {
+            "dynorg" => {
                 expect!(self, "Syntax error", match is_space);
-                let addr = expect!(self, "Expected address after #origin", Number(x));
-                self.nodes.push(Directive::Origin(addr as u128).to_node());
+                let addr = expect!(self, "Expected address after #dynorg", Number(x));
+                self.nodes
+                    .push(Directive::DynamicOrigin(addr as u128).to_node());
             }
             "define" => {
                 expect!(self, "Syntax error", match is_space);

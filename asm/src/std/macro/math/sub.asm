@@ -8,18 +8,19 @@
         clrfb
         sbb $into, $rhs
     }
-}
-
-#macro sub16 {
-    ($intl: reg, $inth: reg, $rhsl: reg | imm8, $rhsh: reg | imm8) => {
-        sub $intl, $rhsl
-        sbb $inth, $rhsh
+    ($into: reg) => {
+        sbb $into, 0
     }
 }
 
-#macro sbbf {
-    ($into: reg) => {
-        sbb $into, 0
+#macro sub16 {
+    ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
+        sub $tol, $frl
+        sbb $toh, $frh
+    }
+    ($tol: reg, $toh: reg, $rhs: imm16) => {
+        sub $tol, $rhs.l
+        sbb $toh, $rhs.h
     }
 }
 
@@ -33,6 +34,6 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         dec $lo
-        sbbf $hi
+        sub $hi
     }
 }

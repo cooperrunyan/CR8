@@ -32,7 +32,7 @@ impl Compiler {
                     self.ram_locations.insert(k.to_string(), self.ram_length);
                     self.ram_length += v;
                 }
-                AstNode::Directive(Directive::Origin(v)) => {
+                AstNode::Directive(Directive::DynamicOrigin(v)) => {
                     self.ram_origin = v as u16;
                 }
                 AstNode::Directive(Directive::Macro(m)) => {

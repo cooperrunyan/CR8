@@ -8,18 +8,19 @@
         clrfc
         adc $into, $rhs
     }
-}
-
-#macro add16 {
-    ($intl: reg, $inth: reg, $rhsl: reg | imm8, $rhsh: reg | imm8) => {
-        add $intl, $rhsl
-        adc $inth, $rhsh
+    ($into: reg) => {
+        adc $into, 0
     }
 }
 
-#macro adcf {
-    ($into: reg) => {
-        adc $into, 0
+#macro add16 {
+    ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
+        add $tol, $frl
+        adc $toh, $frh
+    }
+    ($tol: reg, $toh: reg, $rhs: imm16) => {
+        add $tol, $rhs.l
+        adc $toh, $rhs.h
     }
 }
 
@@ -33,6 +34,6 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         inc $lo
-        adcf $hi
+        add $hi
     }
 }

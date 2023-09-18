@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::compiler::ast::{AddrByte, AstNode, Ident, Instruction, MacroArg, ToNode, Value};
+use crate::compiler::ast::{AddrByte, AstNode, Instruction, MacroArg, ToNode, Value};
 
 use super::Compiler;
 
@@ -70,9 +70,9 @@ impl Compiler {
                     for (i, capture_arg) in capturer.args.iter().enumerate() {
                         let current = args.get(i).unwrap();
                         match capture_arg {
-                            MA::Immediate(name) => match current {
+                            MA::Imm8(name) => match current {
                                 V::Immediate(v) => insert!(name, Immediate(v)),
-                                V::Ident(id) => insert!(name, Ident(id)),
+                                V::MacroArg(id) => insert!(name, MacroArg(id)),
                                 V::Expression(e) => insert!(name, Expression(e)),
                                 _ => invalid!(),
                             },
@@ -83,16 +83,10 @@ impl Compiler {
                             MA::ImmReg(name) => match current {
                                 V::Immediate(v) => insert!(name, Immediate(v)),
                                 V::Register(r) => insert!(name, Register(r)),
-                                V::Ident(id) => insert!(name, Ident(id)),
+                                V::MacroArg(id) => insert!(name, MacroArg(id)),
                                 _ => invalid!(),
                             },
-                            MA::Addr(name) => match current {
-                                V::Ident(i) => match i {
-                                    Ident::Static(a) | Ident::Addr(a) => {
-                                        insert_addr!(name, V::Ident(Ident::Addr(a.to_owned())), a);
-                                    }
-                                    _ => invalid!(),
-                                },
+                            MA::Imm16(name) => match current {
                                 V::Expression(e) => {
                                     insert_addr!(name, V::Expression(e.clone()), e);
                                 }
@@ -118,7 +112,7 @@ impl Compiler {
 
                         for arg in args {
                             match arg {
-                                V::Ident(Ident::MacroArg(ma)) => {
+                                V::MacroArg(ma) => {
                                     let Some(val) = captured_args.get(ma) else {
                                         panic!("Attempted to use undefined macro arg at {mac_name:#?} {empty:#?}");
                                     };

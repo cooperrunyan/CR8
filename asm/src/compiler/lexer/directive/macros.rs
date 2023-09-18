@@ -91,8 +91,8 @@ impl Lexer {
                     let arg = match types.as_str() {
                         "reg|imm8" | "imm8|reg" => MacroArg::ImmReg(name),
                         "reg" => MacroArg::Register(name),
-                        "imm8" => MacroArg::Immediate(name),
-                        "imm16" => MacroArg::Addr(name),
+                        "imm8" => MacroArg::Imm8(name),
+                        "imm16" => MacroArg::Imm16(name),
                         oth => bail!("Unknown macro type: {oth:#?}"),
                     };
                     args.push(arg);

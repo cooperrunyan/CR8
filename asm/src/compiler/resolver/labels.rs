@@ -34,7 +34,7 @@ impl Compiler {
 }
 
 impl Operation {
-    pub fn size(&self, _args: &Vec<Value>) -> Result<u8, String> {
+    pub(crate) fn size(&self, _args: &Vec<Value>) -> Result<u8, String> {
         use Operation::*;
         let mut args = vec![];
         for arg in _args {
@@ -70,7 +70,7 @@ impl Operation {
                         Some(Value::AddrByte(_) | Value::Immediate(_)) => return none!(args, 3),
                         _ => return Err("Expected another address byte for LW".to_string()),
                     },
-                    Some(Value::Expression(_) | Value::Ident(_)) => return none!(args, 3),
+                    Some(Value::Expression(_)) => return none!(args, 3),
                     oth => return Err(format!("Unexpected additional argument: {oth:#?}")),
                 }
             }

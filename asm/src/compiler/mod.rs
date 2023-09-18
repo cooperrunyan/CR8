@@ -114,15 +114,6 @@ impl Compiler {
                                 regn += 1;
                             }
                             Value::Immediate(imm) => compiled_args.push(imm as u8),
-                            Value::Ident(id) => match self.resolve_ident(&id) {
-                                Ok(a) => {
-                                    compiled_args.push(a as u8);
-                                    if op == LW || op == SW {
-                                        compiled_args.push((a >> 8) as u8);
-                                    }
-                                }
-                                Err(()) => bail!("Unknown identifier: {id:#?}"),
-                            },
                             Value::Expression(exp) => match self.resolve_expr(&exp) {
                                 Err(e) => bail!("Failed to resolve: {exp:#?}. {e:#?}"),
                                 Ok(v) => {
@@ -132,6 +123,7 @@ impl Compiler {
                                     }
                                 }
                             },
+                            _ => {}
                         }
                     }
                     match (op, regn, compiled_args.len()) {

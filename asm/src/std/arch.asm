@@ -1,6 +1,6 @@
 #define ROM       0x0000
 #define BRAM      0x8000
-#origin           0x8000
+#dynorg           0xC000
 #define GPRAM     0xC000
 #define STACK     0xFC00
 #define STACK_END 0xFEFF

@@ -6,7 +6,7 @@ use crate::{op::Operation, reg::Register};
 
 macro_rules! impl_conv {
     ($nm:ident, $trait:ident, $to:ident) => {
-        pub trait $trait {
+        pub(crate) trait $trait {
             fn $nm(self) -> $to;
         }
 
@@ -26,7 +26,7 @@ impl_conv! {to_node, ToNode, AstNode}
 impl_conv! {to_value, ToValue, Value}
 
 #[derive(Debug)]
-pub enum AstNode {
+pub(crate) enum AstNode {
     Directive(Directive),
     Label(Label),
     Instruction(Instruction),
@@ -37,7 +37,7 @@ to_node! {Instruction, AstNode::Instruction}
 to_node! {Label, AstNode::Label}
 
 #[derive(Debug)]
-pub enum Label {
+pub(crate) enum Label {
     Label(String),
     SubLabel(String),
 }
@@ -53,10 +53,10 @@ impl From<String> for Label {
 }
 
 #[derive(Debug)]
-pub enum Directive {
+pub(crate) enum Directive {
     Macro(Macro),
     Preamble(Vec<AstNode>),
-    Origin(u128),
+    DynamicOrigin(u128),
     Dynamic(String, u128),
     Rom(String, Vec<u8>),
     Define(String, u128),
@@ -64,15 +64,15 @@ pub enum Directive {
 }
 
 #[derive(Debug)]
-pub struct Macro {
-    pub name: String,
-    pub captures: Vec<Capture>,
+pub(crate) struct Macro {
+    pub(crate) name: String,
+    pub(crate) captures: Vec<Capture>,
 }
 
 #[derive(Debug)]
-pub struct Capture {
-    pub args: Vec<MacroArg>,
-    pub body: Vec<Instruction>,
+pub(crate) struct Capture {
+    pub(crate) args: Vec<MacroArg>,
+    pub(crate) body: Vec<Instruction>,
 }
 
 impl ToNode for Macro {
@@ -82,7 +82,7 @@ impl ToNode for Macro {
 }
 
 impl Macro {
-    pub fn new(name: String, captures: Vec<Capture>) -> Self {
+    pub(crate) fn new(name: String, captures: Vec<Capture>) -> Self {
         Self { name, captures }
     }
 
@@ -92,17 +92,17 @@ impl Macro {
 }
 
 #[derive(Debug)]
-pub enum MacroArg {
-    Immediate(String),
+pub(crate) enum MacroArg {
+    Imm8(String),
     Register(String),
     ImmReg(String),
-    Addr(String),
+    Imm16(String),
 }
 
 impl Display for MacroArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Addr(a) | Self::ImmReg(a) | Self::Immediate(a) | Self::Register(a) => {
+            Self::Imm16(a) | Self::ImmReg(a) | Self::Imm8(a) | Self::Register(a) => {
                 f.write_fmt(format_args!("{a}"))
             }
         }
@@ -110,7 +110,7 @@ impl Display for MacroArg {
 }
 
 #[derive(Debug)]
-pub enum Instruction {
+pub(crate) enum Instruction {
     Native(Operation, Vec<Value>),
     Macro(String, Vec<Value>),
 }
@@ -141,19 +141,19 @@ impl Display for Instruction {
 }
 
 #[derive(Debug, Clone)]
-pub enum Value {
+pub(crate) enum Value {
     Expression(String),
     Immediate(i128),
     Register(Register),
     AddrByte(AddrByte),
-    Ident(Ident),
+    MacroArg(String),
 }
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AddrByte(a) => a.fmt(f),
-            Self::Ident(a) => a.fmt(f),
+            Self::MacroArg(a) => a.fmt(f),
             Self::Register(r) => f.write_fmt(format_args!("%{r}")),
             Self::Immediate(i) => {
                 if *i > 0xff {
@@ -168,12 +168,11 @@ impl Display for Value {
 }
 
 to_value! {AddrByte, Value::AddrByte}
-to_value! {Ident, Value::Ident}
 to_value! {Register, Value::Register}
 to_value! {i128, Value::Immediate}
 
 #[derive(Debug, Clone)]
-pub enum AddrByte {
+pub(crate) enum AddrByte {
     Low(String),
     High(String),
 }
@@ -183,21 +182,6 @@ impl Display for AddrByte {
         match self {
             Self::Low(a) => f.write_fmt(format_args!("[{a} & 0x00FF]")),
             Self::High(a) => f.write_fmt(format_args!("[{a} >> 8]")),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Ident {
-    Static(String),
-    Addr(String),
-    MacroArg(String),
-}
-
-impl Display for Ident {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Addr(a) | Self::MacroArg(a) | Self::Static(a) => f.write_str(&a),
         }
     }
 }

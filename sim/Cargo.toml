@@ -17,4 +17,4 @@
   default  = []
   gfx      = []
   keyboard = []
-  jit      = ["asm/full"]
+  jit      = []

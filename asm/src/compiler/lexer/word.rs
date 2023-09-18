@@ -1,4 +1,4 @@
-use crate::compiler::ast::{Ident, Instruction, Label, ToNode, ToValue, Value};
+use crate::compiler::ast::{Instruction, Label, ToNode, ToValue, Value};
 use crate::compiler::tokenizer::Token;
 use crate::{op::Operation, reg::Register};
 
@@ -23,11 +23,7 @@ impl Lexer {
                 Token::Space => continue,
                 Token::Dollar => {
                     let arg = expect!(self, "Expected word after '$'", Word(x));
-                    args.push(Ident::MacroArg(arg).to_value());
-                }
-                Token::Ampersand => {
-                    let stat = expect!(self, "Expected static after '&'", Word(x));
-                    args.push(Ident::Static(stat).to_value());
+                    args.push(Value::MacroArg(arg));
                 }
                 Token::Percent => {
                     let reg = expect!(self, "Unexpected symbol", Word(x));

@@ -8,6 +8,10 @@
         mov %h, $addr.h
         mov %l, $addr.l
     }
+    ($l: imm8 | reg, $h: imm8 | reg) => {
+        mov %h, $h
+        mov %l, $l
+    }
 }
 
 #macro jnza {
@@ -15,19 +19,24 @@
         ldhl $addr
         jnz $if
     }
-}
-
-#macro jnz16 {
     ($addr: imm16, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh
-        jnza $addr, %f
+        ldhl $addr
+        jnz %f
     }
 }
 
 #macro jmp {
     ($addr: imm16) => {
         jnza $addr, 1
+    }
+    ($l: imm8 | reg, $h: imm8 | reg) => {
+        ldhl $l, $h
+        jnz 1
+    }
+    () => {
+        jnz 1
     }
 }
 
@@ -41,7 +50,6 @@
 #macro jlt {
     ($addr: imm16) => {
         and %f, 0b0001
-        ldhl $addr
         jnza $addr, %f
     }
 }
