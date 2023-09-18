@@ -74,12 +74,13 @@
 
 ## Memory Layout
 
-| Start Address | End Address | Size  | Purpose                  |
-| ------------- | ----------- | ----- | ------------------------ |
-| `0x0000`      | `0x7FFF`    | 32Kb  | ROM                      |
-| `0x8000`      | `0xBFFF`    | 16Kb  | Banked RAM               |
-| `0xC000`      | `0xFBFF`    | ~13Kb | GP RAM                   |
-| `0xFC00`      | `0xFEFF`    | ~2Kb  | Stack + Psuedo-registers |
+| Start Address | End Address | Size  | Purpose    |
+| ------------- | ----------- | ----- | ---------- |
+| `0x0000`      | `0x7FFF`    | 32Kb  | ROM        |
+| `0x8000`      | `0xBFFF`    | 16Kb  | Banked RAM |
+| `0xC000`      | `0xFBFF`    | ~14Kb | GP RAM     |
+| `0xFC00`      | `0xFEFF`    | ~1Kb  | Stack      |
+| `0xFF00`      | `0xFFFF`    | ~256b | Misc       |
 
 ### Memory Banks
 
