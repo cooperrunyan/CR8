@@ -97,9 +97,9 @@ the system or `receive` a byte from the system.
 
 - `0x00`: `PING` - Ping the controller.
 - `0x01`: `HALT` - Stop the clock.
-- `0x02`: `PEEK` - Peek into memory. The next two messages to `SysCtrl` are the
+- `0x02`: `DBG` - Debug the system's register state.
+- `0x03`: `PEEK` - Peek into memory. The next two messages to `SysCtrl` are the
   address's low-byte, followed by it's high-byte.
-- `0x03`: `DBG` - Debug the system's register state.
 
 ### `0x01`: Keyboard
 

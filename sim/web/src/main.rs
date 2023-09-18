@@ -130,19 +130,16 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
         let state = state.clone();
         EventListener::new(&window, "keyup", move |event| {
             let event = event.dyn_ref::<web_sys::KeyboardEvent>().unwrap_throw();
-            let k = match event.key().as_str() {
-                "ArrowLeft" | "a" => Key::Left,
-                "ArrowRight" | "d" => Key::Right,
-                "ArrowDown" | "s" => Key::Down,
-                "ArrowUp" | "w" => Key::Up,
-                " " => Key::Space,
-                "r" => Key::R,
-                "=" => Key::Plus,
-                "-" => Key::Minus,
-                "Enter" => {
-                    state.cr8.read().unwrap().debug(&state.mem.read().unwrap());
-                    return;
-                }
+            match event.key().as_str() {
+                // Reset state
+                // "ArrowLeft" | "a" => Key::Left,
+                // "ArrowRight" | "d" => Key::Right,
+                // "ArrowDown" | "s" => Key::Down,
+                // "ArrowUp" | "w" => Key::Up,
+                // " " => Key::Space,
+                // "r" => Key::R,
+                // "=" => Key::Plus,
+                // "-" => Key::Minus,
                 "1" => {
                     let mut d = state.dev.write().unwrap();
                     if d.sysctrl.state & 1 == 1 {
@@ -152,9 +149,16 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
                     }
                     return;
                 }
+                "2" => {
+                    state.cr8.read().unwrap().debug(
+                        &state.mem.read().unwrap(),
+                        state.dev.read().unwrap().snapshot(),
+                    );
+                    return;
+                }
                 _ => return,
             };
-            state.dev.write().unwrap().keyboard.set(k, false);
+            // state.dev.write().unwrap().keyboard.set(k, false);
         })
     };
 

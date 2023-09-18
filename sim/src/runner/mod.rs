@@ -33,7 +33,8 @@ impl Runner {
 
     pub fn debug(&self) -> Result<()> {
         let mem = self.mem.read().map_err(|_| anyhow!("Poisoned"))?;
-        self.cr8.read().unwrap().debug(&mem);
+        let dev = self.devices.read().map_err(|_| anyhow!("Poisoned"))?;
+        self.cr8.read().unwrap().debug(&mem, dev.snapshot());
         Ok(())
     }
 

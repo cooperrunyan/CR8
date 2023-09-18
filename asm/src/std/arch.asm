@@ -19,8 +19,8 @@
 #define PSR8 0xFF08
 #define PSR9 0xFF09
 
-#define CTRL      0x00
-#define CTRLPING  0x00
-#define CTRLHALT  0x01
-#define CTRLPEEK  0x02
-#define CTRLDBG   0x03
+#define CTRL  0x00
+#define PING  0x00
+#define HALT  0x01
+#define DBG   0x02
+#define PEEK  0x03

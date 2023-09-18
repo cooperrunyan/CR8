@@ -3,6 +3,8 @@ use crate::cr8::CR8;
 use anyhow::Result;
 use log::{debug, warn};
 
+use super::DeviceSnapshot;
+
 #[derive(Debug, Default)]
 pub struct SysCtrl {
     pub state: u8,
@@ -15,8 +17,8 @@ encodable! {
         else UNKNOWN,
         NOP(0x00, "nop"),
         HALT(0x01, "halt"),
-        PEEK(0x02, "peek"),
-        DBG(0x03, "dbg"),
+        DBG(0x02, "dbg"),
+        PEEK(0x03, "peek"),
     }
 }
 
@@ -25,7 +27,7 @@ impl SysCtrl {
         Ok(self.state)
     }
 
-    pub fn receive(&mut self, byte: u8, cr8: &CR8, mem: &Mem) -> Result<()> {
+    pub fn receive(&mut self, byte: u8, cr8: &CR8, mem: &Mem, dev: DeviceSnapshot) -> Result<()> {
         if self.peeking {
             if self.peek_low_byte.is_none() {
                 self.peek_low_byte = Some(byte);
@@ -46,7 +48,7 @@ impl SysCtrl {
             SIG::NOP => warn!("sysctrl recieved NOP message"),
             SIG::HALT => self.state |= 0b00000001,
             SIG::PEEK => self.peeking = true,
-            SIG::DBG => cr8.debug(mem),
+            SIG::DBG => cr8.debug(mem, dev),
 
             SIG::UNKNOWN => warn!("sysctrl recieved unknown {byte:#?} message"),
         };

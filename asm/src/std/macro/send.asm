@@ -12,25 +12,25 @@
 
 #macro halt {
     () => {
-        send [CTRL], [CTRLHALT]
+        send [CRL], [HALT]
     }
 }
 
 #macro ping {
     () => {
-        send [CTRL], [CTRLPING]
+        send [CTRL], [PING]
     }
 }
 
 #macro dbg {
     () => {
-        send [CTRL], [CTRLDBG]
+        send [CTRL], [DBG]
     }
 }
 
 #macro peek {
     ($l: imm8, $h: imm8) => {
-        send [CTRL], [CTRLPEEK]
+        send [CTRL], [PEEK]
         send [CTRL], $l
         send [CTRL], $h
     }
@@ -38,7 +38,7 @@
         peek $addr.l, $addr.h
     }
     ($l: reg, $h: reg) => {
-        send [CTRL], [CTRLPEEK]
+        send [CTRL], [PEEK]
         out [CTRL], $l
         out [CTRL], $h
     }

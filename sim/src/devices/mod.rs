@@ -44,6 +44,13 @@ pub struct Devices {
     pub keyboard: keyboard::Keyboard,
 }
 
+#[derive(Debug)]
+pub struct DeviceSnapshot {
+    pub sysctrl: u8,
+    #[cfg(feature = "keyboard")]
+    pub keyboard: u8,
+}
+
 impl Devices {
     pub fn send(
         &mut self,
@@ -54,7 +61,7 @@ impl Devices {
     ) -> Result<()> {
         #[allow(unreachable_patterns)]
         match to.try_into() {
-            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, cr8, mem),
+            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, cr8, mem, self.snapshot()),
 
             #[cfg(feature = "keyboard")]
             Ok(DeviceId::Keyboard) => Ok(()),
@@ -74,6 +81,14 @@ impl Devices {
 
             Ok(d) => bail!("Device {d:?} not connected"),
             Err(_) => bail!("Unknown device: {to:?}"),
+        }
+    }
+
+    pub fn snapshot(&self) -> DeviceSnapshot {
+        DeviceSnapshot {
+            sysctrl: self.sysctrl.state,
+            #[cfg(feature = "keyboard")]
+            keyboard: self.keyboard.0,
         }
     }
 }
