@@ -1,5 +1,3 @@
-#![feature(absolute_path)]
-
 pub mod op;
 pub mod reg;
 

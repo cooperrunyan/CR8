@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use path_absolutize::*;
+use path_clean::clean;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -194,11 +194,7 @@ impl Compiler {
                                 None => {
                                     let attempted = possibilities
                                         .into_iter()
-                                        .map(|p| {
-                                            p.absolutize()
-                                                .map(|p| p.to_str().unwrap_or("").to_string())
-                                                .unwrap_or(String::new())
-                                        })
+                                        .map(|p| clean(p.as_path()))
                                         .collect::<Vec<_>>();
                                     bail!("Could not locate {path} in any of: \n  {attempted:#?}");
                                 }

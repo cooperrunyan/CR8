@@ -1,5 +1,5 @@
 use log::{debug, info, log_enabled, Level};
-use path_absolutize::Absolutize;
+use path_clean::clean;
 use std::collections::HashMap;
 use std::env;
 
@@ -22,14 +22,7 @@ impl Compiler {
         let mut pwd = env::current_dir().unwrap().display().to_string();
         pwd.push('/');
         for file in self.files.iter() {
-            info!(
-                "  - {}",
-                file.absolutize()
-                    .unwrap()
-                    .display()
-                    .to_string()
-                    .replace(&pwd, "")
-            );
+            info!("  - {}", clean(file.as_path()).display());
         }
         info!("");
     }
