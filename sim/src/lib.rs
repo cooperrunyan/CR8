@@ -4,3 +4,6 @@ extern crate util_macros;
 pub mod cr8;
 pub mod devices;
 pub mod runner;
+
+#[cfg(test)]
+mod test;

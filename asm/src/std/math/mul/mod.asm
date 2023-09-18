@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/math/mul
 
-#include "<std>/math/mul/mul"
-#include "<std>/math/mul/mul16"
+#use "<std>/math/mul/mul"
+#use "<std>/math/mul/mul16"

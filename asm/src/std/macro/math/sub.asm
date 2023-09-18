@@ -1,4 +1,4 @@
-#include "<std>/macro/clear"
+#use "<std>/macro/clear"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/math/sub

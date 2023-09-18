@@ -1,4 +1,4 @@
-#include "<std>/macro/logic"
+#use "<std>/macro/logic"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/jmp

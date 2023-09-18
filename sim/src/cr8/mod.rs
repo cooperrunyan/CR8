@@ -40,7 +40,7 @@ impl Joinable for (u8, u8) {
 
 #[derive(Debug)]
 pub struct CR8 {
-    pub(self) reg: [u8; 8],
+    pub reg: [u8; 8],
     pub pc: u16,
     pub sp: u16,
 }

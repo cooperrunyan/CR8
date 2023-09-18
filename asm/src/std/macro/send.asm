@@ -1,4 +1,4 @@
-#include "<std>/arch"
+#use "<std>/arch"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/send
@@ -12,7 +12,7 @@
 
 #macro halt {
     () => {
-        send [CRL], [HALT]
+        send [CTRL], [HALT]
     }
 }
 

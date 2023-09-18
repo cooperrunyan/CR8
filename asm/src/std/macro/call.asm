@@ -1,4 +1,4 @@
-#include "<std>/macro/jmp"
+#use "<std>/macro/jmp"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/call

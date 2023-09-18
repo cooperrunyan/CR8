@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/math
 
-#include "<std>/macro/math/add"
-#include "<std>/macro/math/sub"
+#use "<std>/macro/math/add"
+#use "<std>/macro/math/sub"

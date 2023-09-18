@@ -1,8 +1,8 @@
-#include "<std>/arch"
-#include "<std>/macro/call"
-#include "<std>/macro/jmp"
-#include "<std>/macro/math/add"
-#include "<std>/macro"
+#use "<std>/arch"
+#use "<std>/macro/call"
+#use "<std>/macro/jmp"
+#use "<std>/macro/math/add"
+#use "<std>/macro"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/gfx/frame

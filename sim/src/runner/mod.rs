@@ -1,4 +1,4 @@
-use std::process::exit;
+
 use std::sync::RwLock;
 use std::time::Duration;
 
@@ -38,7 +38,7 @@ impl Runner {
         Ok(())
     }
 
-    pub fn cycle(&mut self) -> Result<u8> {
+    pub fn cycle(&mut self) -> Result<(u8, bool)> {
         {
             let status = {
                 let dev = self.devices.read().map_err(|_| anyhow!("Poisoned"))?;
@@ -50,7 +50,7 @@ impl Runner {
             }
 
             if status == 0x01 {
-                exit(0);
+                return Ok((0, false));
             }
         }
         let mut cr8 = self.cr8.write().unwrap();
@@ -59,6 +59,6 @@ impl Runner {
             .cycle(&self.mem, &self.devices)
             .context(format!("Cycle failed at {:#06x?}", cr8.pc))?;
 
-        Ok(ticks)
+        Ok((ticks, true))
     }
 }

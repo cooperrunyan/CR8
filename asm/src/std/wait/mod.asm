@@ -1,6 +1,6 @@
-#include "<std>/macro/math/sub"
-#include "<std>/macro/jmp"
-#include "<std>/macro/call"
+#use "<std>/macro/math/sub"
+#use "<std>/macro/jmp"
+#use "<std>/macro/call"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/wait

@@ -1,7 +1,7 @@
-#include "<std>/macro/call"
-#include "<std>/macro/jmp"
-#include "<std>/macro/math/sub"
-#include "<std>/macro/math/add"
+#use "<std>/macro/call"
+#use "<std>/macro/jmp"
+#use "<std>/macro/math/sub"
+#use "<std>/macro/math/add"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/math/mul/mul16

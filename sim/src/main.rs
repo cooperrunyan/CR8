@@ -14,7 +14,10 @@ fn main() -> Result<()> {
     let mut runner = Runner::from_argv()?;
 
     loop {
-        let ticks = runner.cycle()?;
+        let (ticks, should_continue) = runner.cycle()?;
+        if !should_continue {
+            break Ok(());
+        }
         thread::sleep(runner.tickrate * ticks as u32);
     }
 }

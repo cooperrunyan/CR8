@@ -1,8 +1,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>
 
-#include "<std>/arch"
-#include "<std>/macro"
-#include "<std>/math"
-#include "<std>/gfx"
-#include "<std>/wait"
+#use "<std>/arch"
+#use "<std>/macro"
+#use "<std>/math"
+#use "<std>/gfx"
+#use "<std>/wait"

@@ -12,9 +12,9 @@ impl Lexer {
     pub(crate) fn lex_directive(&mut self) -> Result<()> {
         let directive = expect!(self, "Expected directive after: '#'", Word(x));
         match directive.as_str() {
-            "include" => {
+            "use" => {
                 expect!(self, "Syntax error", match is_space);
-                let path = expect!(self, "Expected path after #include statement", String(x));
+                let path = expect!(self, "Expected path after #use statement", String(x));
                 self.nodes
                     .push(Directive::Import(path, self.file.clone()).to_node());
             }

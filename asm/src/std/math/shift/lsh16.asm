@@ -1,31 +1,43 @@
-#include "<std>/macro/call"
-#include "<std>/macro/jmp"
-#include "<std>/macro/math/add"
-#include "<std>/macro/math/sub"
+#use "<std>/macro/call"
+#use "<std>/macro/jmp"
+#use "<std>/macro/math"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/math/shift/lsh16
 
-; Shift ab << c  into  cdz
-lsh16:
-    push %a
-    push %c
-    mov %z, %a
-    mov %d, %b
+; Logical Left Shift
+; ab << c  -> ab
+; Side effects: %a, %b, %c
+lshl16:
     jnz [.loop], %c
-    jmp [.done]
+    ret
 
     .loop:
         dec %c
-        add %z, %z
-        adc %d, %d
-        adc %a
+        add %a, %a
+        adc %b, %b
         jnz [.loop], %c
-        jmp [.done]
-
-    .done:
-        mov %c, %a
-        pop %c
-        pop %a
         ret
 
+; Algorithmic Left Shift
+; Side effects: %a, %b, %c, %d
+lsha16:
+    mov %d, %b
+    call [lshl16]
+    and %d, 0b10000000
+    or %b, %d
+    ret
+
+; Rotate left
+; Side effects: %a, %b, %c
+lshr16:
+    jnz [.loop], %c
+    ret
+
+    .loop:
+        dec %c
+        add %a, %a
+        adc %b, %b
+        adc %a
+        jnz [.loop], %c
+        ret

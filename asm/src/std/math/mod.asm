@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/math
 
-#include "<std>/math/mul"
-#include "<std>/math/shift"
+#use "<std>/math/mul"
+#use "<std>/math/shift"
