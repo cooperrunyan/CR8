@@ -39,7 +39,7 @@ mul16:
     .loop_00:
         dec %z
         add %a, %c
-        adcf %b
+        add %b
         jnza [.loop_00], %z
         jmp [.done_00]
 
@@ -54,7 +54,7 @@ mul16:
     .loop_01:
         dec %z
         add %a, %c
-        adcf %b
+        add %b
         jnza [.loop_01], %z
         jmp [.done_01]
 
@@ -70,7 +70,7 @@ mul16:
     .loop_10:
         dec %z
         add %a, %d
-        adcf %b
+        add %b
         jnza [.loop_10], %z
         jmp [.done_10]
 
@@ -86,7 +86,7 @@ mul16:
     .loop_11:
         dec %z
         add %a, %d
-        adcf %b
+        add %b
         jnza [.loop_11], %z
         jmp [.done]
 
@@ -105,20 +105,20 @@ mul16:
         lw %b, [PSR2]
         lw %c, [PSR4]
         add %a, %b
-        adcf %d
+        add %d
         add %a, %c
-        adcf %d
+        add %d
         sw [PSR1], %a
         lw %a, [PSR3]
         lw %b, [PSR5]
         lw %c, [PSR6]
         add %a, %d
         mov %d, 0
-        adcf %d
+        add %d
         add %a, %b
-        adcf %d
+        add %d
         add %a, %c
-        adcf %d
+        add %d
         mov %c, %a
         lw %a, [PSR7]
         add %d, %a

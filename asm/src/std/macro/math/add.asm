@@ -11,9 +11,6 @@
     ($into: reg) => {
         adc $into, 0
     }
-}
-
-#macro add16 {
     ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
         add $tol, $frl
         adc $toh, $frh
@@ -28,9 +25,6 @@
     ($into: reg) => {
         add $into, 1
     }
-}
-
-#macro inc16 {
     ($lo: reg, $hi: reg) => {
         clrfb
         inc $lo

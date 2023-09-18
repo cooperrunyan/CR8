@@ -62,42 +62,36 @@
 
 ### STD Macros
 
-| Pnuemonic | Args                         | Result                                    |
-| --------- | ---------------------------- | ----------------------------------------- |
-| `LDHL`    | `$a0`                        | `MOV l, $a0l`, `MOV h, $a0h`              |
-| `SUB`     | `$r0`, `$ir0`                | SBB with no borrow                        |
-| `SBBF`    | `$r0`,                       | SUB borrow flag from `$r0`                |
-| `SUB16`   | `$r0` ,`$r1`, `$ir0` ,`$ir1` | 16 bit Sub (L, H) - (L, H)                |
-| `ADD`     | `$r0`, `$ir0`                | ADC with no carry                         |
-| `ADCF`    | `$r0`,                       | ADD carry flag to `$r0`                   |
-| `ADD16`   | `$r0` ,`$r1`, `$ir0` ,`$ir1` | 16 bit Add (L, H) + (L, H)                |
-| `INC`     | `$r0`                        | Increment                                 |
-| `INC16`   | `$r0` ,`$r1`                 | 16 bit Increment (L, H)                   |
-| `DEC`     | `$r0`                        | Decrement                                 |
-| `DEC16`   | `$r0` ,`$r1`                 | 16 bit Decrement (L, H)                   |
-| `CLRF`    | None                         | Clear Flags register                      |
-| `CLRFC`   | None                         | Clear Carry flag                          |
-| `CLRFB`   | None                         | Clear Borrow flag                         |
-| `NAND`    | `$r0`, `$ir0`                | Logical NAND                              |
-| `NOT`     | `$r0`                        | Logical NOT                               |
-| `XOR`     | `$r0`, `$ir0`                | Logical XOR                               |
-| `XNOR`    | `$r0`, `$ir0`                | Logical XNOR                              |
-| `JMP`     | `$a0`                        | Unconditional jump                        |
-| `JNZA`    | `$a0`, `$r0`                 | JNZ to immediate address                  |
-| `JZ`      | `$a0`, `$r0`                 | JMP if zero to immediate address          |
-| `JEQ`     | `$a0`                        | Jump if Flags is equal to                 |
-| `JLT`     | `$a0`                        | Jump if Flags is less than                |
-| `JLE`     | `$a0`                        | Jump if Flags is less than or equal to    |
-| `JGT`     | `$a0`                        | Jump if Flags is greater than             |
-| `JGE`     | `$a0`                        | Jump if Flags is greater than or equal to |
-| `JNE`     | `$a0`                        | Jump if Flags is not equal                |
-| `CALL`    | `$a0`                        | Pushes PC to stack then jumps to `$a0`    |
-| `RET`     | None                         | Pops H and L from stack, then jumps       |
-| `SEND`    | `$r0`, `$ir0`                | `OUT` for immediates                      |
-| `HALT`    | None                         | Send `HALT` to SysControl                 |
-| `PEEK`    | `$a0`                        | Send `PEEK` to SysControl                 |
-| `PING`    | None                         | Send `PING` to SysControl                 |
-| `DBG`     | None                         | Send `DBG` to SysControl                  |
+| Pnuemonic | Args          | Result                                    |
+| --------- | ------------- | ----------------------------------------- |
+| `LDHL`    | `$a0`         | `MOV l, $a0l`, `MOV h, $a0h`              |
+| `SUB`     | `$r0`, `$ir0` | SBB with no borrow                        |
+| `ADD`     | `$r0`, `$ir0` | ADC with no carry                         |
+| `INC`     | `$r0`         | Increment                                 |
+| `DEC`     | `$r0`         | Decrement                                 |
+| `CLRF`    | None          | Clear Flags register                      |
+| `CLRFC`   | None          | Clear Carry flag                          |
+| `CLRFB`   | None          | Clear Borrow flag                         |
+| `NAND`    | `$r0`, `$ir0` | Logical NAND                              |
+| `NOT`     | `$r0`         | Logical NOT                               |
+| `XOR`     | `$r0`, `$ir0` | Logical XOR                               |
+| `XNOR`    | `$r0`, `$ir0` | Logical XNOR                              |
+| `JMP`     | `$a0`         | Unconditional jump                        |
+| `JNZA`    | `$a0`, `$r0`  | JNZ to immediate address                  |
+| `JZ`      | `$a0`, `$r0`  | JMP if zero to immediate address          |
+| `JEQ`     | `$a0`         | Jump if Flags is equal to                 |
+| `JLT`     | `$a0`         | Jump if Flags is less than                |
+| `JLE`     | `$a0`         | Jump if Flags is less than or equal to    |
+| `JGT`     | `$a0`         | Jump if Flags is greater than             |
+| `JGE`     | `$a0`         | Jump if Flags is greater than or equal to |
+| `JNE`     | `$a0`         | Jump if Flags is not equal                |
+| `CALL`    | `$a0`         | Pushes PC to stack then jumps to `$a0`    |
+| `RET`     | None          | Pops H and L from stack, then jumps       |
+| `SEND`    | `$r0`, `$ir0` | `OUT` for immediates                      |
+| `HALT`    | None          | Send `HALT` to SysControl                 |
+| `PEEK`    | `$a0`         | Send `PEEK` to SysControl                 |
+| `PING`    | None          | Send `PING` to SysControl                 |
+| `DBG`     | None          | Send `DBG` to SysControl                  |
 
 > - `$a`: Address
 > - `$i`: Immediate (compile-time byte)

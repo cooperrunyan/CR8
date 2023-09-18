@@ -29,15 +29,13 @@
 }
 
 #macro peek {
-    ($addr: imm16) => {
-        send [CTRL], [CTRLPEEK]
-        send [CTRL], $addr.l
-        send [CTRL], $addr.h
-    }
     ($l: imm8, $h: imm8) => {
         send [CTRL], [CTRLPEEK]
         send [CTRL], $l
         send [CTRL], $h
+    }
+    ($addr: imm16) => {
+        peek $addr.l, $addr.h
     }
     ($l: reg, $h: reg) => {
         send [CTRL], [CTRLPEEK]

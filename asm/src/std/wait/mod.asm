@@ -17,7 +17,7 @@
 
 _wait:
     .loop:
-        dec16 %a, %b
+        dec %a, %b
         jnza [.loop], %a
         jnza [.loop], %b
         ret

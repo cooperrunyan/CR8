@@ -19,7 +19,7 @@ lsh16:
         dec %c
         add %z, %z
         adc %d, %d
-        adcf %a
+        add %a
         jnza [.loop], %c
         jmp [.done]
 

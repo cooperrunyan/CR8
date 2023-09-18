@@ -12,8 +12,7 @@
     ($l: imm8 | reg, $h: imm8 | reg) => {
         push [($ + 10) >> 8]    ; 2 bytes
         push [($ + 8) & 0x00FF] ; 2 bytes
-        ldhl $l, $h             ; 4 bytes
-        jmp                     ; 2 bytes
+        jmp $l, $h              ; 6 bytes
     }
 }
 

@@ -15,6 +15,6 @@ mul:
     .loop:
         dec %a
         add %z, %b
-        adcf %d
+        add %d
         jnza [.loop], %a
         ret

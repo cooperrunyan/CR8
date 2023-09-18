@@ -11,9 +11,6 @@
     ($into: reg) => {
         sbb $into, 0
     }
-}
-
-#macro sub16 {
     ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
         sub $tol, $frl
         sbb $toh, $frh
@@ -28,12 +25,10 @@
     ($into: reg) => {
         sub $into, 1
     }
-}
-
-#macro dec16 {
     ($lo: reg, $hi: reg) => {
         clrfb
         dec $lo
         sub $hi
     }
 }
+

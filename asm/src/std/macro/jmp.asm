@@ -22,8 +22,7 @@
     ($addr: imm16, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh
-        ldhl $addr
-        jnz %f
+        jnza $addr, %f
     }
 }
 
@@ -33,7 +32,7 @@
     }
     ($l: imm8 | reg, $h: imm8 | reg) => {
         ldhl $l, $h
-        jnz 1
+        jmp
     }
     () => {
         jnz 1
