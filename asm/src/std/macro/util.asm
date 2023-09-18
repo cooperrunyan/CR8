@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/util
 
-#macro mov16 {
+#macro mov {
     ($inlo: reg, $inhi: reg, $frlo: reg | imm8, $frhi: reg | imm8) => {
         mov $inlo, $frlo
         mov $inhi, $frhi
@@ -12,7 +12,7 @@
     }
 }
 
-#macro swi {
+#macro sw {
     ($to: imm16, $b: imm8) => {
         mov %f, $b
         sw $to, %f

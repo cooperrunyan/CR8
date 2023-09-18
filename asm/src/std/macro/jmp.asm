@@ -14,7 +14,7 @@
     }
 }
 
-#macro jnza {
+#macro jnz {
     ($addr: imm16, $if: imm8 | reg) => {
         ldhl $addr
         jnz $if
@@ -22,13 +22,13 @@
     ($addr: imm16, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
 #macro jmp {
     ($addr: imm16) => {
-        jnza $addr, 1
+        jnz $addr, 1
     }
     ($l: imm8 | reg, $h: imm8 | reg) => {
         ldhl $l, $h
@@ -42,21 +42,21 @@
 #macro jeq {
     ($addr: imm16) => {
         and %f, 0b0010
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
 #macro jlt {
     ($addr: imm16) => {
         and %f, 0b0001
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
 #macro jle {
     ($addr: imm16) => {
         and %f, 0b0011
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
@@ -64,7 +64,7 @@
     ($addr: imm16) => {
         not %f
         and %f, 0b0001
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
@@ -72,7 +72,7 @@
     ($addr: imm16) => {
         nand %f, 0b0001
         and %f, 0b0011
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 
@@ -80,7 +80,7 @@
     ($addr: imm16) => {
         not %f
         and %f, 0b0010
-        jnza $addr, %f
+        jnz $addr, %f
     }
 }
 

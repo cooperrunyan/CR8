@@ -32,8 +32,8 @@ _clrvram:
         sw %z
         inc %a, %b
         dec %c, %d
-        jnza [.loop], %c
-        jnza [.loop], %d
+        jnz [.loop], %c
+        jnz [.loop], %d
         ret
 
 ; ab: Frame address
@@ -62,5 +62,5 @@ frmwof:
         or %z, %d
         pop %d
         pop %c
-        jnza [.loop], %z
+        jnz [.loop], %z
         ret

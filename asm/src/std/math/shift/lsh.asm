@@ -8,13 +8,13 @@
 lsh:
     push %b
     mov %z, %a
-    jnza [.loop], %b
+    jnz [.loop], %b
     jmp [.done]
 
     .loop:
         dec %b
         add %z, %z
-        jnza [.loop], %b
+        jnz [.loop], %b
         jmp [.done]
 
     .done:

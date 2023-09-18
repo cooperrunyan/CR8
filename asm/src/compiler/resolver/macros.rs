@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::compiler::ast::{AddrByte, AstNode, Instruction, MacroArg, ToNode, Value};
+use crate::op::Operation;
 
 use super::Compiler;
 
@@ -28,7 +29,14 @@ impl Compiler {
                 use Value as V;
                 let mac = match self.macros.get(&mac_name) {
                     Some(m) => m,
-                    None => panic!("Macro '{mac_name}' not defined"),
+                    None => {
+                        let op = match Operation::try_from(mac_name.as_str()) {
+                            Ok(op) => op,
+                            Err(_) => panic!("Macro '{mac_name}' not defined"),
+                        };
+
+                        return vec![AstNode::Instruction(Instruction::Native(op, args))];
+                    }
                 };
 
                 let mut captured_args: HashMap<String, Value> = HashMap::new();
@@ -136,6 +144,13 @@ impl Compiler {
                     }
                     return tree;
                 }
+
+                let op = match Operation::try_from(mac_name.as_str()) {
+                    Ok(op) => op,
+                    Err(_) => panic!("Could not find matching macro for {mac_name}"),
+                };
+
+                return vec![AstNode::Instruction(Instruction::Native(op, args))];
             }
             _ => tree.push(node),
         };

@@ -15,10 +15,10 @@
 }
 
 hello:
-    mov16 %a, %b, [HELLO]
-    mov16 %c, %d, [BRAM]
-    swi [PSR0], [HELLO_SZL]
-    swi [PSR1], [HELLO_SZH]
+    mov %a, %b, [HELLO]
+    mov %c, %d, [BRAM]
+    sw [PSR0], [HELLO_SZL]
+    sw [PSR1], [HELLO_SZH]
     call [frmwof]
     wait [WAIT]
     clrvram [BRAM], [BRAM + HELLO_SZ]
@@ -26,10 +26,10 @@ hello:
     jmp [world]
 
 world:
-    mov16 %a, %b, [WORLD]
-    mov16 %c, %d, [BRAM + OFFSET]
-    swi [PSR0], [WORLD_SZL]
-    swi [PSR1], [WORLD_SZH]
+    mov %a, %b, [WORLD]
+    mov %c, %d, [BRAM + OFFSET]
+    sw [PSR0], [WORLD_SZL]
+    sw [PSR1], [WORLD_SZH]
     call [frmwof]
     wait [WAIT]
     clrvram [BRAM + OFFSET], [BRAM + OFFSET + WORLD_SZ]

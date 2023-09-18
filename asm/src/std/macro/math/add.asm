@@ -8,9 +8,6 @@
         clrfc
         adc $into, $rhs
     }
-    ($into: reg) => {
-        adc $into, 0
-    }
     ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
         add $tol, $frl
         adc $toh, $frh
@@ -21,6 +18,12 @@
     }
 }
 
+#macro adc {
+    ($into: reg) => {
+        adc $into, 0
+    }
+}
+
 #macro inc {
     ($into: reg) => {
         add $into, 1
@@ -28,6 +31,6 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         inc $lo
-        add $hi
+        adc $hi
     }
 }

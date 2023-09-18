@@ -12,15 +12,15 @@ lsh16:
     push %c
     mov %z, %a
     mov %d, %b
-    jnza [.loop], %c
+    jnz [.loop], %c
     jmp [.done]
 
     .loop:
         dec %c
         add %z, %z
         adc %d, %d
-        add %a
-        jnza [.loop], %c
+        adc %a
+        jnz [.loop], %c
         jmp [.done]
 
     .done:

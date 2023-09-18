@@ -18,6 +18,6 @@
 _wait:
     .loop:
         dec %a, %b
-        jnza [.loop], %a
-        jnza [.loop], %b
+        jnz [.loop], %a
+        jnz [.loop], %b
         ret

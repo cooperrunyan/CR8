@@ -1,6 +1,6 @@
 use crate::compiler::ast::{Instruction, Label, ToNode, ToValue, Value};
 use crate::compiler::tokenizer::Token;
-use crate::{op::Operation, reg::Register};
+use crate::reg::Register;
 
 use anyhow::{anyhow, bail, Result};
 
@@ -50,11 +50,11 @@ impl Lexer {
             }
         });
 
-        if let Ok(op) = Operation::try_from(inst.as_str()) {
-            self.nodes.push(Instruction::Native(op, args).to_node());
-        } else {
-            self.nodes.push(Instruction::Macro(inst, args).to_node());
-        };
+        // if let Ok(op) = Operation::try_from(inst.as_str()) {
+        //     self.nodes.push(Instruction::Native(op, args).to_node());
+        // } else {
+        self.nodes.push(Instruction::Macro(inst, args).to_node());
+        // };
 
         Ok(())
     }

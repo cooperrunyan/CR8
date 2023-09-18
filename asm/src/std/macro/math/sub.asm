@@ -8,9 +8,6 @@
         clrfb
         sbb $into, $rhs
     }
-    ($into: reg) => {
-        sbb $into, 0
-    }
     ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
         sub $tol, $frl
         sbb $toh, $frh
@@ -21,6 +18,12 @@
     }
 }
 
+#macro sbb {
+    ($into: reg) => {
+        sbb $into, 0
+    }
+}
+
 #macro dec {
     ($into: reg) => {
         sub $into, 1
@@ -28,7 +31,7 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         dec $lo
-        sub $hi
+        sbb $hi
     }
 }
 

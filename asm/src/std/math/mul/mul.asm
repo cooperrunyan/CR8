@@ -9,12 +9,12 @@
 ; Multiply %a * %b -> %zd
 mul:
     mov %z, 0
-    jnza [.loop], %a
+    jnz [.loop], %a
     ret
 
     .loop:
         dec %a
         add %z, %b
-        add %d
-        jnza [.loop], %a
+        adc %d
+        jnz [.loop], %a
         ret
