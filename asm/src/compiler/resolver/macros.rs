@@ -23,106 +23,124 @@ impl Compiler {
         let mut tree = vec![];
 
         match node {
-            AstNode::Instruction(Instruction::Macro(mac_name, mut args)) => {
-                args.reverse();
-                let mac_content = match self.macros.get(&mac_name) {
+            AstNode::Instruction(Instruction::Macro(mac_name, args)) => {
+                use MacroArg as MA;
+                use Value as V;
+                let mac = match self.macros.get(&mac_name) {
                     Some(m) => m,
                     None => panic!("Macro '{mac_name}' not defined"),
                 };
 
-                let mut parsed_args: HashMap<String, Value> = HashMap::new();
+                let mut captured_args: HashMap<String, Value> = HashMap::new();
 
-                for (i, mac_arg) in mac_content.args.iter().enumerate() {
-                    match mac_arg {
-                        MacroArg::Immediate(name) => {
-                            let Some(next) = args.pop() else {
-                                panic!("Bad amount of arguments sent to macro: '{mac_name:#?}'. Expected immediate, found none.");
-                            };
-                            match next {
-                            Value::Immediate(v) => parsed_args.insert(name.to_string(),  Value::Immediate(v)),
-                            Value::Ident(id) => parsed_args.insert(name.to_string(), Value::Ident(id)),
-                            Value::Expression(e) => parsed_args.insert(name.to_string(), Value::Expression(e)),
-                            _ => panic!("Expected an immediate value at {mac_name:#?} argument {i}. Received: {next:#?}")
-                        };
-                        }
-                        MacroArg::Register(name) => {
-                            let Some(next) = args.pop() else {
-                                panic!("Bad amount of arguments sent to macro: '{mac_name:#?}'. Expected register, found none.");
-                            };
-                            match next {
-                            Value::Register(r) => parsed_args.insert(name.to_string(),  Value::Register(r)),
-                            _ => panic!("Expected a register at {mac_name:#?} argument {i}. Received: {next:#?}")
-                        };
-                        }
-                        MacroArg::ImmReg(name) => {
-                            let Some(next) = args.pop() else {
-                                panic!("Bad amount of arguments sent to macro: '{mac_name:#?}'. Expected Immediate or Register, found none.");
-                            };
-                            match next {
-                            Value::Immediate(v) => parsed_args.insert(name.to_string(),  Value::Immediate(v)),
-                            Value::Register(r) => parsed_args.insert(name.to_string(),  Value::Register(r)),
-                            Value::Ident(id) => parsed_args.insert(name.to_string(), Value::Ident(id)),
-                            _ => panic!("Expected an immediate or register at {mac_name:#?} argument {i}. Received: {next:#?}")
-                        };
-                        }
-                        MacroArg::Addr(name) => {
-                            let Some(next) = args.pop() else {
-                                panic!("Bad amount of arguments sent to macro: '{mac_name:#?}'. Expected an address, found none.");
-                            };
-                            match next {
-                            Value::Ident(Ident::Addr(a)) => {
-                                parsed_args.insert(format!("{name}"), Value::Ident(Ident::Addr(a.clone())));
-                                parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(a.clone())));
-                                parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(a)));
+                for capturer in mac.captures.iter() {
+                    if capturer.args.len() != args.len() {
+                        continue;
+                    }
+
+                    let mut valid = true;
+
+                    macro_rules! invalid {
+                        () => {{
+                            valid = false;
+                            break;
+                        }};
+                    }
+
+                    macro_rules! insert {
+                        ($n:expr, $t:ident($v:expr)) => {{
+                            captured_args.insert($n.to_string(), V::$t($v.clone()));
+                        }};
+                    }
+
+                    macro_rules! insert_addr {
+                        ($n:expr, $f:expr, $r:expr) => {{
+                            captured_args.insert($n.to_string(), $f);
+                            captured_args.insert(
+                                format!("{}.l", $n),
+                                V::AddrByte(AddrByte::Low($r.clone())),
+                            );
+                            captured_args.insert(
+                                format!("{}.h", $n),
+                                V::AddrByte(AddrByte::High($r.clone())),
+                            );
+                        }};
+                    }
+
+                    for (i, capture_arg) in capturer.args.iter().enumerate() {
+                        let current = args.get(i).unwrap();
+                        match capture_arg {
+                            MA::Immediate(name) => match current {
+                                V::Immediate(v) => insert!(name, Immediate(v)),
+                                V::Ident(id) => insert!(name, Ident(id)),
+                                V::Expression(e) => insert!(name, Expression(e)),
+                                _ => invalid!(),
                             },
-                            Value::Ident(Ident::Static(a)) => {
-                                parsed_args.insert(format!("{name}"), Value::Ident(Ident::Addr(a.clone())));
-                                parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(a.clone())));
-                                parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(a)));
+                            MA::Register(name) => match current {
+                                V::Register(r) => insert!(name, Register(r)),
+                                _ => invalid!(),
                             },
-                            Value::Expression(expr) => {
-                                parsed_args.insert(format!("{name}"), Value::Expression(expr.clone()));
-                                parsed_args.insert(format!("{name}l"), Value::AddrByte(AddrByte::Low(expr.clone())));
-                                parsed_args.insert(format!("{name}h"), Value::AddrByte(AddrByte::High(expr)));
+                            MA::ImmReg(name) => match current {
+                                V::Immediate(v) => insert!(name, Immediate(v)),
+                                V::Register(r) => insert!(name, Register(r)),
+                                V::Ident(id) => insert!(name, Ident(id)),
+                                _ => invalid!(),
                             },
-                            _ => panic!("Expected an address at {mac_name:#?} argument {i}. Received: {next:#?}")
-                        };
+                            MA::Addr(name) => match current {
+                                V::Ident(i) => match i {
+                                    Ident::Static(a) | Ident::Addr(a) => {
+                                        insert_addr!(name, V::Ident(Ident::Addr(a.to_owned())), a);
+                                    }
+                                    _ => invalid!(),
+                                },
+                                V::Expression(e) => {
+                                    insert_addr!(name, V::Expression(e.clone()), e);
+                                }
+                                _ => invalid!(),
+                            },
                         }
                     }
-                }
-                for instruction in mac_content.body.iter() {
-                    let (empty, args) = match instruction {
-                        Instruction::Macro(m, args) => {
-                            (Instruction::Macro(m.to_string(), vec![]), args)
-                        }
-                        Instruction::Native(n, args) => {
-                            (Instruction::Native(n.to_owned(), vec![]), args)
-                        }
-                    };
-                    let mut new_args: Vec<Value> = vec![];
 
-                    for arg in args {
-                        match arg {
-                            Value::Ident(Ident::MacroArg(ma)) => {
-                                let Some(val) = parsed_args.get(ma) else {
-                                    panic!("Attempted to use undefined macro arg at {mac_name:#?} {empty:#?}");
-                                };
-                                new_args.push(val.clone().to_owned());
+                    if !valid {
+                        continue;
+                    }
+
+                    for instruction in capturer.body.iter() {
+                        let (empty, args) = match instruction {
+                            Instruction::Macro(m, args) => {
+                                (Instruction::Macro(m.to_string(), vec![]), args)
                             }
-                            oth => new_args.push(oth.clone()),
-                        }
-                    }
+                            Instruction::Native(n, args) => {
+                                (Instruction::Native(n.to_owned(), vec![]), args)
+                            }
+                        };
+                        let mut new_args: Vec<Value> = vec![];
 
-                    match instruction {
-                        Instruction::Macro(m, _) => {
-                            let mut nodes = self
-                                .fill_macro(Instruction::Macro(m.to_owned(), new_args).to_node());
-                            tree.append(&mut nodes);
+                        for arg in args {
+                            match arg {
+                                V::Ident(Ident::MacroArg(ma)) => {
+                                    let Some(val) = captured_args.get(ma) else {
+                                        panic!("Attempted to use undefined macro arg at {mac_name:#?} {empty:#?}");
+                                    };
+                                    new_args.push(val.to_owned());
+                                }
+                                oth => new_args.push(oth.clone()),
+                            }
                         }
-                        Instruction::Native(n, _) => {
-                            tree.push(Instruction::Native(n.to_owned(), new_args).to_node())
-                        }
-                    };
+
+                        match instruction {
+                            Instruction::Macro(m, _) => {
+                                let mut nodes = self.fill_macro(
+                                    Instruction::Macro(m.to_owned(), new_args).to_node(),
+                                );
+                                tree.append(&mut nodes);
+                            }
+                            Instruction::Native(n, _) => {
+                                tree.push(Instruction::Native(n.to_owned(), new_args).to_node())
+                            }
+                        };
+                    }
+                    return tree;
                 }
             }
             _ => tree.push(node),

@@ -3,20 +3,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/send
 
-#macro send (i0, i1) {
-    push %f
-    mov %f, $i1
-    out $i0, %f
-    pop %f
+#macro send {
+    ($port: imm8, $b: imm8) => {
+        mov %f, $b
+        out $port, %f
+    }
 }
 
-#macro halt (): send &CTRL, &CTRLHALT
-#macro ping (): send &CTRL, &CTRLPING
-#macro dbg (): send &CTRL, &CTRLDBG
+#macro halt {
+    () => {
+        send &CTRL, &CTRLHALT
+    }
+}
 
-#macro peek (a0) {
-    send &CTRL, &CTRLPEEK
-    send &CTRL, $a0l
-    send &CTRL, $a0h
+#macro ping {
+    () => {
+        send &CTRL, &CTRLPING
+    }
+}
+
+#macro dbg {
+    () => {
+        send &CTRL, &CTRLDBG
+    }
+}
+
+#macro peek {
+    ($addr: imm16) => {
+        send &CTRL, &CTRLPEEK
+        send &CTRL, $addr.l
+        send &CTRL, $addr.h
+    }
 }
 

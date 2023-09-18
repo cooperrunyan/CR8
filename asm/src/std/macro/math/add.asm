@@ -3,21 +3,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/math/add
 
-#macro add (r0, ir0) {
-    clrfc
-    adc $r0, $ir0
+#macro add {
+    ($into: reg, $rhs: reg | imm8) => {
+        clrfc
+        adc $into, $rhs
+    }
 }
 
-#macro add16 (r0, r1, ir0, ir1) {
-    add $r0, $ir0
-    adc $r1, $ir1
+#macro add16 {
+    ($intl: reg, $inth: reg, $rhsl: reg | imm8, $rhsh: reg | imm8) => {
+        add $intl, $rhsl
+        adc $inth, $rhsh
+    }
 }
 
-#macro adcf (r0): adc $r0, 0
-#macro inc (r0): add $r0, 1
+#macro adcf {
+    ($into: reg) => {
+        adc $into, 0
+    }
+}
 
-#macro inc16 (r0, r1) {
-    clrfc
-    inc $r0
-    adcf $r1
+#macro inc {
+    ($into: reg) => {
+        add $into, 1
+    }
+}
+
+#macro inc16 {
+    ($lo: reg, $hi: reg) => {
+        clrfb
+        inc $lo
+        adcf $hi
+    }
 }

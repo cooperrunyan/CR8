@@ -46,19 +46,8 @@ impl Compiler {
 
     fn debug_macros(&self) {
         debug!("===== Macros Declared: =====");
-        for (name, mac) in self.macros.iter() {
-            let mut args = String::new();
-            for (i, arg) in mac.args.iter().enumerate() {
-                args.push_str(&format!("{arg}"));
-                if i != mac.args.len() - 1 {
-                    args.push_str(&format!(", "));
-                }
-            }
-            debug!("  {name} [{}]:", args);
-            for inst in mac.body.iter() {
-                debug!("    {}", inst);
-            }
-            debug!("");
+        for (name, _) in self.macros.iter() {
+            debug!("  - {name}");
         }
         debug!("");
     }

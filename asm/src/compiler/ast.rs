@@ -66,6 +66,11 @@ pub enum Directive {
 #[derive(Debug)]
 pub struct Macro {
     pub name: String,
+    pub captures: Vec<Capture>,
+}
+
+#[derive(Debug)]
+pub struct Capture {
     pub args: Vec<MacroArg>,
     pub body: Vec<Instruction>,
 }
@@ -77,8 +82,8 @@ impl ToNode for Macro {
 }
 
 impl Macro {
-    pub fn new(name: String, args: Vec<MacroArg>, body: Vec<Instruction>) -> Self {
-        Self { name, args, body }
+    pub fn new(name: String, captures: Vec<Capture>) -> Self {
+        Self { name, captures }
     }
 
     fn to_directive(self) -> Directive {

@@ -10,12 +10,14 @@
 ; CALLER MUST SET mb 1
 ; Draws bytes from ROM to VRAM
 
-#macro clrvram (a0, a1) {
-    mov %a, $a0l
-    mov %b, $a0h
-    mov %c, $a1l
-    mov %d, $a1h
-    call [_clrvram]
+#macro clrvram {
+    ($from: imm16, $to: imm16) => {
+        mov %a, $from.l
+        mov %b, $from.h
+        mov %c, $to.l
+        mov %d, $to.h
+        call [_clrvram]
+    }
 }
 
 ; ab: From

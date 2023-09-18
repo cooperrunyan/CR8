@@ -1,9 +1,8 @@
-use crate::compiler::ast::Directive;
-use crate::compiler::ast::Macro;
-use crate::compiler::ast::MacroArg;
-use crate::compiler::ast::ToNode;
+use crate::compiler::ast::{Directive, ToNode};
 
 use anyhow::{anyhow, bail, Result};
+
+mod macros;
 
 use super::AstNode;
 use super::Lexer;
@@ -127,81 +126,7 @@ impl Lexer {
                         .push(Directive::Dynamic(name, len as u128).to_node())
                 }
             }
-            "macro" => {
-                ignore!(self, Token::NewLine | Token::Space);
-                let name = expect!(self, "Expected macro name", Word(x));
-                ignore!(self, Token::Space);
-                expect!(self, "Expected macro args", match is_paren_open);
-                ignore!(self, Token::Space);
-
-                let mut args = vec![];
-                while_next!(self, next, {
-                    ignore!(self, Token::Space);
-                    match next.token {
-                        Token::Word(arg) => {
-                            if arg.starts_with("ir") {
-                                args.push(MacroArg::ImmReg(arg))
-                            } else if arg.starts_with('i') {
-                                args.push(MacroArg::Immediate(arg))
-                            } else if arg.starts_with('r') {
-                                args.push(MacroArg::Register(arg))
-                            } else if arg.starts_with('a') {
-                                args.push(MacroArg::Addr(arg))
-                            } else {
-                                bail!("Macro arg should start with 'i' 'ir' 'r' or 'a' to signify its type")
-                            }
-                        }
-                        Token::Comma => continue,
-                        Token::ParenClose => break,
-                        oth => bail!("Unexpected value: {oth:?}"),
-                    }
-                });
-
-                let mut body = vec![];
-                let mut mustached = false;
-                let mut coloned = false;
-
-                while_next!(self, next, {
-                    match &next.token {
-                        Token::MustacheOpen => mustached = true,
-                        Token::MustacheClose => {
-                            if mustached {
-                                break;
-                            }
-                            body.push(next);
-                        }
-                        Token::Colon => coloned = true,
-                        Token::NewLine => {
-                            if coloned {
-                                break;
-                            }
-                            body.push(next);
-                        }
-                        Token::Space => body.push(next),
-                        _ => {
-                            if !coloned && !mustached {
-                                bail!("Bad macro syntax. Expected either mustache open to signify a block or colon to signify inline");
-                            }
-                            body.push(next);
-                        }
-                    }
-                });
-
-                let mac_nodes = Lexer::new(body, self.file.clone())
-                    .lex()?
-                    .nodes
-                    .into_iter()
-                    .map(|mn| match mn {
-                        AstNode::Instruction(inst) => inst,
-                        _ => panic!(
-                            "Macro body for '{}' should only contain instructions",
-                            &name
-                        ),
-                    })
-                    .collect::<Vec<_>>();
-
-                self.nodes.push(Macro::new(name, args, mac_nodes).to_node())
-            }
+            "macro" => self.lex_macro()?,
             _ => bail!("Invalid directive: '#{directive}'"),
         };
         Ok(())

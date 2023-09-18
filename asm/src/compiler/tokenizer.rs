@@ -77,6 +77,7 @@ isable! {
         Equal(is_equal),
         LeftShift(is_left_shift),
         RightShift(is_right_shift),
+        RightArrow(is_right_arrow),
         Add(is_add),
         Sub(is_sub),
         Ampersand(is_ampersand),
@@ -108,6 +109,7 @@ impl ToString for Token {
             Self::Equal => EQUAL.to_string(),
             Self::LeftShift => "<<".to_string(),
             Self::RightShift => ">>".to_string(),
+            Self::RightArrow => "=>".to_string(),
             Self::Add => ADD.to_string(),
             Self::Sub => SUB.to_string(),
             Self::Ampersand => AMPERSAND.to_string(),
@@ -241,7 +243,18 @@ fn tokenize_next(
         BRACKET_CLOSE => Token::BracketClose,
         PAREN_OPEN => Token::ParenOpen,
         PAREN_CLOSE => Token::ParenClose,
-        EQUAL => Token::Equal,
+        EQUAL => {
+            if let Some(n) = chars.peek() {
+                if n.1 == '>' {
+                    chars.next();
+                    Token::RightArrow
+                } else {
+                    Token::Equal
+                }
+            } else {
+                Token::Equal
+            }
+        }
         ADD => Token::Add,
         SUB => Token::Sub,
         AMPERSAND => Token::Ampersand,

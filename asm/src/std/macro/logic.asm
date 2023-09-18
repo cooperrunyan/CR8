@@ -1,25 +1,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; <std>/macro/logic
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Logic
-#macro nand (r0, ir0) {
-    and $r0, $ir0
-    not $r0
+#macro nand {
+    ($into: reg, $rhs: imm8 | reg) => {
+        and $into, $rhs
+        not $into
+    }
 }
 
-#macro not (r0): nor $r0, $r0
-
-#macro xnor (r0, ir0) {
-    mov %f, $r0
-    nor $r0, $ir0
-    and %f, $ir0
-    or $r0, %f
+#macro not {
+    ($into: reg) => {
+        nor $into, $into
+    }
 }
 
-#macro xor (r0, ir0) {
-    mov %f, $ir0
-    or %f, $r0
-    nand $r0, $ir0
-    and $r0, %f
+#macro xnor {
+    ($into: reg, $rhs: imm8 | reg) => {
+        mov %f, $into
+        nor $into, $rhs
+        and %f, $rhs
+        or $into, %f
+    }
+}
+
+#macro xor {
+    ($into: reg, $rhs: imm8 | reg) => {
+        mov %f, $rhs
+        or %f, $into
+        nand $into, $rhs
+        and $into, %f
+    }
 }
