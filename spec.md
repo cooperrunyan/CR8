@@ -4,6 +4,7 @@
 - 16-bit address bus (64KB) + 8 bit memory bank
 - Little endian
 - Designed to be implemented with 74HC logic gates
+- RISC-based architecture
 
 ## Registers
 
@@ -18,6 +19,16 @@
 | 6      | `H`  | 8-bit | High index byte      |
 | 7      | `F`  | 8-bit | Flags / Intermediate |
 
+> `F` Is commonly used as an intermediate register in `std` macros, meaning
+> certain macros will overwrite its state.
+
+### Flags
+
+- 0: `LF`: Less than flag
+- 1: `EF`: Equal to flag
+- 2: `CF`: Carry
+- 4: `BF`: Borrow
+
 ### System Registers
 
 | Name  | Size  | Description          |
@@ -28,89 +39,38 @@
 | `SPH` | 8-bit | Stack pointer HIGH   |
 | `MB`  | 8-bit | Memory Bank          |
 
-### Flags
-
-- 0: `LF`: Less than flag
-- 1: `EF`: Equal to flag
-- 2: `CF`: Carry
-- 4: `BF`: Borrow
-
 ## Instructions
 
 > - 0x00 is effectively a `NOP` because it moves A to A
 > - `JNZ` with the is-imm bit set to 1 is effectively `JMP`
 
-| Code | Pnuemonic | Args                         | Result                                   |
-| ---- | --------- | ---------------------------- | ---------------------------------------- |
-| 0    | `MOV`     | `reg`, `reg/imm8`            | `reg = reg/imm8`                         |
-| 1    | `LW`      | `reg`, `HL/imm8`, `HL/imm8`  | `reg` = `[HL/(imm8, imm8)]`              |
-| 2    | `SW`      | `HL/imm8`, `HL/imm8`, `reg`, | `[HL/(imm8, imm8)]` = `reg`              |
-| 3    | `PUSH`    | `reg/imm8`                   | `[SP++] = reg/imm8`                      |
-| 4    | `POP`     | `reg`                        | `reg = [SP--]`                           |
-| 5    | `JNZ`     | `reg/imm8`,                  | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
-| 6    | `IN`      | `reg`, `reg/imm8`            | `reg = PORT[reg/imm8]`                   |
-| 7    | `OUT`     | `reg/imm8`, `reg`            | `PORT[reg/imm8] = reg`                   |
-| 8    | `CMP*`    | `reg`, `reg/imm8`            | `reg - reg/imm8`                         |
-| 9    | `ADC*`    | `reg`, `reg/imm8`            | `reg = reg + reg/imm8 + CF`              |
-| A    | `SBB*`    | `reg`, `reg/imm8`            | `reg = reg - (reg/imm8 + CF)`            |
-| B    | `OR`      | `reg`, `reg/imm8`            | `reg = reg \| reg/imm8`                  |
-| C    | `NOR`     | `reg`, `reg/imm8`            | `reg = !(reg \| reg/imm8)`               |
-| D    | `AND`     | `reg`, `reg/imm8`            | `reg = reg & reg/imm8`                   |
-| E    | `MB`      | `imm8`                       | `SYSTEM_REGISTER[MB] = imm8`             |
+| Code | Pnuemonic | Args               | Result                                   |
+| ---- | --------- | ------------------ | ---------------------------------------- |
+| 0    | `MOV`     | `reg`, `reg/imm8`  | `reg = reg/imm8`                         |
+| 1    | `LW`      | `reg`, `HL/imm16`  | `reg` = `[HL/imm16]`                     |
+| 2    | `SW`      | `HL/imm16`, `reg`, | `[HL/imm16]` = `reg`                     |
+| 3    | `PUSH`    | `reg/imm8`         | `[SP++] = reg/imm8`                      |
+| 4    | `POP`     | `reg`              | `reg = [SP--]`                           |
+| 5    | `JNZ`     | `reg/imm8`,        | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
+| 6    | `IN`      | `reg`, `reg/imm8`  | `reg = PORT[reg/imm8]`                   |
+| 7    | `OUT`     | `reg/imm8`, `reg`  | `PORT[reg/imm8] = reg`                   |
+| 8    | `CMP*`    | `reg`, `reg/imm8`  | `reg - reg/imm8`                         |
+| 9    | `ADC*`    | `reg`, `reg/imm8`  | `reg = reg + reg/imm8 + CF`              |
+| A    | `SBB*`    | `reg`, `reg/imm8`  | `reg = reg - (reg/imm8 + BF)`            |
+| B    | `OR`      | `reg`, `reg/imm8`  | `reg = reg \| reg/imm8`                  |
+| C    | `NOR`     | `reg`, `reg/imm8`  | `reg = !(reg \| reg/imm8)`               |
+| D    | `AND`     | `reg`, `reg/imm8`  | `reg = reg & reg/imm8`                   |
+| E    | `MB`      | `imm8`             | `SYSTEM_REGISTER[MB] = imm8`             |
 
 > `*`: Updates FLAG register
 
-### STD Macros
-
-| Pnuemonic | Args          | Result                                    |
-| --------- | ------------- | ----------------------------------------- |
-| `LDHL`    | `$a0`         | `MOV l, $a0l`, `MOV h, $a0h`              |
-| `SUB`     | `$r0`, `$ir0` | SBB with no borrow                        |
-| `ADD`     | `$r0`, `$ir0` | ADC with no carry                         |
-| `INC`     | `$r0`         | Increment                                 |
-| `DEC`     | `$r0`         | Decrement                                 |
-| `CLRF`    | None          | Clear Flags register                      |
-| `CLRFC`   | None          | Clear Carry flag                          |
-| `CLRFB`   | None          | Clear Borrow flag                         |
-| `NAND`    | `$r0`, `$ir0` | Logical NAND                              |
-| `NOT`     | `$r0`         | Logical NOT                               |
-| `XOR`     | `$r0`, `$ir0` | Logical XOR                               |
-| `XNOR`    | `$r0`, `$ir0` | Logical XNOR                              |
-| `JMP`     | `$a0`         | Unconditional jump                        |
-| `JNZA`    | `$a0`, `$r0`  | JNZ to immediate address                  |
-| `JZ`      | `$a0`, `$r0`  | JMP if zero to immediate address          |
-| `JEQ`     | `$a0`         | Jump if Flags is equal to                 |
-| `JLT`     | `$a0`         | Jump if Flags is less than                |
-| `JLE`     | `$a0`         | Jump if Flags is less than or equal to    |
-| `JGT`     | `$a0`         | Jump if Flags is greater than             |
-| `JGE`     | `$a0`         | Jump if Flags is greater than or equal to |
-| `JNE`     | `$a0`         | Jump if Flags is not equal                |
-| `CALL`    | `$a0`         | Pushes PC to stack then jumps to `$a0`    |
-| `RET`     | None          | Pops H and L from stack, then jumps       |
-| `SEND`    | `$r0`, `$ir0` | `OUT` for immediates                      |
-| `HALT`    | None          | Send `HALT` to SysControl                 |
-| `PEEK`    | `$a0`         | Send `PEEK` to SysControl                 |
-| `PING`    | None          | Send `PING` to SysControl                 |
-| `DBG`     | None          | Send `DBG` to SysControl                  |
-
-> - `$a`: Address
-> - `$i`: Immediate (compile-time byte)
-> - `$r`: Register
-> - `$ir`: Immediate or Register
-
 ### Instruction Layout
 
-Instructions are 1-4 bytes long. First byte of the instruction looks like:
-
-`OOOOIRRR`
-
-| Bits | Name          |
-| ---- | ------------- |
-| I    | Is-immediate? |
-| O    | Operation     |
-| R    | Register      |
-
-> JNZ is always 1 byte long
+- Instructions are 2-3 bytes long.
+- First byte of the instruction looks like `OOOOIRRR`, where:
+  - `I`: Is-immediate?
+  - `O`: Operation
+  - `R`: Register value
 
 ## Memory Layout
 
@@ -125,11 +85,62 @@ Instructions are 1-4 bytes long. First byte of the instruction looks like:
 
 - `0x00`: Builtin-memory
 - `0x01`: VRAM
-- Extensible
+- `...`: Extensible
 
-## SysControl
+## Devices
 
-- `0x00`: Ping
-- `0x01`: Halt - Stops the machine
-- `0x02`: Peek - Prints memory address
-- `0x03`: Debug - Prints register states
+Up to 256 devices can be connected at once. A device can either `send` a byte to
+the system or `receive` a byte from the system.
+
+### `0x00`: SysCtrl - _BUILTIN_
+
+- `0x00`: `PING` - Ping the controller.
+- `0x01`: `HALT` - Stop the clock.
+- `0x02`: `PEEK` - Peek into memory. The next two messages to `SysCtrl` are the
+  address's low-byte, followed by it's high-byte.
+- `0x03`: `DBG` - Debug the system's register state.
+
+### `0x01`: Keyboard
+
+- Stores state for 8 keys. Stores keys' pressed-state in 1 byte.
+- Currently does not support receiving information.
+- If it is asked to `send` it will flush its state to the receiver.
+- When a key is pressed, it sets its corresponding bit into the state, which is
+  stored until it is flushed.
+- Key bit number (Can be modified):
+  - `0`: `↑`
+  - `1`: `↓`
+  - `2`: `←`
+  - `3`: `→`
+  - `4`: `spacebar`
+  - `5`: `r`
+  - `6`: `+`
+  - `7`: `-`
+
+## Macros
+
+Instruction-set is extremely minimal but the assembler offers extensibility with
+rust-inspired macros. See `asm/std` for the `std` library which contains macros
+and other functions.
+
+```asm
+#macro jnz {
+    ; Capture the use of `jnz arg0, arg1` where
+    ; arg0 is a static, two-byte value and
+    ; arg1 is either a static, one-byte value or a register
+    ($addr: imm16, $if: imm8 | reg) => {
+        mov %l, $addr.l    ; Move low-byte of $addr into %l
+        mov %h, $addr.h    ; Move high-byte of $addr into %h
+        jnz $if
+    }
+
+    ; Additional capture arm
+    () => {
+        ...
+    }
+}
+```
+
+> This is a snippet from `<std>/macro/jmp` that extends the native `jnz`
+> instruction to also support known addresses (Instead of only being able to
+> jump to `HL`).
