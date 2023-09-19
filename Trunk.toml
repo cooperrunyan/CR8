@@ -1,5 +1,5 @@
 [build]
-  target         = "./index.html"
+  target         = "./sim/web/index.html"
   release        = false
   dist           = "dist"
   public_url     = "/"
@@ -7,7 +7,7 @@
   inject_scripts = true
 
 [watch]
-  watch  = ["../../sim"]
+  watch  = ["./sim", "./target/web.bin"]
   ignore = []
 
 [serve]

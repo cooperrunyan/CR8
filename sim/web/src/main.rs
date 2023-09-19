@@ -20,7 +20,7 @@ struct State {
 fn main() -> Result<(), JsValue> {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
 
-    let (int, kd, ku) = run(include_bytes!("../../../target/test.bin"))?;
+    let (int, kd, ku) = run(include_bytes!("../../../target/web.bin"))?;
 
     int.forget();
     kd.forget();
@@ -28,6 +28,9 @@ fn main() -> Result<(), JsValue> {
 
     Ok(())
 }
+
+const HZ: usize = 4_000_000;
+const HZ_10MS: usize = HZ / 1000;
 
 fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> {
     let window = window().unwrap();
@@ -64,8 +67,9 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
     });
 
     let int = {
-        let mut tick: usize = 0;
+        let mut i: usize = 0;
         let state = state.clone();
+
         Interval::new(1, move || {
             let status = { state.dev.read().unwrap().sysctrl.state };
 
@@ -74,35 +78,43 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
             }
 
             let context = context.clone();
-            for _ in 0..4000 {
-                state
+            let mut ticks = 0;
+
+            loop {
+                if ticks >= HZ_10MS {
+                    break;
+                }
+
+                let ticks_in_this_cycle = state
                     .cr8
                     .write()
                     .unwrap()
                     .cycle(&state.mem, &state.dev)
-                    .unwrap();
+                    .unwrap() as usize;
 
-                let byte = state.mem.read().unwrap().get_vram(tick).unwrap();
+                ticks += ticks_in_this_cycle;
 
-                for j in 0..8 {
-                    let j = 7 - j;
-                    let v = (byte >> j) & 1;
+                for _ in 0..ticks_in_this_cycle {
+                    let byte = state.mem.read().unwrap().get_vram(i).unwrap();
 
-                    let by = tick >> 5;
-                    let bx = tick & 0b11111;
-                    let x = (bx as f64) * 8.0 + (7 - j) as f64;
-                    let y = by as f64;
+                    for j in 0..8 {
+                        let j = 7 - j;
+                        let v = (byte >> j) & 1;
 
-                    if v == 1 {
-                        context.fill_rect(x * 4.0, y * 4.0, 4.0, 4.0);
-                    } else {
-                        context.clear_rect(x * 4.0, y * 4.0, 4.0, 4.0);
+                        let by = i >> 5;
+                        let bx = i & 0b11111;
+                        let x = (bx as f64) * 8.0 + (7 - j) as f64;
+                        let y = by as f64;
+
+                        if v == 1 {
+                            context.fill_rect(x * 4.0, y * 4.0, 4.0, 4.0);
+                        } else {
+                            context.clear_rect(x * 4.0, y * 4.0, 4.0, 4.0);
+                        }
                     }
+
+                    i = if i >= 0x3fff { 0 } else { i + 1 };
                 }
-
-                let newtick = if tick >= 0x3fff { 0 } else { tick + 1 };
-
-                tick = newtick;
             }
         })
     };
