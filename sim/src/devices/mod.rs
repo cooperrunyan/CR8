@@ -52,6 +52,13 @@ pub struct DeviceSnapshot {
 }
 
 impl Devices {
+    pub fn new(debug: bool) -> Self {
+        Self {
+            sysctrl: SysCtrl::new(debug),
+            ..Default::default()
+        }
+    }
+
     pub fn send(
         &mut self,
         cr8: &CR8,

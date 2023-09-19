@@ -9,10 +9,10 @@ use super::Runner;
 
 impl Runner {
     pub fn from_argv() -> Result<Self> {
-        let (file, tickrate) = Self::read_argv()?;
+        let (file, tickrate, debug) = Self::read_argv()?;
         let bin = Self::jit(file)?;
 
-        Ok(Self::new(&bin, tickrate))
+        Ok(Self::new(&bin, tickrate, debug))
     }
 
     pub fn jit(path: String) -> Result<Vec<u8>> {

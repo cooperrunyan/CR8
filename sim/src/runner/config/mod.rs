@@ -11,21 +11,22 @@ impl Runner {
     pub fn from_argv() -> Result<Self> {
         use std::fs;
 
-        let (file, tickrate) = Self::read_argv()?;
+        let (file, tickrate, debug) = Self::read_argv()?;
 
         let bin = match fs::read(file.clone()) {
             Ok(i) => i,
             Err(_) => bail!("Could not read input file"),
         };
 
-        Ok(Self::new(&bin, tickrate))
+        Ok(Self::new(&bin, tickrate, debug))
     }
 
-    pub fn read_argv() -> Result<(String, Duration)> {
+    pub fn read_argv() -> Result<(String, Duration, bool)> {
         let args: Vec<_> = env::args().collect();
 
         let mut file = String::new();
         let mut tickrate = Duration::ZERO;
+        let mut debug = false;
 
         for (i, arg) in args.iter().enumerate() {
             match arg.as_str() {
@@ -42,6 +43,9 @@ impl Runner {
 
                     tickrate = Self::parse_duration(&args[i + 1])?;
                 }
+                "--dbg" => {
+                    debug = true;
+                }
                 _ => {}
             }
         }
@@ -50,7 +54,7 @@ impl Runner {
             bail!("Expected input file");
         }
 
-        Ok((file, tickrate))
+        Ok((file, tickrate, debug))
     }
 
     pub fn parse_duration(inpt: &str) -> Result<Duration> {

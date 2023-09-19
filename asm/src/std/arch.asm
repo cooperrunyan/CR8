@@ -20,7 +20,7 @@
 #[static(PSR9: 0xFF09)]
 
 #[static(CTRL: 0x00)]
-#[static(PING: 0x00)]
-#[static(HALT: 0x01)]
-#[static(DBG: 0x02)]
-#[static(PEEK: 0x03)]
+#[static(SIGPING: 0x00)]
+#[static(SIGHALT: 0x01)]
+#[static(SIGDBG: 0x02)]
+#[static(SIGBRKPT: 0x03)]

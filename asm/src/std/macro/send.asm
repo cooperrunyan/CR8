@@ -9,35 +9,25 @@
 
 #[macro] halt: {
     () => {
-        send [CTRL], [HALT]
+        send [CTRL], [SIGHALT]
     }
 }
 
 #[macro] ping: {
     () => {
-        send [CTRL], [PING]
+        send [CTRL], [SIGPING]
+    }
+}
+
+#[macro] brkpt: {
+    () => {
+        send [CTRL], [SIGBRKPT]
     }
 }
 
 #[macro] dbg: {
     () => {
-        send [CTRL], [DBG]
-    }
-}
-
-#[macro] peek: {
-    ($l: imm8, $h: imm8) => {
-        send [CTRL], [PEEK]
-        send [CTRL], $l
-        send [CTRL], $h
-    }
-    ($addr: imm16) => {
-        peek $addr.l, $addr.h
-    }
-    ($l: reg, $h: reg) => {
-        send [CTRL], [PEEK]
-        out [CTRL], $l
-        out [CTRL], $h
+        send [CTRL], [SIGDBG]
     }
 }
 

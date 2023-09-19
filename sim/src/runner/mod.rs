@@ -1,4 +1,3 @@
-
 use std::sync::RwLock;
 use std::time::Duration;
 
@@ -18,9 +17,9 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn new(bin: &[u8], tickrate: Duration) -> Self {
+    pub fn new(bin: &[u8], tickrate: Duration, debug: bool) -> Self {
         let mem = RwLock::new(Mem::new(bin));
-        let devices = RwLock::new(Devices::default());
+        let devices = RwLock::new(Devices::new(debug));
         let cr8 = RwLock::new(CR8::new());
 
         Self {
@@ -45,9 +44,16 @@ impl Runner {
                 dev.sysctrl.state
             };
 
-            if status >> 1 & 1 == 1 {
-                self.debug()?;
-            }
+            // if status >> 1 & 1 == 1 {
+            //     self.debug()?;
+            //     if self.debug {
+            //         let mut inp = String::new();
+            //         stdin().read_line(&mut inp)?;
+            //         if &inp == "q" {
+            //             return Ok((0, false));
+            //         }
+            //     }
+            // }
 
             if status == 0x01 {
                 return Ok((0, false));

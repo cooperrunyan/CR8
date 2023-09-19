@@ -35,7 +35,7 @@ fn run_asm(asm: String) -> Result<CR8> {
     let mut compiler = Compiler::new();
     compiler.push(Input::Raw(asm), Arc::new(PathBuf::from("test")))?;
     let bin = compiler.compile()?;
-    let mut runner = Runner::new(&bin, Duration::ZERO);
+    let mut runner = Runner::new(&bin, Duration::ZERO, false);
 
     loop {
         let (_, should_continue) = runner.cycle()?;
