@@ -59,3 +59,70 @@ fn rsh() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn mul() -> Result<()> {
+    let i0: u16 = 24;
+    let i1: u16 = 19;
+    let o0 = i0.overflowing_mul(i1).0 as u8;
+    let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
+    let i0 = 24 as u8;
+    let i1 = 19 as u8;
+    t!("mul"; A: i0, B: i1  =>  D: o1, Z: o0);
+
+    let i0: u16 = 7;
+    let i1: u16 = 99;
+    let o0 = i0.overflowing_mul(i1).0 as u8;
+    let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
+    let i0 = 7 as u8;
+    let i1 = 99 as u8;
+    t!("mul"; A: i0, B: i1  =>  D: o1, Z: o0);
+
+    Ok(())
+}
+
+#[test]
+fn mulip() -> Result<()> {
+    let i0: u16 = 24;
+    let i1: u16 = 19;
+    let o0 = i0.overflowing_mul(i1).0 as u8;
+    let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
+    let i0 = 24 as u8;
+    let i1 = 19 as u8;
+    t!("mulip"; A: i0, B: i1  =>  B: o1, A: o0);
+
+    let i0: u16 = 7;
+    let i1: u16 = 99;
+    let o0 = i0.overflowing_mul(i1).0 as u8;
+    let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
+    let i0 = 7 as u8;
+    let i1 = 99 as u8;
+    t!("mulip"; A: i0, B: i1  =>  B: o1, A: o0);
+
+    Ok(())
+}
+
+#[test]
+fn mul16() -> Result<()> {
+    macro_rules! test_mul16 {
+        ($ab:expr, $cd:expr) => {{
+            let ab: u16 = $ab;
+            let cd: u16 = $cd;
+            let out = (ab as u32).overflowing_mul(cd as u32).0;
+            let a_in = ab as u8;
+            let b_in = (ab >> 8) as u8;
+            let c_in = cd as u8;
+            let d_in = (cd >> 8) as u8;
+            let a_out = out as u8;
+            let b_out = (out >> 8) as u8;
+            let c_out = (out >> 16) as u8;
+            let d_out = (out >> 24) as u8;
+            t!("mul16"; A: a_in, B: b_in, C: c_in, D: d_in  =>  A: a_out, B: b_out, C: c_out, D: d_out)
+        }}
+    }
+
+    test_mul16!(5201, 19246);
+    test_mul16!(1975, 9276);
+
+    Ok(())
+}

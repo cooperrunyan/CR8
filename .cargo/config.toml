@@ -1,5 +1,6 @@
 [alias]
   sim = "run --bin sim --no-default-features -F jit -- -r 4ghz -i"
+  dbg = "run --bin sim --no-default-features -F jit -- -r 10hz -i"
   asm = "run --bin asm -- -o target/test.bin -i"
   png = "run --bin png --"
 

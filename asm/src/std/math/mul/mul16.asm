@@ -1,6 +1,8 @@
+#[use(std::arch)]
 #[use(std::macro::call)]
 #[use(std::macro::jmp)]
 #[use(std::macro::math)]
+#[use(std::math::mul::mul)]
 
 ; 16 bit manipulation
 ; Multiply %ab * %cd -> %abcd
@@ -10,114 +12,70 @@
 ;           [2] [3]
 ;           [4] [5]
 ;               [6] [7]
+
+; Byte:  0    1    2    3
+;       [ac] [ac]
+;            [ad] [ad]
+;            [bc] [bc]
+;                 [bd] [bd]
 mul16:
-    push %a
+    push %d
+    push %c
     push %b
-    push %a
-    push %b
-    mov %z, %a
-    mov %a, 0
-    mov %b, 0
-
-    ; Clear used PSRs
+    push %d
+    mov %d, 0
+    sw [PSR0], %d
+    sw [PSR1], %d
+    sw [PSR2], %d
+    sw [PSR3], %d
+    sw [PSR4], %d
+    sw [PSR5], %d
+    sw [PSR6], %d
+    sw [PSR7], %d
+    mov %b, %c
+    call [mulip] ; puts original %a into %z
     sw [PSR0], %a
-    sw [PSR1], %a
+    sw [PSR1], %b
+    pop %b ; original %d
+    mov %a, %z
+    call [mulip]
     sw [PSR2], %a
-    sw [PSR3], %a
+    sw [PSR3], %b
+    pop %a ; original %b
+    pop %b ; original %c
+    call [mulip] ; puts %a (original %b) into %z
     sw [PSR4], %a
-    sw [PSR5], %a
+    sw [PSR5], %b
+    mov %a, %z
+    pop %b ; original %d
+    call [mulip]
     sw [PSR6], %a
-    sw [PSR7], %a
+    sw [PSR7], %b
+    lw %a, [PSR1]
+    lw %b, [PSR2]
+    mov %c, 0
+    add %a, %b
+    adc %c
+    lw %b, [PSR4]
+    add %a, %b
+    adc %c
+    push %a
+    mov %a, %c
+    mov %c, 0
+    lw %b, [PSR3]
+    add %a, %b
+    adc %c
+    lw %b, [PSR5]
+    add %a, %b
+    adc %c
+    lw %b, [PSR6]
+    add %a, %b
+    adc %c
 
-    jnz [.loop_00], %z
-    jmp [.done_00]
-
-    .loop_00:
-        dec %z
-        add %a, %c
-        adc %b
-        jnz [.loop_00], %z
-        jmp [.done_00]
-
-    .done_00:
-        sw [PSR0], %a
-        sw [PSR1], %b
-        pop %z
-        mov %a, 0
-        mov %b, 0
-        jmp [.loop_01]
-
-    .loop_01:
-        dec %z
-        add %a, %c
-        adc %b
-        jnz [.loop_01], %z
-        jmp [.done_01]
-
-    .done_01:
-        sw [PSR2], %a
-        sw [PSR3], %b
-        pop %z
-        mov %a, 0
-        mov %b, 0
-        jnz [.loop_10], %z
-        jmp [.done_10]
-
-    .loop_10:
-        dec %z
-        add %a, %d
-        adc %b
-        jnz [.loop_10], %z
-        jmp [.done_10]
-
-    .done_10:
-        sw [PSR4], %a
-        sw [PSR5], %b
-        pop %z
-        mov %a, 0
-        mov %b, 0
-        jnz [.loop_11], %z
-        jmp [.done_11]
-
-    .loop_11:
-        dec %z
-        add %a, %d
-        adc %b
-        jnz [.loop_11], %z
-        jmp [.done]
-
-    .done_11:
-        sw [PSR6], %a
-        sw [PSR7], %b
-        pop %z
-        mov %a, 0
-        mov %b, 0
-        jnz [.loop_11], %z
-        jmp [.done]
-
-    .done:
-        mov %d, 0
-        lw %a, [PSR1]
-        lw %b, [PSR2]
-        lw %c, [PSR4]
-        add %a, %b
-        adc %d
-        add %a, %c
-        adc %d
-        sw [PSR1], %a
-        lw %a, [PSR3]
-        lw %b, [PSR5]
-        lw %c, [PSR6]
-        add %a, %d
-        mov %d, 0
-        adc %d
-        add %a, %b
-        adc %d
-        add %a, %c
-        adc %d
-        mov %c, %a
-        lw %a, [PSR7]
-        add %d, %a
-        lw %a, [PSR0]
-        lw %b, [PSR1]
-        ret
+    mov %d, %c
+    lw %c, [PSR7]
+    add %d, %c
+    mov %c, %a
+    pop %b
+    lw %a, [PSR0]
+    ret
