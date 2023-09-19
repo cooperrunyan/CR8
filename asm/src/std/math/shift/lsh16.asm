@@ -5,7 +5,7 @@
 ; Logical Left Shift
 ; ab << c  -> ab
 ; Side effects: %a, %b, %c
-lshl16:
+lsh16:
     jnz [.loop], %c
     ret
 
@@ -18,23 +18,10 @@ lshl16:
 
 ; Algorithmic Left Shift
 ; Side effects: %a, %b, %c, %d
-lsha16:
+lsa16:
     mov %d, %b
-    call [lshl16]
+    call [lsh16]
     and %d, 0b10000000
+    and %b, 0b01111111
     or %b, %d
     ret
-
-; Rotate left
-; Side effects: %a, %b, %c
-lshr16:
-    jnz [.loop], %c
-    ret
-
-    .loop:
-        dec %c
-        add %a, %a
-        adc %b, %b
-        adc %a
-        jnz [.loop], %c
-        ret

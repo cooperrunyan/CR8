@@ -4,7 +4,7 @@
 
 ; Logical Left Shift
 ; Side effects: %z, %b
-lshl:
+lsh:
     mov %z, %a
     jnz [.loop], %b
     ret
@@ -17,16 +17,16 @@ lshl:
 
 ; Algorithmic Left Shift
 ; Side effects: %z, %b, %d
-lsha:
+lsa:
     mov %d, %a
     and %d, 0b10000000
-    call [lshl]
+    call [lsh]
     or %z, %d
     ret
 
 ; Rotate left
 ; Side effects: %z, %b
-lshr:
+lrt:
     mov %z, %a
     jnz [.loop], %b
     ret

@@ -5,22 +5,23 @@
 
 ; Rotate Right
 ; Side effects: %z, %b, %c
-rshr:
+rrt:
     ; Left rotate %a (8 - %b) times
     mov %c, 8
     sub %c, %b
-    and %c, 0b111
+    and %c, 0b1111
 
     mov %b, %c
-    call [lshr]
+    call [lrt]
     ret
 
 ; Logical Right Shift
 ; Side effects: %z, %b, %c, %d
-rshl:
+rsh:
     mov %d, 0
     mov %c, %b
-    and %c, 0b111
+    sub %c, 8
+    and %c, 0b1111
     jnz [.mask], %c
     mov %z, %a
     ret
@@ -33,16 +34,6 @@ rshl:
         jmp [.shift]
 
     .shift:
-        call [rshr]
+        call [rrt]
         and %z, %d
         ret
-
-; Algorithmic Right Shift
-; Side effects: %z, %b, %c, %d
-rsha:
-    push %a
-    call [rshl]
-    pop %d
-    and %d, 0b10000000
-    or %z, %d
-    ret
