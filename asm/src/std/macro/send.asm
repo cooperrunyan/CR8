@@ -1,34 +1,31 @@
-#use "<std>/arch"
+#[use(std::arch)]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/send
-
-#macro send {
+#[macro] send: {
     ($port: imm8, $b: imm8) => {
         mov %f, $b
         out $port, %f
     }
 }
 
-#macro halt {
+#[macro] halt: {
     () => {
         send [CTRL], [HALT]
     }
 }
 
-#macro ping {
+#[macro] ping: {
     () => {
         send [CTRL], [PING]
     }
 }
 
-#macro dbg {
+#[macro] dbg: {
     () => {
         send [CTRL], [DBG]
     }
 }
 
-#macro peek {
+#[macro] peek: {
     ($l: imm8, $h: imm8) => {
         send [CTRL], [PEEK]
         send [CTRL], $l

@@ -33,7 +33,7 @@ const SPACE: char = ' ';
 const NEW_LINE: char = '\n';
 const DIRECTIVE: char = '#';
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct TokenMeta {
     pub(crate) token: Token,
     pub(crate) path: Arc<PathBuf>,
@@ -68,6 +68,7 @@ isable! {
         Number(is_num, i128, _),
         Comma(is_comma),
         Colon(is_colon),
+        ColonColon(is_colon_colon),
         MustacheOpen(is_mustache_open),
         MustacheClose(is_mustache_close),
         BracketOpen(is_brack_open),
@@ -100,6 +101,7 @@ impl ToString for Token {
             Self::Number(v) => v.to_string(),
             Self::Comma => COMMA.to_string(),
             Self::Colon => COLON.to_string(),
+            Self::ColonColon => "::".to_string(),
             Self::MustacheOpen => MUSTACHE_OPEN.to_string(),
             Self::MustacheClose => MUSTACHE_CLOSE.to_string(),
             Self::BracketOpen => BRACKET_OPEN.to_string(),
@@ -218,7 +220,18 @@ fn tokenize_next(
             Token::NewLine
         }
         COMMA => Token::Comma,
-        COLON => Token::Colon,
+        COLON => {
+            if let Some(n) = chars.peek() {
+                if n.1 == COLON {
+                    chars.next();
+                    Token::ColonColon
+                } else {
+                    Token::Colon
+                }
+            } else {
+                Token::Colon
+            }
+        }
         SEMI_COLON => {
             while chars.peek().map(|t| t.1) != Some(NEW_LINE) {
                 chars.next();

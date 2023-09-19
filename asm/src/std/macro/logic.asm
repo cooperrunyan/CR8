@@ -1,7 +1,4 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/logic
-
-#macro nand {
+#[macro] nand: {
     ($into: reg, $rhs: imm8 | reg) => {
         and $into, $rhs
         not $into
@@ -12,7 +9,7 @@
     }
 }
 
-#macro not {
+#[macro] not: {
     ($into: reg) => {
         nor $into, $into
     }
@@ -22,7 +19,7 @@
     }
 }
 
-#macro xnor {
+#[macro] xnor: {
     ($into: reg, $rhs: imm8 | reg) => {
         mov %f, $into
         nor $into, $rhs
@@ -36,7 +33,7 @@
 }
 
 
-#macro xor {
+#[macro] xor: {
     ($into: reg, $rhs: imm8 | reg) => {
         mov %f, $rhs
         or %f, $into

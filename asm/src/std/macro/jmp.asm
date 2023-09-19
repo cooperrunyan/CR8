@@ -1,9 +1,6 @@
-#use "<std>/macro/logic"
+#[use(std::macro::logic)]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/jmp
-
-#macro ldhl {
+#[macro] ldhl: {
     ($addr: imm16) => {
         mov %h, $addr.h
         mov %l, $addr.l
@@ -14,7 +11,7 @@
     }
 }
 
-#macro jnz {
+#[macro] jnz: {
     ($addr: imm16, $if: imm8 | reg) => {
         ldhl $addr
         jnz $if
@@ -26,7 +23,7 @@
     }
 }
 
-#macro jmp {
+#[macro] jmp: {
     ($addr: imm16) => {
         jnz $addr, 1
     }
@@ -39,28 +36,28 @@
     }
 }
 
-#macro jeq {
+#[macro] jeq: {
     ($addr: imm16) => {
         and %f, 0b0010
         jnz $addr, %f
     }
 }
 
-#macro jlt {
+#[macro] jlt: {
     ($addr: imm16) => {
         and %f, 0b0001
         jnz $addr, %f
     }
 }
 
-#macro jle {
+#[macro] jle: {
     ($addr: imm16) => {
         and %f, 0b0011
         jnz $addr, %f
     }
 }
 
-#macro jgt {
+#[macro] jgt: {
     ($addr: imm16) => {
         not %f
         and %f, 0b0001
@@ -68,7 +65,7 @@
     }
 }
 
-#macro jge {
+#[macro] jge: {
     ($addr: imm16) => {
         nand %f, 0b0001
         and %f, 0b0011
@@ -76,7 +73,7 @@
     }
 }
 
-#macro jne {
+#[macro] jne: {
     ($addr: imm16) => {
         not %f
         and %f, 0b0010
@@ -84,7 +81,7 @@
     }
 }
 
-#macro jz {
+#[macro] jz: {
     ($addr: imm16, $if: reg) => {
         cmp $if, 0b0010
         jeq $addr

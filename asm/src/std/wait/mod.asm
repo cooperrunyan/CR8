@@ -1,13 +1,10 @@
-#use "<std>/macro/math/sub"
-#use "<std>/macro/jmp"
-#use "<std>/macro/call"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/wait
+#[use(std::macro::math::sub)]
+#[use(std::macro::jmp)]
+#[use(std::macro::call)]
 
 ; Can be shortcut called with the macro: `wait [TICKS]`
 
-#macro wait {
+#[macro] wait: {
     ($tickamt: imm16) => {
         mov %b, $tickamt.h
         mov %a, $tickamt.l

@@ -1,9 +1,6 @@
-#use "<std>/macro/clear"
+#[use(std::macro::clear)]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/math/sub
-
-#macro sub {
+#[macro] sub: {
     ($into: reg, $rhs: reg | imm8) => {
         clrfb
         sbb $into, $rhs
@@ -18,13 +15,13 @@
     }
 }
 
-#macro sbb {
+#[macro] sbb: {
     ($into: reg) => {
         sbb $into, 0
     }
 }
 
-#macro dec {
+#[macro] dec: {
     ($into: reg) => {
         sub $into, 1
     }

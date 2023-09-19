@@ -1,5 +1,2 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/math
-
-#use "<std>/math/mul"
-#use "<std>/math/shift"
+#[use(std::math::mul)]
+#[use(std::math::shift)]

@@ -1,9 +1,6 @@
-#use "<std>/macro/clear"
+#[use(std::macro::clear)]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/math/add
-
-#macro add {
+#[macro] add: {
     ($into: reg, $rhs: reg | imm8) => {
         clrfc
         adc $into, $rhs
@@ -18,13 +15,13 @@
     }
 }
 
-#macro adc {
+#[macro] adc: {
     ($into: reg) => {
         adc $into, 0
     }
 }
 
-#macro inc {
+#[macro] inc: {
     ($into: reg) => {
         add $into, 1
     }

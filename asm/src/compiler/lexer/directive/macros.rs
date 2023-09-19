@@ -10,6 +10,8 @@ impl Lexer {
         ignore!(self, Token::NewLine | Token::Space);
         let name = expect!(self, "Expected macro name", Word(x));
         ignore!(self, Token::Space);
+        expect!(self, "Invalid syntax", match is_colon);
+        ignore!(self, Token::Space);
 
         expect!(self, "Expected {{}} after '#macro _'", match is_mustache_open);
 

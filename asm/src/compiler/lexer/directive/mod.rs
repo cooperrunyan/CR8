@@ -1,135 +1,218 @@
+use crate::compiler::ast::{AddrByte, Instruction, Label, ToValue, Value};
 use crate::compiler::ast::{Directive, ToNode};
+use crate::op::Operation;
+use crate::reg::Register;
 
 use anyhow::{anyhow, bail, Result};
+use log::warn;
 
 mod macros;
 
-use super::AstNode;
 use super::Lexer;
 use super::Token;
 
 impl Lexer {
     pub(crate) fn lex_directive(&mut self) -> Result<()> {
-        let directive = expect!(self, "Expected directive after: '#'", Word(x));
-        match directive.as_str() {
-            "use" => {
-                expect!(self, "Syntax error", match is_space);
-                let path = expect!(self, "Expected path after #use statement", String(x));
-                self.nodes
-                    .push(Directive::Import(path, self.file.clone()).to_node());
+        expect!(self, "Expected '[' after: '#'", match is_brack_open);
+
+        let mut directive = vec![];
+
+        while_next!(self, next, {
+            match &next.token {
+                Token::Space | Token::NewLine => continue,
+                Token::BracketClose => break,
+                _ => directive.push(next),
             }
-            "dynorg" => {
-                expect!(self, "Syntax error", match is_space);
-                let addr = expect!(self, "Expected address after #dynorg", Number(x));
-                self.nodes
-                    .push(Directive::DynamicOrigin(addr as u128).to_node());
+        });
+
+        let mut directive = directive.into_iter();
+
+        match directive.next() {
+            None => {
+                warn!("Found empty '#[]' statement");
             }
-            "define" => {
-                expect!(self, "Syntax error", match is_space);
-                let name = expect!(self, "Expected name for #define statement", Word(x));
-                expect!(self, "Syntax error", match is_space);
-                let val = expect!(self, "Expected value for #define statement", Number(x));
-                self.nodes
-                    .push(Directive::Define(name, val as u128).to_node());
-            }
-            "init" => {
-                let mut init = vec![];
-                let mut open = false;
-                while_next!(self, next, {
-                    match &next.token {
-                        Token::MustacheOpen => open = true,
-                        Token::MustacheClose => {
-                            if open {
-                                break;
-                            }
+            Some(t) => match &t.token {
+                Token::Word(word) => match word.as_str() {
+                    "use" => {
+                        match next_in!(directive) {
+                            t => match &t.token {
+                                Token::ParenOpen => {}
+                                t => bail!("Unexpected token: {t:#?}"),
+                            },
                         }
-                        Token::NewLine => {
-                            if !open {
-                                break;
-                            }
-                            init.push(next);
-                        }
-                        _ => init.push(next),
-                    };
-                });
-
-                let init_nodes = Lexer::new(init, self.file.clone()).lex()?.nodes;
-                self.nodes
-                    .push(AstNode::Directive(Directive::Preamble(init_nodes)))
-            }
-            "dyn" | "mem" => {
-                expect!(self, "Syntax error", match is_space);
-
-                let next =
-                    expect!(self, "Expected length after '#{directive:?}'", match is_num | is_word);
-
-                let len = match next {
-                    Token::Word(w) => match w.as_str() {
-                        "byte" => 1,
-                        "word" => 2,
-                        _ => bail!("Expected length after '#{directive:?}'"),
-                    },
-                    Token::Number(l) => l,
-                    _ => bail!("Expected length after '#{directive:?}'"),
-                };
-
-                expect!(self, "Syntax error", match is_space);
-
-                let name = expect!(self, "Expected name after '#{directive:?}'", Word(x));
-
-                if directive == "mem" {
-                    expect!(self, "Syntax error", match is_space);
-
-                    let mut val = vec![];
-                    if len == 1 {
-                        let v = expect!(self, "Expected value after #mem assignment", Number(x));
-                        val.push(v as u8);
-                    } else if len == 2 {
-                        let v = expect!(self, "Expected value after #mem assignment", Number(x));
-                        val.push(v as u8);
-                        val.push((v >> 8) as u8);
-                    } else {
-                        expect!(self, "Expected '[0, 0, ...]' for #mem assignments longer than 2", match is_brack_open);
-                        while_next!(self, next_num, {
-                            match next_num.token {
-                                Token::Number(n) => {
-                                    val.push(n as u8);
-                                    while_peek!(self, next_num, {
-                                        match next_num {
-                                            Token::Comma => break,
-                                            Token::BracketClose => break,
-                                            Token::Space | Token::NewLine => {
-                                                self.tokens.next();
+                        let next = next_in!(directive);
+                        match &next.token {
+                            Token::Word(w) => match w.as_str() {
+                                "std" => {
+                                    let mut std_import = format!("${}", w);
+                                    while_next_in!(directive, next, {
+                                        match &next.token {
+                                            Token::ParenClose => {
+                                                if directive.next().is_some() {
+                                                    bail!("Unexpected after {:#?}", next.token);
+                                                }
                                             }
-                                            other => {
-                                                bail!("Expected [0, 0, 0, ...], got: {other:?}")
+                                            _ => {
+                                                std_import.push_str(next.token.to_string().as_str())
                                             }
                                         }
                                     });
+                                    self.nodes.push(
+                                        Directive::Import(std_import, self.file.clone()).to_node(),
+                                    );
                                 }
-                                Token::Comma | Token::NewLine | Token::Space => continue,
-                                Token::BracketClose => break,
-                                other => bail!("Expected [0, 0, 0, ...], got: {other:?}"),
+                                _ => bail!("Invalid import to {w:?}"),
+                            },
+                            Token::String(path) => {
+                                self.nodes.push(
+                                    Directive::Import(path.to_string(), self.file.clone())
+                                        .to_node(),
+                                );
+                                expect_in!(directive, "Syntax error", match is_paren_close);
+                                let next = directive.next();
+                                if next.is_some() {
+                                    bail!("Unexpected after {:#?}", next.unwrap().token);
+                                }
                             }
-                        });
+                            oth => bail!("Unexpected {oth:?}"),
+                        }
                     }
-
-                    if val.len() != len as usize {
-                        bail!(
-                            "Expected {name} to be {len} bytes long, got {} bytes",
-                            val.len()
-                        );
+                    "macro" => {
+                        let n = directive.next();
+                        if n.is_some() {
+                            bail!("Unexpected: {n:#?}");
+                        }
+                        self.lex_macro()?
                     }
+                    "static" => {
+                        expect_in!(directive, "Syntax error", match is_paren_open);
+                        let name = expect_in!(directive, "Expected name for static", Word(x));
+                        expect_in!(directive, "Expected assignment", match is_colon);
+                        let val = expect_in!(directive, "Expected value for static", Number(n));
+                        expect_in!(directive, "Expected ')'", match is_paren_close);
 
-                    self.nodes.push(Directive::Rom(name, val).to_node())
-                } else {
-                    self.nodes
-                        .push(Directive::Dynamic(name, len as u128).to_node())
-                }
-            }
-            "macro" => self.lex_macro()?,
-            _ => bail!("Invalid directive: '#{directive}'"),
-        };
+                        self.nodes
+                            .push(Directive::Define(name, val as u128).to_node());
+                    }
+                    "boot" => {
+                        let n = directive.next();
+                        if n.is_some() {
+                            bail!("Unexpected: {n:#?}");
+                        }
+                        ignore!(self, Token::Space | Token::NewLine);
+                        let label = expect!(self, "Expected label after #[boot]", Word(x));
+                        ignore!(self, Token::Space | Token::NewLine);
+                        expect!(self, "Expected label after #[boot]", match is_colon);
+
+                        let nodes = vec![
+                            Instruction::Native(
+                                Operation::MOV,
+                                vec![
+                                    Register::L.to_value(),
+                                    AddrByte::Low(label.clone()).to_value(),
+                                ],
+                            )
+                            .to_node(),
+                            Instruction::Native(
+                                Operation::MOV,
+                                vec![
+                                    Register::H.to_value(),
+                                    AddrByte::High(label.clone()).to_value(),
+                                ],
+                            )
+                            .to_node(),
+                            Instruction::Native(Operation::JNZ, vec![Value::Immediate(1)])
+                                .to_node(),
+                        ];
+                        self.nodes.push(Directive::Preamble(nodes).to_node());
+                        self.nodes.push(Label::Label(label).to_node());
+                        return Ok(());
+                    }
+                    "mem" => {
+                        expect_in!(directive, "Expected '('", match is_paren_open);
+                        let name = expect_in!(directive, "Expected mem name", Word(x));
+                        expect_in!(directive, "Expected ')'", match is_paren_close);
+                        let n = directive.next();
+                        if n.is_some() {
+                            bail!("Unexpected: {n:#?}");
+                        }
+                        let val = self.lex_mem_definition()?;
+                        self.nodes.push(Directive::Rom(name, val).to_node());
+                    }
+                    "dyn" => {
+                        expect_in!(directive, "Expected '('", match is_paren_open);
+                        let next = expect_in!(directive, "Expected dyn name", match is_word | is_ampersand);
+                        match next {
+                            Token::Ampersand => {
+                                let from =
+                                    expect_in!(directive, "Expected dyn start value", Number(x));
+                                self.nodes
+                                    .push(Directive::DynamicOrigin(from as u128).to_node());
+                            }
+                            Token::Word(name) => {
+                                expect_in!(directive, "Expected dyn length", match is_equal);
+                                let len = expect_in!(directive, "Expected dyn length", Number(x));
+
+                                self.nodes
+                                    .push(Directive::Dynamic(name, len as u128).to_node());
+                            }
+                            t => bail!("Unexpected {t:?}"),
+                        }
+                        expect_in!(directive, "Expected ')'", match is_paren_close);
+                        let n = directive.next();
+                        if n.is_some() {
+                            bail!("Unexpected: {n:#?}");
+                        }
+                    }
+                    oth => bail!("Unknown directive {oth:?}"),
+                },
+                _ => bail!("Unexpected {t:#?}"),
+            },
+        }
+
         Ok(())
+    }
+
+    fn lex_mem_definition(&mut self) -> Result<Vec<u8>> {
+        let mut val = vec![];
+        let mut open = false;
+        while_next!(self, next, {
+            match next.token {
+                Token::MustacheOpen => {
+                    if !open {
+                        open = true;
+                    } else {
+                        bail!("Unexpected '{{'");
+                    }
+                }
+                Token::Number(n) => {
+                    val.push(n as u8);
+                    if !open {
+                        break;
+                    }
+                    while_peek!(self, next, {
+                        match next {
+                            Token::Comma => break,
+                            Token::MustacheClose => {
+                                if !open {
+                                    bail!("Unexpected '}}'");
+                                }
+                                break;
+                            }
+                            Token::Space | Token::NewLine => {
+                                self.tokens.next();
+                            }
+                            _ => {
+                                bail!("Syntax error")
+                            }
+                        }
+                    });
+                }
+                Token::Comma | Token::NewLine | Token::Space => continue,
+                Token::MustacheClose => break,
+                _ => bail!("Syntax error"),
+            }
+        });
+        Ok(val)
     }
 }

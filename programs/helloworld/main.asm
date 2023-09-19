@@ -1,18 +1,15 @@
-#use "<std>/macro"
-#use "<std>/gfx"
-#use "<std>/wait"
-#use "<std>"
+#[use(std)]
 
-#use "./images/HELLO"
-#use "./images/WORLD"
+#[use("./images/HELLO")]
+#[use("./images/WORLD")]
 
-#define WAIT 0x2000
-#define OFFSET 0x0400
+#[static(WAIT: 0x2000)]
+#[static(OFFSET: 0x0400)]
 
-#init {
+#[boot]
+main:
     mb 0x01
     jmp [hello]
-}
 
 hello:
     mov %a, %b, [HELLO]

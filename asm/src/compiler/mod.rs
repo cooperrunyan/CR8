@@ -151,7 +151,8 @@ impl Compiler {
         let content = {
             let (content, path) = match input {
                 Input::File(path) => {
-                    if path.starts_with("<std>") {
+                    if path.starts_with("$std") {
+                        let path = path.strip_prefix('$').unwrap().to_string();
                         for included in self.files.iter() {
                             if included.clone() == PathBuf::from(&path).into() {
                                 return Ok(());

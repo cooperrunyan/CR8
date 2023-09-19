@@ -1,10 +1,6 @@
-#use "<std>/macro/call"
-#use "<std>/macro/jmp"
-#use "<std>/macro/math/sub"
-#use "<std>/macro/math/add"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/math/mul/mul16
+#[use(std::macro::call)]
+#[use(std::macro::jmp)]
+#[use(std::macro::math)]
 
 ; 16 bit manipulation
 ; Multiply %ab * %cd -> %abcd

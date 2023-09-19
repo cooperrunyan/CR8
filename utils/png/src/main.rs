@@ -36,15 +36,15 @@ fn main() {
     }
 
     let def = format!(
-        r#"#define {name}_W {w:#06X}
-#define {name}_WL {:#04X}
-#define {name}_WH {:#04X}
-#define {name}_H {h:#06X}
-#define {name}_HL {:#04X}
-#define {name}_HH {:#04X}
-#define {name}_SZ {len:#06X}
-#define {name}_SZH {:#04X}
-#define {name}_SZL {:#04X}"#,
+        r#"#[static({name}_W: {w:#06X})]
+#[static({name}_WL: {:#04X})]
+#[static({name}_WH: {:#04X})]
+#[static({name}_H: {h:#06X})]
+#[static({name}_HL: {:#04X})]
+#[static({name}_HH: {:#04X})]
+#[static({name}_SZ: {len:#06X})]
+#[static({name}_SZH: {:#04X})]
+#[static({name}_SZL: {:#04X})]"#,
         (w >> 8) as u8,
         w as u8,
         (h >> 8) as u8,
@@ -61,9 +61,10 @@ fn main() {
             r#"; Generated with "utils/png"
 
 {def}
-#mem {len:#06X} {name} [
-    {bytes}]
-"#
+
+#[mem( {name} )] {{
+    {bytes}
+}}"#
         ),
     )
     .unwrap();

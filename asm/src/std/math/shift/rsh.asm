@@ -1,10 +1,7 @@
-#use "<std>/macro/call"
-#use "<std>/macro/jmp"
-#use "<std>/macro/math"
-#use "<std>/math/shift/lsh"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/math/shift/rsh
+#[use(std::macro::call)]
+#[use(std::macro::jmp)]
+#[use(std::macro::math)]
+#[use(std::math::shift::lsh)]
 
 ; Rotate Right
 ; Side effects: %z, %b, %c

@@ -125,7 +125,7 @@ rust-inspired macros. See `asm/std` for the `std` library which contains macros
 and other functions.
 
 ```asm
-#macro jnz {
+#[macro] jnz: {
     ; Capture the use of `jnz arg0, arg1` where
     ; arg0 is a static, two-byte value and
     ; arg1 is either a static, one-byte value or a register
@@ -142,6 +142,6 @@ and other functions.
 }
 ```
 
-> This is a snippet from `<std>/macro/jmp` that extends the native `jnz`
+> This is a snippet from `std::macro::jmp` that extends the native `jnz`
 > instruction to also support known addresses (Instead of only being able to
 > jump to `HL`).

@@ -1,9 +1,6 @@
-#use "<std>/macro/call"
-#use "<std>/macro/jmp"
-#use "<std>/macro/math"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/math/shift/lsh16
+#[use(std::macro::call)]
+#[use(std::macro::jmp)]
+#[use(std::macro::math)]
 
 ; Logical Left Shift
 ; ab << c  -> ab

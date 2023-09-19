@@ -1,10 +1,6 @@
-#use "<std>/macro/call"
-#use "<std>/macro/jmp"
-#use "<std>/macro/math/sub"
-#use "<std>/macro/math/add"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/math/mul/mul
+#[use(std::macro::call)]
+#[use(std::macro::jmp)]
+#[use(std::macro::math)]
 
 ; Multiply %a * %b -> %zd
 mul:

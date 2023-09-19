@@ -1,9 +1,6 @@
-#use "<std>/macro/jmp"
+#[use(std::macro::jmp)]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; <std>/macro/call
-
-#macro call {
+#[macro] call: {
     ($addr: imm16) => {
         push [($ + 10) >> 8]    ; 2 bytes
         push [($ + 8) & 0x00FF] ; 2 bytes
@@ -16,7 +13,7 @@
     }
 }
 
-#macro ret {
+#[macro] ret: {
     () => {
         pop %l
         pop %h
