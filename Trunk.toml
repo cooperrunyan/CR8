@@ -1,7 +1,7 @@
 [build]
   target         = "./sim/web/index.html"
   release        = false
-  dist           = "dist"
+  dist           = "./target/dist"
   public_url     = "/"
   filehash       = true
   inject_scripts = true
@@ -17,5 +17,5 @@
   no_autoreload = false
 
 [clean]
-  dist  = "dist"
+  dist  = "./target/dist"
   cargo = true
