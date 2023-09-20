@@ -59,7 +59,7 @@
         "2": {
           "patterns": [
             {
-              "match": "(use|boot|macro|static|dyn|mem)",
+              "match": "\\b(use|boot|macro|static|dyn|mem)\\b",
               "name": "keyword.control"
             },
             {

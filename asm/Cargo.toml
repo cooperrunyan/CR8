@@ -7,7 +7,6 @@
 
 [dependencies]
   lazy_static = "1.4"
-  util_macros = { path = "../tool/macros" }
   phf         = { version = "0.11.2", features = ["macros"] }
   regex       = "1.9"
   env_logger  = "0.10"

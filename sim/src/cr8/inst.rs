@@ -2,7 +2,7 @@ use log::trace;
 use std::num::Wrapping;
 use std::sync::RwLock;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use asm::reg::Register;
 
 use crate::devices::Devices;
@@ -54,7 +54,7 @@ impl CR8 {
 
     pub fn push_imm8(&mut self, mem: &RwLock<Mem>, imm8: u8) -> Result<u8> {
         if self.sp >= STACK_END {
-            err!("Stack overflow");
+            bail!("Stack overflow");
         }
 
         self.sp += 1;
@@ -80,7 +80,7 @@ impl CR8 {
 
     pub fn pop(&mut self, mem: &RwLock<Mem>, reg: Register) -> Result<u8> {
         if self.sp < STACK {
-            err!("Cannot pop empty stack");
+            bail!("Cannot pop empty stack");
         }
 
         {

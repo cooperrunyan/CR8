@@ -1,58 +1,22 @@
+mod bank;
+
 use anyhow::{bail, Result};
 use std::fmt::Debug;
 
-const ROM_START: usize = 0x0000;
-const ROM_LEN: usize = 0x8000;
+use bank::{mask, BankCollection, BankId};
 
-const RAM_LEN: usize = 0x8000;
+pub(self) const ROM_START: usize = 0x0000;
+pub(self) const ROM_LEN: usize = 0x8000;
+
+pub(self) const RAM_LEN: usize = 0x8000;
 pub const BANK_LEN: usize = 0x4000;
 
-const ROM_END: usize = ROM_START + ROM_LEN - 1;
+pub(self) const ROM_END: usize = ROM_START + ROM_LEN - 1;
 pub const RAM_START: usize = ROM_END + 1;
-const BANK_END: usize = RAM_LEN + BANK_LEN - 1;
+pub(self) const BANK_END: usize = RAM_LEN + BANK_LEN - 1;
 
-const BANK_MASK: usize = BANK_LEN - 1;
-const RAM_MASK: usize = RAM_LEN - 1;
-
-fn mask(idx: usize) -> usize {
-    idx & RAM_MASK
-}
-
-fn smallmask(idx: usize) -> usize {
-    idx & BANK_MASK
-}
-
-#[derive(Debug)]
-pub struct Bank([u8; BANK_LEN]);
-
-impl Default for Bank {
-    fn default() -> Self {
-        Self([0; BANK_LEN])
-    }
-}
-
-impl Bank {
-    pub fn get(&self, idx: usize) -> Option<u8> {
-        self.0.get(smallmask(idx)).map(|b| *b)
-    }
-
-    pub fn get_mut(&mut self, idx: usize) -> Option<&mut u8> {
-        self.0.get_mut(smallmask(idx))
-    }
-
-    pub fn set(&mut self, idx: usize, val: u8) -> Result<()> {
-        let byte = self.0.get_mut(smallmask(idx)).unwrap();
-        *byte = val;
-        Ok(())
-    }
-}
-
-define_banks! {
-    pub enum BankId,
-    pub struct BankCollection {
-        Vram(0x01) if "gfx",
-    }
-}
+pub(self) const BANK_MASK: usize = BANK_LEN - 1;
+pub(self) const RAM_MASK: usize = RAM_LEN - 1;
 
 #[derive(Debug)]
 pub struct Mem {

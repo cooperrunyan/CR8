@@ -13,13 +13,25 @@ pub struct SysCtrl {
     pub debug: bool,
 }
 
-encodable! {
-    enum SysCtrlSignal {
-        else UNKNOWN,
-        PING(0x00, "ping"),
-        HALT(0x01, "halt"),
-        DBG(0x02, "dbg"),
-        BRKPT(0x03, "brkpt"),
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SysCtrlSignal {
+    Ping,
+    Halt,
+    Debug,
+    Breakpoint,
+}
+
+impl TryFrom<u8> for SysCtrlSignal {
+    type Error = ();
+    fn try_from(value: u8) -> std::result::Result<Self, Self::Error> {
+        use SysCtrlSignal as SIG;
+        Ok(match value {
+            0x00 => SIG::Ping,
+            0x01 => SIG::Halt,
+            0x02 => SIG::Debug,
+            0x03 => SIG::Breakpoint,
+            _ => Err(())?,
+        })
     }
 }
 
@@ -37,20 +49,21 @@ impl SysCtrl {
 
     pub fn receive(&mut self, byte: u8, cr8: &CR8, mem: &Mem, dev: DeviceSnapshot) -> Result<()> {
         use SysCtrlSignal as SIG;
-        match SIG::from(byte) {
-            SIG::PING => info!("PONG"),
-            SIG::HALT => self.state |= 0b00000001,
-            SIG::DBG => cr8.debug(mem, dev),
-            SIG::BRKPT => {
-                if !self.debug {
-                    return Ok(());
+        match SIG::try_from(byte) {
+            Ok(s) => match s {
+                SIG::Ping => info!("PONG"),
+                SIG::Halt => self.state |= 0b00000001,
+                SIG::Debug => cr8.debug(mem, dev),
+                SIG::Breakpoint => {
+                    if !self.debug {
+                        return Ok(());
+                    }
+                    cr8.debug(mem, dev);
+                    let mut inp = String::new();
+                    stdin().read_line(&mut inp)?;
                 }
-                cr8.debug(mem, dev);
-                let mut inp = String::new();
-                stdin().read_line(&mut inp)?;
-            }
-
-            SIG::UNKNOWN => warn!("sysctrl recieved unknown {byte:#?} message"),
+            },
+            Err(_) => warn!("sysctrl recieved unknown {byte:#?} message"),
         };
         Ok(())
     }

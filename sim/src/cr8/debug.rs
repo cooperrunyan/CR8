@@ -3,6 +3,21 @@ use crate::devices::DeviceSnapshot;
 use super::*;
 use log::info;
 
+macro_rules! byte {
+    ($name:expr, $val:expr) => {
+        format!("{}:  {:#04x} | {:#3} | {:08b}", $name, $val, $val, $val)
+    };
+}
+
+macro_rules! addr {
+    ($name:expr, $val:expr, $pt:expr) => {
+        format!(
+            "{}: {{ {:#06x} | {:#5} }}  =>  {:#3} | {:#04x}",
+            $name, $val, $val, $pt, $pt
+        )
+    };
+}
+
 impl CR8 {
     pub fn debug(&self, mem: &Mem, dev: DeviceSnapshot) {
         let mut snapshot = String::new();
