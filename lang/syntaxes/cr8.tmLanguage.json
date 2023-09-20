@@ -1,0 +1,153 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "CR8 Assembly",
+  "fileTypes": ["asm", "cr8"],
+  "scopeName": "source.cr8",
+  "repository": {
+    "num": {
+      "patterns": [
+        {
+          "match": "\\b0b[01]+\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "match": "(i?)\\b0x[0-9a-fA-F]+\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "match": "\\b[0-9]+\\b",
+          "name": "constant.numeric"
+        }
+      ]
+    }
+  },
+  "patterns": [
+    {
+      "match": ";.*$",
+      "name": "comment.line"
+    },
+    {
+      "match": "[A-Z_][A-Z_0-9]+",
+      "name": "constant.numeric"
+    },
+    {
+      "match": "\\=\\>",
+      "name": "keyword.control"
+    },
+    {
+      "match": "\\+|=|\\-|&|\\|\\/|\\*|\\>|\\<",
+      "name": "keyword.operator"
+    },
+    {
+      "match": "\"[^\"]*\"",
+      "name": "string"
+    },
+    {
+      "match": "\\[|\\]|\\(|\\)|\\:|\\,|\\{|\\}",
+      "name": "punctuation"
+    },
+    { "include": "#num" },
+    {
+      "match": "(#\\[)\\s*(.*)\\s*(\\])",
+      "captures": {
+        "1": {
+          "name": "punctuation"
+        },
+        "3": {
+          "name": "punctuation"
+        },
+        "2": {
+          "patterns": [
+            {
+              "match": "(use|boot|macro|static|dyn|mem)",
+              "name": "keyword.control"
+            },
+            {
+              "match": "(\\()\\s*(.*)\\s*(\\))",
+              "captures": {
+                "1": {
+                  "name": "punctuation"
+                },
+                "3": {
+                  "name": "punctuation"
+                },
+                "2": {
+                  "patterns": [
+                    { "include": "#num" },
+                    {
+                      "match": "std",
+                      "name": "entity.name.namespace"
+                    },
+                    {
+                      "match": "(?:\\:\\:)(\\w+)",
+                      "captures": {
+                        "1": {
+                          "name": "entity.name.namespace"
+                        }
+                      }
+                    },
+                    {
+                      "match": "(\\w+)\\s*(?=\\:)",
+                      "captures": {
+                        "1": {
+                          "name": "constant.numeric"
+                        }
+                      }
+                    },
+                    {
+                      "match": "\"[^\"]*\"",
+                      "name": "string"
+                    },
+                    {
+                      "match": "(?<=\\s*)(\\w+)(?=\\s*)",
+                      "captures": {
+                        "1": {
+                          "name": "constant.numeric"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "match": "(\\.?[a-z_0-9]+)\\s*(?=\\:)",
+      "name": "entity.name.function"
+    },
+    {
+      "match": "(?<=\\[[^\\]]*\\b)(\\.?[a-z0-9_]+)(?=\\b[^\\]]*\\])",
+      "name": "entity.name.function"
+    },
+    {
+      "match": "\\%[a-z]+\\b",
+      "name": "variable.name"
+    },
+
+    {
+      "match": "(?<=\\()(.*?)(?=\\)\\s*?\\=\\>)",
+      "captures": {
+        "1": {
+          "patterns": [
+            {
+              "match": "\\b(imm8|reg|imm16)\\b",
+              "name": "support.type"
+            },
+            {
+              "match": "\\$\\w(\\w|\\d|_)*",
+              "name": "variable.parameter"
+            },
+            { "match": "\\|", "name": "keyword.control" }
+          ]
+        }
+      }
+    },
+    {
+      "match": "\\$\\w(\\w|\\d|_)*",
+      "name": "variable.parameter"
+    }
+  ]
+}

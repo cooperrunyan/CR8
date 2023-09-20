@@ -1,0 +1,43 @@
+{
+  "name": "cr8",
+  "displayName": "CR8",
+  "description": "CR8 Assembly",
+  "version": "0.0.2",
+  "publisher": "cooperrunyan",
+  "engines": {
+    "vscode": "^1.54.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cr8",
+        "aliases": [
+          "CR8 Assembly",
+          "cr8"
+        ],
+        "extensions": [
+          ".asm",
+          ".cr8"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cr8",
+        "scopeName": "source.cr8",
+        "path": "./syntaxes/cr8.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.3"
+  },
+  "repository": {
+    "url": "https://github.com/cooperrunyan/cr8"
+  },
+  "license": "afl-3.0"
+}
