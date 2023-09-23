@@ -2,7 +2,7 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Result;
-use asm::compiler::{Compiler, Config};
+use asm::compiler::{lex, Compiler, Config};
 
 use env_logger::Env;
 
@@ -15,6 +15,7 @@ fn main() -> Result<()> {
         .init();
 
     let config = Config::from_argv();
+
     let mut compiler = Compiler::new();
 
     compiler.push(config.input, Arc::new(env::current_dir().unwrap()))?;

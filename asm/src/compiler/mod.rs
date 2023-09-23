@@ -8,6 +8,7 @@ use std::sync::Arc;
 mod ast;
 mod config;
 mod debug;
+pub mod lex;
 mod lexer;
 mod resolver;
 mod tokenizer;
