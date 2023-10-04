@@ -1,126 +1,90 @@
+mod expr;
+mod lexable;
+
 use std::fmt::Debug;
-use std::num::ParseIntError;
 use std::path::PathBuf;
-use std::ptr;
 use std::rc::Rc;
 
 use failure::Fail;
 use indexmap::IndexMap;
-use serde::Serialize;
 
+use crate::compiler::SourceInputError;
 use crate::op::Operation;
 use crate::reg::Register;
 
+use self::expr::Expr;
+use self::lexable::expect;
+
 use super::Input;
 
-#[derive(Debug, PartialEq, Fail)]
-#[fail(display = "unknown identifier")]
-struct UnknownIdentifierError;
-
-#[derive(Debug, PartialEq, Fail)]
-#[fail(display = "unknown register")]
-struct ParseRegisterError;
-
-#[derive(Debug, PartialEq, Fail)]
-#[fail(display = "unknown register")]
-struct UnexpectedTypeError;
-
-#[derive(Debug, PartialEq, Fail)]
-enum LexErrorKind {
-    #[fail(display = "expected {}", _0)]
-    Expected(&'static str),
-
-    #[fail(display = "{} parsing (radix: {})", err, radix)]
-    ParseInt {
-        #[cause]
-        err: ParseIntError,
-        radix: u32,
-    },
-
-    #[fail(display = "{}", _0)]
-    ParseRegister(#[cause] ParseRegisterError),
-
-    #[fail(display = "{}", _0)]
-    UnknownIdentifier(#[cause] UnknownIdentifierError),
-
-    #[fail(display = "unexpected end of file")]
-    EOF,
-
-    #[fail(display = "unexpected no more input")]
-    NoInput,
-
-    #[fail(display = "unexpected redefinition")]
-    Redefinition,
-
-    #[fail(display = "invalid argument amount (expected {})", _0)]
-    ArgAmt(usize),
-
-    #[fail(display = "type error {}", _0)]
-    ArgType(&'static str),
-}
-
-type LexError<'b> = (LexErrorKind, &'b str);
-
-type LexResult<'b, T> = Result<(T, &'b str), LexError<'b>>;
-
-trait Lexable<'b>: Sized {
-    fn lex(buf: &'b str) -> LexResult<'b, Self>;
-}
-
-trait LexableWith<'b, W>: Sized {
-    fn lex_with(buf: &'b str, with: W) -> LexResult<'b, Self>;
-}
-
-impl<'b, T: Lexable<'b>, W> LexableWith<'b, W> for T {
-    fn lex_with(buf: &'b str, _with: W) -> LexResult<'b, Self> {
-        Self::lex(buf)
-    }
-}
+use lexable::{
+    collect_until, collect_while, expect_complete, ignore_whitespace, LexError, LexErrorKind,
+    LexResult, Lexable, LexableWith, ParseRegisterError, UnknownIdentifierError,
+};
 
 #[derive(Debug, Default)]
-struct CompilerContext<'c> {
-    labels: IndexMap<&'c str, usize>,
+pub struct CompilerContext<'c> {
+    labels: IndexMap<String, usize>,
     statics: IndexMap<&'c str, usize>,
+    vars: IndexMap<&'c str, usize>,
     macros: IndexMap<&'c str, Macro<'c>>,
     files: Vec<PathBuf>,
     mem_root: usize,
     boot_to: Option<&'c str>,
+    nodes: Vec<Node<'c>>,
 }
 
 #[derive(Fail, Debug)]
-enum SourceFileError {
-    #[fail(display = "bad path")]
-    BadPath,
-
-    #[fail(display = "file not found")]
-    FileNotFound,
-
-    #[fail(display = "module not found")]
-    ModNotFound,
-}
-
-fn source_file(import: Import) -> Result<String, SourceFileError> {
-    match import {
-        Import::File(_f) => Ok("".into()),
-        Import::Module(_f) => Ok("".into()),
-    }
-}
-
-#[derive(Fail, Debug)]
-enum CompileError {
+pub enum CompileError {
     #[fail(display = "{}", _0)]
     LexError(#[cause] LexErrorKind),
 
     #[fail(display = "{}", _0)]
-    SourceFileError(#[cause] SourceFileError),
+    SourceInputError(#[cause] SourceInputError),
+
+    #[fail(display = "{}", _0)]
+    Redefine(String),
 }
 
+enum Item<'i> {
+    Meta(Directive<'i>),
+    Node(Node<'i>),
+}
+
+#[derive(Debug)]
 enum Node<'n> {
-    Meta(Directive<'n>),
-    Label(usize),
     Instruction(Instruction<'n>),
+    Label(&'n str),
+    Explicit(&'n str, ExplicitBytes),
+    Import(Import<'n>),
 }
 
+impl<'b> Lexable<'b> for Item<'b> {
+    fn lex(buf: &'b str) -> LexResult<'b, Self> {
+        if buf.starts_with("#") {
+            let (dir, buf) = Directive::lex(buf)?;
+            return Ok((Self::Meta(dir), buf));
+        }
+
+        if let Ok(_) = expect(buf, ".") {
+            let (label, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '.')?;
+            let buf = ignore_whitespace(buf);
+            let buf = expect(buf, ":")?;
+            return Ok((Self::Node(Node::Label(label)), buf));
+        }
+
+        let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
+        let buf = ignore_whitespace(buf);
+        if let Ok(buf) = expect(buf, ":") {
+            return Ok((Self::Node(Node::Label(id)), buf));
+        }
+
+        let (args, buf) = Vec::<Value>::lex(buf)?;
+        Ok((Self::Node(Node::Instruction(Instruction { id, args })), buf))
+    }
+}
+
+#[derive(Debug)]
 struct Instruction<'i> {
     id: &'i str,
     args: Vec<Value<'i>>,
@@ -131,6 +95,7 @@ enum Value<'v> {
     Expr(Expr<'v>),
     Immediate(usize),
     Register(Register),
+    MacroVariable(&'v str),
 }
 
 impl<'b> Lexable<'b> for Value<'b> {
@@ -148,12 +113,17 @@ impl<'b> Lexable<'b> for Value<'b> {
             return Ok((Value::Register(reg), buf));
         }
 
+        if let Ok(_) = expect(buf, "$") {
+            let (var, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '$')?;
+            return Ok((Value::MacroVariable(var), buf));
+        }
+
         let (val, buf) = usize::lex(buf)?;
         return Ok((Value::Immediate(val), buf));
     }
 }
 
-impl<'b> Lexable<'b> for Vec<Value<'b>> {
+impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut values = vec![];
         let mut buf = buf;
@@ -163,7 +133,7 @@ impl<'b> Lexable<'b> for Vec<Value<'b>> {
                 buf = b;
                 break buf;
             }
-            let (val, b) = Value::lex(buf)?;
+            let (val, b) = T::lex(buf)?;
             buf = b;
             buf = buf.trim_start_matches(&[' ', '\t']);
             values.push(val);
@@ -178,52 +148,6 @@ impl<'b> Lexable<'b> for Vec<Value<'b>> {
     }
 }
 
-fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str, LexError<'b>> {
-    if buf.starts_with(expect) {
-        Ok(&buf[expect.len()..])
-    } else {
-        Err((LexErrorKind::Expected(expect), buf))
-    }
-}
-
-fn ignore_whitespace<'b>(buf: &'b str) -> &'b str {
-    buf.trim_start_matches(char::is_whitespace)
-}
-
-fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
-    for (i, ch) in buf.chars().enumerate() {
-        if check(ch) {
-            let remaining = &buf[i..];
-            if i == 0 {
-                return Err((LexErrorKind::Expected(""), buf));
-            }
-            return if remaining.len() == 0 {
-                Err((LexErrorKind::EOF, buf))
-            } else {
-                Ok(buf.split_at(i))
-            };
-        }
-    }
-
-    Ok((buf, ""))
-}
-
-fn collect_until<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
-    collect(buf, check)
-}
-
-fn collect_while<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
-    collect(buf, |ch| !check(ch))
-}
-
-fn expect_complete<'b>(buf: &'b str) -> LexResult<'b, ()> {
-    let buf = ignore_whitespace(buf);
-    if buf.len() != 0 {
-        return Err((LexErrorKind::NoInput, buf));
-    }
-    Ok(((), buf))
-}
-
 #[derive(Debug)]
 struct Macro<'m> {
     id: &'m str,
@@ -233,7 +157,7 @@ struct Macro<'m> {
 #[derive(Debug)]
 struct MacroCapture<'m> {
     args: Vec<MacroCaptureArg<'m>>,
-    content: Vec<&'m str>,
+    content: Vec<Instruction<'m>>,
 }
 
 #[derive(Debug)]
@@ -477,16 +401,25 @@ impl<'b> Lexable<'b> for MacroCapture<'b> {
         let buf = ignore_whitespace(buf);
         let buf = expect(buf, "{")?;
         let buf = ignore_whitespace(buf);
-        let (content, buf) = collect_until(buf, |c| c == '}')?;
+        let (mut raw, buf) = collect_until(buf, |c| c == '}')?;
         let buf = expect(buf, "}")?;
 
-        Ok((
-            MacroCapture {
-                args,
-                content: content.lines().collect::<Vec<_>>(),
-            },
-            buf,
-        ))
+        let mut content = vec![];
+
+        loop {
+            raw = ignore_whitespace(raw);
+            if raw.is_empty() {
+                break;
+            }
+            let (id, r) = collect_while(raw, |c| c.is_alphanumeric() || c == '_')?;
+            raw = r;
+            raw = ignore_whitespace(raw);
+            let (args, r) = Vec::<Value>::lex(raw)?;
+            raw = r;
+            content.push(Instruction { id, args });
+        }
+
+        Ok((MacroCapture { args, content }, buf))
     }
 }
 
@@ -574,165 +507,64 @@ impl<'b> Lexable<'b> for Operation {
     }
 }
 
-//////////////////////////////////
-
-#[derive(Fail, Debug)]
-enum ResolutionError {
-    #[fail(display = "Unknown operation")]
-    UnknownOperation,
-
-    #[fail(display = "Unknown variable")]
-    UnknownVariable,
-
-    #[fail(display = "Operation failed")]
-    OperationFailed,
-}
-
-#[derive(Fail, Debug)]
-#[fail(display = "Operator application error")]
-struct ApplyError;
-
-trait Applicable: Debug {
-    fn apply(self, lhs: usize, rhs: usize) -> Result<usize, ApplyError>;
-}
-
-#[derive(Debug, Clone)]
-enum Expr<'e> {
-    Literal(usize),
-    Variable(&'e str),
-    Expr {
-        lhs: Box<Expr<'e>>,
-        op: ExprOperation,
-        rhs: Box<Expr<'e>>,
-    },
-}
-
-impl<'e> Expr<'e> {
-    fn resolve(self, ctx: &CompilerContext) -> Result<usize, ResolutionError> {
-        match self {
-            Self::Literal(lit) => Ok(lit),
-            Self::Variable(var) => {
-                if let Some(label) = ctx.labels.get(var) {
-                    Ok(*label)
-                } else if let Some(stat) = ctx.statics.get(var) {
-                    Ok(*stat)
-                } else {
-                    Err(ResolutionError::UnknownVariable)
-                }
-            }
-            Self::Expr { lhs, op, rhs } => op
-                .apply(lhs.resolve(ctx)?, rhs.resolve(ctx)?)
-                .map_err(|_| ResolutionError::OperationFailed),
-        }
-    }
-}
-
-fn lex_expr_lhs<'b>(buf: &'b str) -> LexResult<'b, Expr> {
-    let buf = ignore_whitespace(buf);
-
-    if let Ok(buf) = expect(buf, "(") {
-        let buf = ignore_whitespace(buf);
-        let (ex, buf) = Expr::lex(buf)?;
-        let buf = ignore_whitespace(buf);
-        let buf = expect(buf, ")")?;
-        return Ok((ex, buf));
-    }
-
-    if let Ok((lhs, buf)) = usize::lex(buf) {
-        Ok((Expr::Literal(lhs), buf))
-    } else {
-        let (lhs, buf) = collect_while(buf, |c| c.is_alphabetic() || c == '_')?;
-        Ok((Expr::Variable(lhs), buf))
-    }
-}
-
-impl<'b> Lexable<'b> for Expr<'b> {
-    fn lex(buf: &'b str) -> LexResult<'b, Expr<'b>> {
-        let (lhs, buf) = lex_expr_lhs(buf)?;
-        let buf = ignore_whitespace(buf);
-
-        if let Ok((op, buf)) = ExprOperation::lex(buf) {
-            let buf = ignore_whitespace(buf);
-            if op == ExprOperation::Mul || op == ExprOperation::Div {
-                let (rhs, buf) = lex_expr_lhs(buf)?;
-                let buf = ignore_whitespace(buf);
-
-                let lhs = op.to_expr(lhs, rhs);
-
-                if let Ok((next_op, buf)) = ExprOperation::lex(buf) {
-                    let buf = ignore_whitespace(buf);
-
-                    let (rhs, buf) = Expr::lex(buf)?;
-
-                    return Ok((next_op.to_expr(lhs, rhs), buf));
-                } else {
-                    return Ok((lhs, buf));
-                }
-            } else {
-                let buf = ignore_whitespace(buf);
-
-                let (rhs, buf) = Expr::lex(buf)?;
-
-                return Ok((op.to_expr(lhs, rhs), buf));
-            };
-        } else {
-            Ok((lhs, buf))
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ExprOperation {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    And,
-    Or,
-}
-
-impl ExprOperation {
-    fn to_expr<'e>(&self, lhs: Expr<'e>, rhs: Expr<'e>) -> Expr<'e> {
-        Expr::Expr {
-            lhs: Box::new(lhs),
-            op: *self,
-            rhs: Box::new(rhs),
-        }
-    }
-}
-
-impl Applicable for ExprOperation {
-    fn apply(self, lhs: usize, rhs: usize) -> Result<usize, ApplyError> {
-        match self {
-            Self::Add => Ok(lhs + rhs),
-            Self::Sub => Ok(lhs - rhs),
-            Self::Mul => Ok(lhs * rhs),
-            Self::Div => Ok(lhs / rhs),
-            Self::And => Ok(lhs & rhs),
-            Self::Or => Ok(lhs | rhs),
-        }
-    }
-}
-
-impl<'b> Lexable<'b> for ExprOperation {
+impl<'b> Lexable<'b> for CompilerContext<'b> {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        Ok(if let Ok(buf) = expect(buf, "*") {
-            (Self::Mul, buf)
-        } else if let Ok(buf) = expect(buf, "+") {
-            (Self::Add, buf)
-        } else if let Ok(buf) = expect(buf, "-") {
-            (Self::Sub, buf)
-        } else if let Ok(buf) = expect(buf, "/") {
-            (Self::Div, buf)
-        } else if let Ok(buf) = expect(buf, "&") {
-            (Self::And, buf)
-        } else if let Ok(buf) = expect(buf, "|") {
-            (Self::Or, buf)
-        } else {
-            Err((LexErrorKind::UnknownIdentifier(UnknownIdentifierError), buf))?
-        })
+        let mut ctx = CompilerContext::default();
+        let mut buf = buf;
+
+        loop {
+            buf = ignore_whitespace(buf);
+            if buf.is_empty() {
+                break;
+            }
+            let (n, b) = Item::lex(buf)?;
+            buf = b;
+            match n {
+                Item::Meta(d) => match d {
+                    Directive::Boot(to) => {
+                        if ctx.boot_to.is_some() {
+                            return Err((LexErrorKind::Redefinition, "#[boot]"));
+                        }
+                        ctx.boot_to = Some(to);
+                    }
+                    Directive::DynOrigin(org) => {
+                        if ctx.mem_root != 0 {
+                            return Err((LexErrorKind::Redefinition, "#[dyn(&)]"));
+                        }
+                        ctx.mem_root = org;
+                    }
+                    Directive::ExplicitBytes(id, explicit) => {
+                        ctx.nodes.push(Node::Explicit(id, explicit));
+                    }
+                    Directive::Macro(m) => {
+                        if ctx.macros.contains_key(m.id) {
+                            return Err((LexErrorKind::Redefinition, m.id));
+                        }
+                        ctx.macros.insert(m.id, m);
+                    }
+                    Directive::Static(id, val) => {
+                        if ctx.statics.contains_key(id) {
+                            return Err((LexErrorKind::Redefinition, id));
+                        }
+                        ctx.statics.insert(id, val);
+                    }
+                    Directive::Use(import) => ctx.nodes.push(Node::Import(import)),
+                    Directive::Dyn(id, len) => {
+                        if ctx.vars.contains_key(id) {
+                            return Err((LexErrorKind::Redefinition, id));
+                        }
+                        ctx.vars.insert(id, len);
+                    }
+                },
+                Item::Node(n) => ctx.nodes.push(n),
+            }
+        }
+
+        Ok((ctx, buf))
     }
 }
+
+//////////////////////////////////
 
 #[cfg(test)]
 mod test {
@@ -774,24 +606,115 @@ mod test {
     }
 
     #[test]
-    fn expr<'s>() -> Result<(), LexError<'s>> {
-        let ctx = CompilerContext::default();
-        assert!(Expr::lex("1 + 2")?.0.resolve(&ctx).unwrap() == 3);
-        assert!(Expr::lex("1 + 2 * 3")?.0.resolve(&ctx).unwrap() == 7);
-        assert!(Expr::lex("(1 + 2) * 3")?.0.resolve(&ctx).unwrap() == 9);
+    fn d<'s>() -> Result<(), LexError<'s>> {
+        let f = r#"
+#[macro] nand: {
+    ($into: reg, $rhs: imm8 | reg) => {
+        and $into, $rhs
+        not $into
+    }
+    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+        nand $inl, $frl
+        nand $inh, $frh
+    }
+}
 
-        let mut ctx = CompilerContext {
-            statics: IndexMap::new(),
-            ..Default::default()
-        };
+#[macro] not: {
+    ($into: reg) => {
+        nor $into, $into
+    }
+    ($inl: reg, $inh: reg) => {
+        not $inl
+        not $inh
+    }
+}
 
-        ctx.statics.insert("A", 1);
-        ctx.statics.insert("B", 2);
-        ctx.statics.insert("C", 3);
+#[macro] xnor: {
+    ($into: reg, $rhs: imm8 | reg) => {
+        mov %f, $into
+        nor $into, $rhs
+        and %f, $rhs
+        or $into, %f
+    }
+    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+        xnor $inl, $frl
+        xnor $inh, $frh
+    }
+}
 
-        assert!(Expr::lex("A + 2")?.0.resolve(&ctx).unwrap() == 3);
-        assert!(Expr::lex("1 + B * 3")?.0.resolve(&ctx).unwrap() == 7);
-        assert!(Expr::lex("(1 + 2) * C")?.0.resolve(&ctx).unwrap() == 9);
+
+#[macro] xor: {
+    ($into: reg, $rhs: imm8 | reg) => {
+        mov %f, $rhs
+        or %f, $into
+        nand $into, $rhs
+        and $into, %f
+    }
+    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+        xor $inl, $frl
+        xor $inh, $frh
+    }
+}
+
+#[static(ROM: 0x0000)]
+#[static(BRAM: 0x8000)]
+#[static(GPRAM: 0xC000)]
+#[static(STACK: 0xFC00)]
+#[static(STACK_END: 0xFEFF)]
+
+#[static(PSR0: 0xFF00)]
+#[static(PSR1: 0xFF01)]
+#[static(PSR2: 0xFF02)]
+#[static(PSR3: 0xFF03)]
+#[static(PSR4: 0xFF04)]
+#[static(PSR5: 0xFF05)]
+#[static(PSR6: 0xFF06)]
+#[static(PSR7: 0xFF07)]
+#[static(PSR8: 0xFF08)]
+#[static(PSR9: 0xFF09)]
+
+#[static(CTRL: 0x00)]
+#[static(SIGPING: 0x00)]
+#[static(SIGHALT: 0x01)]
+#[static(SIGDBG: 0x02)]
+#[static(SIGBRKPT: 0x03)]
+
+#[static(WAIT: 0x2000)]
+#[static(OFFSET: 0x0400)]
+
+#[boot]
+main:
+    mb 0x01
+    jmp [hello]
+
+hello:
+    mov %a, %b, [HELLO]
+    mov %c, %d, [BRAM]
+    sw [PSR0], [HELLO_SZL]
+    sw [PSR1], [HELLO_SZH]
+    call [frmwof]
+    wait [WAIT]
+    clrvram [BRAM], [BRAM + HELLO_SZ]
+
+    jmp [world]
+
+world:
+    mov %a, %b, [WORLD]
+    mov %c, %d, [BRAM + OFFSET]
+    sw [PSR0], [WORLD_SZL]
+    sw [PSR1], [WORLD_SZH]
+    call [frmwof]
+    wait [WAIT]
+    clrvram [BRAM + OFFSET], [BRAM + OFFSET + WORLD_SZ]
+
+    jmp [hello]
+
+
+        "#;
+
+        let cc = CompilerContext::lex(f)?;
+
+        dbg!(&cc);
 
         Ok(())
     }
