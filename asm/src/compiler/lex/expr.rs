@@ -1,10 +1,7 @@
 use failure::Fail;
 
-use super::lexable::{
-    collect_while, expect, ignore_whitespace, LexErrorKind, LexResult, Lexable,
-    UnknownIdentifierError,
-};
-use super::CompilerContext;
+use super::lexable::{collect_while, expect, ignore_whitespace, LexError, LexResult, Lexable};
+use super::NodeTree;
 
 #[derive(Fail, Debug)]
 pub enum ResolutionError {
@@ -22,7 +19,7 @@ pub enum ResolutionError {
 #[fail(display = "Operator application error")]
 pub struct ApplyError;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr<'e> {
     Literal(usize),
     Variable(&'e str),
@@ -34,7 +31,7 @@ pub enum Expr<'e> {
 }
 
 impl<'e> Expr<'e> {
-    pub fn resolve(self, ctx: &CompilerContext) -> Result<usize, ResolutionError> {
+    pub fn resolve(self, ctx: &NodeTree) -> Result<usize, ResolutionError> {
         match self {
             Self::Literal(lit) => Ok(lit),
             Self::Variable(var) => {
@@ -72,38 +69,42 @@ fn lex_expr_lhs<'b>(buf: &'b str) -> LexResult<'b, Expr> {
     }
 }
 
-impl<'b> Lexable<'b> for Expr<'b> {
-    fn lex(buf: &'b str) -> LexResult<'b, Expr<'b>> {
-        let (lhs, buf) = lex_expr_lhs(buf)?;
+fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr<'b>> {
+    let (lhs, buf) = lex_expr_lhs(buf)?;
+    let buf = ignore_whitespace(buf);
+
+    if let Ok((op, buf)) = ExprOperation::lex(buf) {
         let buf = ignore_whitespace(buf);
-
-        if let Ok((op, buf)) = ExprOperation::lex(buf) {
+        if op == ExprOperation::Mul || op == ExprOperation::Div {
+            let (rhs, buf) = lex_expr_lhs(buf)?;
             let buf = ignore_whitespace(buf);
-            if op == ExprOperation::Mul || op == ExprOperation::Div {
-                let (rhs, buf) = lex_expr_lhs(buf)?;
-                let buf = ignore_whitespace(buf);
 
-                let lhs = op.to_expr(lhs, rhs);
+            let lhs = op.to_expr(lhs, rhs);
 
-                if let Ok((next_op, buf)) = ExprOperation::lex(buf) {
-                    let buf = ignore_whitespace(buf);
-
-                    let (rhs, buf) = Expr::lex(buf)?;
-
-                    return Ok((next_op.to_expr(lhs, rhs), buf));
-                } else {
-                    return Ok((lhs, buf));
-                }
-            } else {
+            if let Ok((next_op, buf)) = ExprOperation::lex(buf) {
                 let buf = ignore_whitespace(buf);
 
                 let (rhs, buf) = Expr::lex(buf)?;
 
-                return Ok((op.to_expr(lhs, rhs), buf));
-            };
+                return Ok((next_op.to_expr(lhs, rhs), buf));
+            } else {
+                return Ok((lhs, buf));
+            }
         } else {
-            Ok((lhs, buf))
-        }
+            let buf = ignore_whitespace(buf);
+
+            let (rhs, buf) = Expr::lex(buf)?;
+
+            return Ok((op.to_expr(lhs, rhs), buf));
+        };
+    } else {
+        Ok((lhs, buf))
+    }
+}
+
+impl<'b> Lexable<'b> for Expr<'b> {
+    fn lex(buf: &'b str) -> LexResult<'b, Expr<'b>> {
+        lex_expr(buf)
     }
 }
 
@@ -153,7 +154,27 @@ impl<'b> Lexable<'b> for ExprOperation {
         } else if let Ok(buf) = expect(buf, "|") {
             (Self::Or, buf)
         } else {
-            Err((LexErrorKind::UnknownIdentifier(UnknownIdentifierError), buf))?
+            Err(LexError::UnknownOperator(buf.to_string()))?
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn lex_expression() -> Result<(), Box<dyn std::error::Error>> {
+        let ctx = NodeTree::default();
+
+        let (expr, _) = Expr::lex("1 + 0b01 + 2 * 3")?;
+        let res = expr.resolve(&ctx).unwrap();
+        assert_eq!(res, 1 + 0b01 + 2 * 3);
+
+        let (expr, _) = Expr::lex("1 + (0b01 + 2) * 3")?;
+        let res = expr.resolve(&ctx).unwrap();
+        assert_eq!(res, 1 + (0b01 + 2) * 3);
+
+        Ok(())
     }
 }
