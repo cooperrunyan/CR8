@@ -6,7 +6,7 @@ use anyhow::{bail, Result};
 use super::Compiler;
 
 impl Compiler {
-    pub(crate) fn resolve_labels(&mut self) {
+    pub(crate) fn resolve_labels(&mut self) -> Result<()> {
         for node in self.tree.iter() {
             match node {
                 Node::Label(ln) => {
@@ -22,7 +22,7 @@ impl Compiler {
                 Node::Instruction(inst) => {
                     let size = match inst.size() {
                         Ok(sz) => sz,
-                        Err(e) => panic!("Argument error for {inst:#?}: {e:#?}. At {node:#?}"),
+                        Err(e) => bail!("Argument error for {inst:#?}: {e:#?}. At {node:#?}"),
                     };
                     self.pc += size as usize;
                 }
@@ -31,9 +31,11 @@ impl Compiler {
                     self.labels.insert(name.to_string(), self.pc);
                     self.pc += len;
                 }
-                oth => panic!("Unexpected {oth:#?}. At {node:#?}"),
+                oth => bail!("Unexpected {oth:#?}. At {node:#?}"),
             }
         }
+
+        Ok(())
     }
 }
 
@@ -62,7 +64,7 @@ impl Operation {
                 let mut args = match self {
                     LW => args.collect::<Vec<_>>().into_iter(),
                     SW => args.rev().collect::<Vec<_>>().into_iter(),
-                    _ => panic!(),
+                    _ => bail!(""),
                 };
 
                 let Some(Value::Register(_)) = args.next() else {

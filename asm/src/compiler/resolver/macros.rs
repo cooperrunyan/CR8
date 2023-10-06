@@ -1,3 +1,4 @@
+use anyhow::{bail, Result};
 use indexmap::IndexMap;
 
 use crate::compiler::lex::{Expr, ExprOperation, Instruction, MacroCaptureArgType, Node, Value};
@@ -6,21 +7,23 @@ use crate::op::Operation;
 use super::Compiler;
 
 impl Compiler {
-    pub(crate) fn resolve_macros(&mut self) {
+    pub(crate) fn resolve_macros(&mut self) -> Result<()> {
         let mut new_tree = vec![];
 
         let mut tree = vec![];
         tree.append(&mut self.tree);
 
         for node in tree {
-            let mut stripped = self.fill_macro(node);
+            let mut stripped = self.fill_macro(node)?;
             new_tree.append(&mut stripped);
         }
 
         self.tree = new_tree;
+
+        Ok(())
     }
 
-    fn fill_macro(&self, node: Node) -> Vec<Node> {
+    fn fill_macro(&self, node: Node) -> Result<Vec<Node>> {
         use MacroCaptureArgType as MA;
         use Value as V;
 
@@ -33,10 +36,10 @@ impl Compiler {
                     None => {
                         match Operation::try_from(inst.id.as_str()) {
                             Ok(_) => {}
-                            Err(_) => panic!("Macro '{}' not defined", inst.id),
+                            Err(_) => bail!("Macro {:#?} not defined", inst.id),
                         };
 
-                        return vec![Node::Instruction(inst)];
+                        return Ok(vec![Node::Instruction(inst)]);
                     }
                 };
 
@@ -138,26 +141,26 @@ impl Compiler {
                         let mut nodes = self.fill_macro(Node::Instruction(Instruction {
                             id: instruction.id.clone(),
                             args: new_args,
-                        }));
+                        }))?;
 
                         tree.append(&mut nodes);
                     }
-                    return tree;
+                    return Ok(tree);
                 }
 
                 match Operation::try_from(inst.id.as_str()) {
                     Ok(_) => {}
-                    Err(_) => panic!(
-                        "Could not find matching macro or instruction for {}",
+                    Err(_) => bail!(
+                        "Could not find matching macro or instruction for {:#?}",
                         inst.id
                     ),
                 };
 
-                return vec![Node::Instruction(inst)];
+                return Ok(vec![Node::Instruction(inst)]);
             }
             _ => tree.push(node),
         };
 
-        tree
+        Ok(tree)
     }
 }

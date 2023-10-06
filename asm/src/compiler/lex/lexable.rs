@@ -40,7 +40,10 @@ pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b,
         if check(ch) {
             let remaining = &buf[i..];
             if i == 0 {
-                bail!("Unexpected {:#?}", buf.split_ascii_whitespace().next());
+                bail!(
+                    "Unexpected {:#?}",
+                    buf.split_ascii_whitespace().next().unwrap_or_default()
+                );
             }
             return if remaining.len() == 0 {
                 bail!("Unexpected end of input");
@@ -75,7 +78,7 @@ pub fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str> {
     } else {
         bail!(
             "Expected {expect:#?}, got {:#?}",
-            buf.split_ascii_whitespace().next()
+            buf.split_ascii_whitespace().next().unwrap_or_default()
         );
     }
 }
@@ -119,7 +122,7 @@ impl<'b> Lexable<'b> for usize {
         let num = &num.replace('_', "");
         match usize::from_str_radix(&num, radix) {
             Ok(val) => Ok((val, buf)),
-            Err(_) => bail!("Failed to parse number {num:#?} at {buf:#?}"),
+            Err(_) => bail!("Failed to parse number {num:#?}"),
         }
     }
 }

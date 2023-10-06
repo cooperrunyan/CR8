@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use indexmap::IndexMap;
+use path_clean::clean;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -70,8 +71,8 @@ impl Compiler {
             self.preamble = None;
         }
 
-        self.resolve_macros();
-        self.resolve_labels();
+        self.resolve_macros()?;
+        self.resolve_labels()?;
 
         self.last_label = String::new();
 
@@ -150,13 +151,20 @@ impl Compiler {
 
         let mut buf = content.as_str();
         let mut nodes = vec![];
+        let path = self.files.last().unwrap();
 
         loop {
             buf = ignore_whitespace(buf);
             if buf.is_empty() {
                 break;
             }
-            let (item, b) = Item::lex(buf).unwrap(); // FIXME
+            let (item, b) = Item::lex(buf).map_err(|e| {
+                e.context(find_err_location(
+                    buf,
+                    &content,
+                    clean(path.as_path()).display().to_string().as_str(),
+                ))
+            })?;
             nodes.push(item);
             buf = b;
         }
@@ -165,4 +173,26 @@ impl Compiler {
 
         Ok(())
     }
+}
+
+pub fn find_err_location(at: &str, file_content: &str, file_path: &str) -> String {
+    let mut lines = 0;
+    let mut col = 0;
+    let Some(idx) = file_content.find(at) else {
+        return file_path.to_string();
+    };
+
+    for (i, ch) in file_content.chars().take(idx).enumerate() {
+        if i == idx {
+            break;
+        }
+
+        if ch == '\n' {
+            lines += 1;
+            col = 0;
+        } else {
+            col += 1;
+        }
+    }
+    return format!("{file_path}:{}:{}", lines + 1, col + 1);
 }
