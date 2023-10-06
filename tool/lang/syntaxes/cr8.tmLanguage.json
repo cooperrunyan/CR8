@@ -75,7 +75,7 @@
                   "patterns": [
                     { "include": "#num" },
                     {
-                      "match": "std|core",
+                      "match": "std|core|prelude",
                       "name": "entity.name.namespace"
                     },
                     {

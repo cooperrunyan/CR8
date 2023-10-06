@@ -38,7 +38,7 @@ impl Compiler {
         let mut ctx = Self::default();
 
         ctx.push(
-            Input::File("core".to_string()),
+            Input::File("prelude".to_string()),
             Arc::new(env::current_dir().unwrap()),
         )
         .unwrap();

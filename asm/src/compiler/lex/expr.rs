@@ -168,7 +168,7 @@ mod test {
 
     #[test]
     fn lex_expression() -> Result<(), Box<dyn std::error::Error>> {
-        let ctx = Compiler::new();
+        let ctx = Compiler::default();
 
         let (expr, _) = Expr::lex("1 + 0b01 + 2 * 3")?;
         let res = expr.resolve(&ctx).unwrap();

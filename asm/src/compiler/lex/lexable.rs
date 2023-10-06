@@ -106,9 +106,6 @@ impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {
             let (val, b) = T::lex(buf)?;
             buf = b;
             buf = buf.trim_start_matches([' ', '\t']);
-            if buf.is_empty() {
-                break buf;
-            }
             values.push(val);
             if let Ok(b) = expect(buf, ",") {
                 buf = b;

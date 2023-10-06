@@ -81,7 +81,10 @@ impl Input {
         match self {
             Input::File(path) => {
                 let pb = Arc::new(PathBuf::from(&path));
-                if path.starts_with("std") || path.starts_with("core") {
+                if path.starts_with("std")
+                    || path.starts_with("core")
+                    || path.starts_with("prelude")
+                {
                     if let Some(visited) = visited {
                         for included in visited {
                             if included == &pb {
@@ -134,7 +137,7 @@ impl Input {
                                     .into_iter()
                                     .map(|p| clean(p.as_path()))
                                     .collect::<Vec<_>>();
-                                bail!("No file found in any of {:#?}", attempted);
+                                bail!("No file {path:#?} found in any of {:#?}", attempted);
                             }
                         }
                     };
