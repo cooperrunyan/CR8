@@ -1,62 +1,63 @@
 use anyhow::{bail, Result};
-use path_clean::clean;
-use std::collections::HashMap;
-use std::fs;
+use indexmap::IndexMap;
+use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-mod ast;
 mod config;
 mod debug;
 pub mod lex;
-mod lexer;
 mod resolver;
-mod tokenizer;
 
-use ast::{AstNode, Macro};
-use lexer::Lexer;
-
-use crate::compiler::ast::{AddrByte, Instruction, Label, Value};
+use crate::compiler::lex::{Node, Value};
 use crate::op::Operation;
 
 pub use config::*;
 
-use super::std::STD;
+use self::lex::{ignore_whitespace, Item, Lexable, Macro};
 
 #[derive(Debug)]
 pub struct Compiler {
     bin: Vec<u8>,
-    tree: Vec<AstNode>,
-    preamble: Option<Vec<AstNode>>,
-    markers: HashMap<usize, String>,
-    labels: HashMap<String, usize>,
+    tree: Vec<Node>,
+    preamble: Option<Vec<Node>>,
+    markers: IndexMap<usize, String>,
+    labels: IndexMap<String, usize>,
     last_label: String,
     pc: usize,
     files: Vec<Arc<PathBuf>>,
-    macros: HashMap<String, Macro>,
-    statics: HashMap<String, u128>,
-    ram_locations: HashMap<String, u128>,
-    ram_length: u128,
-    ram_origin: u16,
+    macros: IndexMap<String, Macro>,
+    statics: IndexMap<String, usize>,
+    ram_locations: IndexMap<String, usize>,
+    ram_length: usize,
+    ram_origin: usize,
 }
 
 impl Compiler {
     pub fn new() -> Self {
-        Self {
+        let mut ctx = Self {
             bin: vec![],
             tree: vec![],
-            markers: HashMap::new(),
-            labels: HashMap::new(),
+            markers: IndexMap::new(),
+            labels: IndexMap::new(),
             last_label: String::new(),
             pc: 0,
             preamble: None,
             files: vec![],
-            macros: HashMap::new(),
-            statics: HashMap::new(),
-            ram_locations: HashMap::new(),
+            macros: IndexMap::new(),
+            statics: IndexMap::new(),
+            ram_locations: IndexMap::new(),
             ram_length: 0,
             ram_origin: 0,
-        }
+        };
+
+        ctx.push(
+            Input::File("core".to_string()),
+            Arc::new(env::current_dir().unwrap()),
+        )
+        .unwrap();
+
+        ctx
     }
 
     pub fn compile(mut self) -> Result<Vec<u8>> {
@@ -80,32 +81,20 @@ impl Compiler {
 
         for node in tree {
             match node {
-                AstNode::Directive(ast::Directive::Rom(_, mut val)) => self.bin.append(&mut val),
-                AstNode::Label(Label::Label(ln)) => self.last_label = ln,
-                AstNode::Instruction(Instruction::Native(op, args)) => {
-                    let mut marker = format!("{op} ");
-                    for (i, arg) in args.iter().enumerate() {
-                        marker.push_str(&format!("{arg}"));
-                        if i != args.len() - 1 {
-                            marker.push_str(&format!(", "));
-                        }
+                Node::Explicit(_, mut val) => self.bin.append(&mut val.0),
+                Node::Label(ln) => {
+                    if !ln.contains(".") {
+                        self.last_label = ln.to_string();
                     }
-                    self.markers.insert(self.bin.len(), marker);
-
+                }
+                Node::Instruction(inst) => {
+                    let op = Operation::try_from(inst.id.as_str()).unwrap(); // FIXME
                     let mut header = (op as u8) << 4;
                     let mut compiled_args: Vec<u8> = vec![];
                     let mut regn = 0;
 
-                    for arg in args {
+                    for arg in inst.args {
                         match arg {
-                            Value::AddrByte(AddrByte::High(a)) => match self.resolve_expr(&a) {
-                                Ok(a) => compiled_args.push((a >> 8) as u8),
-                                Err(e) => bail!("Unknown address: {a:#?}. {e:#?}"),
-                            },
-                            Value::AddrByte(AddrByte::Low(a)) => match self.resolve_expr(&a) {
-                                Ok(a) => compiled_args.push(a as u8),
-                                Err(e) => bail!("Unknown address: {a:#?}. {e:#?}"),
-                            },
                             Value::Register(r) => {
                                 if regn > 0 {
                                     compiled_args.push(r as u8)
@@ -115,8 +104,8 @@ impl Compiler {
                                 regn += 1;
                             }
                             Value::Immediate(imm) => compiled_args.push(imm as u8),
-                            Value::Expression(exp) => match self.resolve_expr(&exp) {
-                                Err(e) => bail!("Failed to resolve: {exp:#?}. {e:#?}"),
+                            Value::Expr(exp) => match exp.resolve(&self) {
+                                Err(e) => bail!("Failed to resolve: {e:#?}"),
                                 Ok(v) => {
                                     compiled_args.push(v as u8);
                                     if op == LW || op == SW {
@@ -150,79 +139,27 @@ impl Compiler {
 
     pub fn push(&mut self, input: Input, from: Arc<PathBuf>) -> Result<()> {
         let content = {
-            let (content, path) = match input {
-                Input::File(path) => {
-                    if path.starts_with("$std") {
-                        let path = path.strip_prefix('$').unwrap().to_string();
-                        for included in self.files.iter() {
-                            if included.clone() == PathBuf::from(&path).into() {
-                                return Ok(());
-                            }
-                        }
-                        if let Some(content) = STD.get(&path) {
-                            (content.to_string(), path.into())
-                        } else {
-                            bail!("Attempted to import non-existent std file: {path:#?}");
-                        }
-                    } else {
-                        let pb = PathBuf::from(&path);
-                        let real = if pb.exists() && pb.is_file() {
-                            pb
-                        } else {
-                            let possibilities = vec![
-                                from.parent().unwrap_or(&from).join(&pb),
-                                from.parent()
-                                    .unwrap_or(&from)
-                                    .join(&pb)
-                                    .with_extension("asm"),
-                                from.parent().unwrap_or(&from).join(&pb).join("mod.asm"),
-                                from.parent().unwrap_or(&from).join(&pb).join("main.asm"),
-                                pb.with_extension("asm"),
-                                pb.join("main.asm"),
-                                pb.join("mod.asm"),
-                                pb,
-                            ];
-
-                            let mut found = None;
-
-                            for possible in possibilities.iter() {
-                                if possible.exists() && possible.is_file() {
-                                    found = Some(possible.to_owned());
-                                    break;
-                                }
-                            }
-                            match found {
-                                Some(p) => p,
-                                None => {
-                                    let attempted = possibilities
-                                        .into_iter()
-                                        .map(|p| clean(p.as_path()))
-                                        .collect::<Vec<_>>();
-                                    bail!("Could not locate {path} in any of: \n  {attempted:#?}");
-                                }
-                            }
-                        };
-
-                        if let Ok(file) = fs::read_to_string(&real) {
-                            (file, real)
-                        } else {
-                            bail!("Failed to read {real:?}");
-                        }
-                    }
-                }
-
-                Input::Raw(s) => (s, "raw".into()),
-            };
+            let (content, path) = input.source(Some(&from), Some(&self.files))?;
 
             self.files.push(Arc::new(path));
-            content
+            match content {
+                Some(c) => c,
+                None => return Ok(()),
+            }
         };
-        let nodes = {
-            let path = self.files.last().unwrap();
 
-            let tokens = Compiler::tokenize(content, path.clone())?;
-            Lexer::new(tokens, path.clone()).lex()?.nodes
-        };
+        let mut buf = content.as_str();
+        let mut nodes = vec![];
+
+        loop {
+            buf = ignore_whitespace(buf);
+            if buf.is_empty() {
+                break;
+            }
+            let (item, b) = Item::lex(buf).unwrap(); // FIXME
+            nodes.push(item);
+            buf = b;
+        }
 
         self.resolve_directives(nodes)?;
 

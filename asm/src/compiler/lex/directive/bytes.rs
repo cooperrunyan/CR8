@@ -1,7 +1,7 @@
 use crate::compiler::lex::lexable::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ExplicitBytes(Vec<u8>);
+pub struct ExplicitBytes(pub Vec<u8>);
 
 impl<'b> Lexable<'b> for ExplicitBytes {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {

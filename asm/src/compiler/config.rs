@@ -1,9 +1,11 @@
+use anyhow::{bail, Result};
 use path_clean::clean;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use failure::Fail;
+use crate::std::STD;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -72,44 +74,32 @@ impl Config {
     }
 }
 
-#[derive(Fail, Debug)]
-pub enum SourceInputError {
-    #[fail(display = "import of unknown std module: {}", _0)]
-    NoStdModule(String),
-
-    #[fail(display = "file not found in any of: \n{:#?}", _0)]
-    NoFile(Vec<PathBuf>),
-
-    #[fail(display = "failed to read file: {:#?}", _0)]
-    ReadError(PathBuf),
-}
-
 impl Input {
     pub fn source(
         self,
         from: Option<&PathBuf>,
-        visited: Option<&Vec<PathBuf>>,
-    ) -> Result<(Option<String>, PathBuf), SourceInputError> {
+        visited: Option<&Vec<Arc<PathBuf>>>,
+    ) -> Result<(Option<String>, PathBuf)> {
         match self {
             Input::File(path) => {
-                let pb = PathBuf::from(&path);
-                if path.starts_with("std") {
+                let pb = Arc::new(PathBuf::from(&path));
+                if path.starts_with("std") || path.starts_with("core") {
                     if let Some(visited) = visited {
                         for included in visited {
                             if included == &pb {
-                                return Ok((None, pb));
+                                return Ok((None, pb.to_path_buf()));
                             }
                         }
                     }
-                    Ok((Some(String::from("")), path.into()))
-                    // if let Some(content) = STD.get(&path) {
-                    //     Ok((Some(content.to_string()), path.into()))
-                    // } else {
-                    //     Err(SourceInputError::NoStdModule(path))
-                    // }
+                    if let Some(content) = STD.get(&path) {
+                        Ok((Some(content.to_string()), path.into()))
+                    } else {
+                        bail!("No std module: {path}");
+                    }
                 } else {
+                    let pb = pb.to_path_buf();
                     let real = if pb.exists() && pb.is_file() {
-                        pb
+                        pb.to_path_buf()
                     } else {
                         let possibilities = match from {
                             Some(f) => vec![
@@ -146,14 +136,14 @@ impl Input {
                                     .into_iter()
                                     .map(|p| clean(p.as_path()))
                                     .collect::<Vec<_>>();
-                                return Err(SourceInputError::NoFile(attempted));
+                                bail!("No file found in any of {:#?}", attempted);
                             }
                         }
                     };
 
                     match fs::read_to_string(&real) {
-                        Ok(file) => Ok((Some(file), real)),
-                        Err(_) => Err(SourceInputError::ReadError(real)),
+                        Ok(file) => Ok((Some(file), real.to_path_buf())),
+                        Err(_) => bail!("Failed to read {real:?}"),
                     }
                 }
             }

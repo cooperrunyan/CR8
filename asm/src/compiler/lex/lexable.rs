@@ -49,8 +49,30 @@ pub trait Lexable<'b>: Sized {
     fn lex(buf: &'b str) -> LexResult<'b, Self>;
 }
 
+pub fn ignore_comment<'b>(buf: &'b str) -> &'b str {
+    if buf.starts_with(";") {
+        if let Some(nl) = buf.find('\n') {
+            ignore_comment(&buf[nl..].trim_start_matches(char::is_whitespace))
+        } else {
+            &""
+        }
+    } else {
+        buf
+    }
+}
+
 pub fn ignore_whitespace<'b>(buf: &'b str) -> &'b str {
-    buf.trim_start_matches(char::is_whitespace)
+    let buf = buf.trim_start_matches(char::is_whitespace);
+    let buf = ignore_comment(buf);
+    let buf = buf.trim_start_matches(char::is_whitespace);
+    buf
+}
+
+pub fn ignore_whitespace_noline<'b>(buf: &'b str) -> &'b str {
+    let buf = buf.trim_start_matches(&[' ', '\t']);
+    let buf = ignore_comment(buf);
+    let buf = buf.trim_start_matches(&[' ', '\t']);
+    buf
 }
 
 pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {

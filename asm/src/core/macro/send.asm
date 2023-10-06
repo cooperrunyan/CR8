@@ -1,4 +1,4 @@
-#[use(std::arch)]
+#[use(core::arch)]
 
 #[macro] send: {
     ($port: imm8, $b: imm8) => {

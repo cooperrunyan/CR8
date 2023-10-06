@@ -6,8 +6,5 @@ main:
     mov %b, 15
     mov %c, 94
     mov %d, 87
-    brkpt
-    call [mul16]
-    brkpt
-    ping
+    dbg
     halt

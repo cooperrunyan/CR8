@@ -2,15 +2,15 @@ use crate::compiler::lex::lexable::*;
 use crate::compiler::lex::node::{Instruction, Value};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Macro<'m> {
-    pub id: &'m str,
-    pub captures: Vec<MacroCapture<'m>>,
+pub struct Macro {
+    pub id: String,
+    pub captures: Vec<MacroCapture>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct MacroCapture<'m> {
-    pub args: Vec<MacroCaptureArg<'m>>,
-    pub content: Vec<Instruction<'m>>,
+pub struct MacroCapture {
+    pub args: Vec<MacroCaptureArg>,
+    pub content: Vec<Instruction>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -22,17 +22,17 @@ pub enum MacroCaptureArgType {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct MacroCaptureArg<'m> {
-    pub id: &'m str,
+pub struct MacroCaptureArg {
+    pub id: String,
     pub ty: MacroCaptureArgType,
 }
 
-impl<'b> Lexable<'b> for Macro<'b> {
+impl<'b> Lexable<'b> for Macro {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = ignore_whitespace(buf);
         let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
         let mut mac = Macro {
-            id,
+            id: id.to_string(),
             captures: vec![],
         };
 
@@ -55,7 +55,7 @@ impl<'b> Lexable<'b> for Macro<'b> {
     }
 }
 
-impl<'b> Lexable<'b> for MacroCapture<'b> {
+impl<'b> Lexable<'b> for MacroCapture {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut buf = expect(buf, "(")?;
         let mut args = vec![];
@@ -100,17 +100,28 @@ impl<'b> Lexable<'b> for MacroCapture<'b> {
             }
             let (id, r) = collect_while(raw, |c| c.is_alphanumeric() || c == '_')?;
             raw = r;
-            raw = ignore_whitespace(raw);
-            let (args, r) = Vec::<Value>::lex(raw)?;
-            raw = r;
-            content.push(Instruction { id, args });
+            raw = ignore_whitespace_noline(raw);
+            if let Ok(r) = expect(raw, "\n") {
+                raw = r;
+                content.push(Instruction {
+                    id: id.to_string(),
+                    args: vec![],
+                });
+            } else {
+                let (args, r) = Vec::<Value>::lex(raw)?;
+                raw = r;
+                content.push(Instruction {
+                    id: id.to_string(),
+                    args,
+                });
+            }
         }
 
         Ok((MacroCapture { args, content }, buf))
     }
 }
 
-impl<'b> Lexable<'b> for MacroCaptureArg<'b> {
+impl<'b> Lexable<'b> for MacroCaptureArg {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '$')?;
         let buf = ignore_whitespace(buf);
@@ -118,7 +129,13 @@ impl<'b> Lexable<'b> for MacroCaptureArg<'b> {
         let buf = ignore_whitespace(buf);
         let (ty, buf) = MacroCaptureArgType::lex(buf)?;
 
-        Ok((MacroCaptureArg { id, ty }, buf))
+        Ok((
+            MacroCaptureArg {
+                id: id.to_string(),
+                ty,
+            },
+            buf,
+        ))
     }
 }
 
@@ -189,12 +206,12 @@ mod test {
             cap.content,
             vec![
                 Instruction {
-                    id: "ldhl",
-                    args: vec![Value::MacroVariable("$addr")]
+                    id: "ldhl".to_string(),
+                    args: vec![Value::MacroVariable("$addr".to_string())]
                 },
                 Instruction {
-                    id: "jnz",
-                    args: vec![Value::MacroVariable("$if")]
+                    id: "jnz".to_string(),
+                    args: vec![Value::MacroVariable("$if".to_string())]
                 },
             ]
         );
@@ -202,11 +219,11 @@ mod test {
             cap.args,
             vec![
                 MacroCaptureArg {
-                    id: "$addr",
+                    id: "$addr".to_string(),
                     ty: MacroCaptureArgType::Imm16
                 },
                 MacroCaptureArg {
-                    id: "$if",
+                    id: "$if".to_string(),
                     ty: MacroCaptureArgType::Imm8OrRegister
                 },
             ]

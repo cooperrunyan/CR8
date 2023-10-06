@@ -1,7 +1,3 @@
-#[use(std::macro::call)]
-#[use(std::macro::jmp)]
-#[use(std::macro::math)]
-
 ; Logical Left Shift
 ; ab << c  -> ab
 ; Side effects: %a, %b, %c

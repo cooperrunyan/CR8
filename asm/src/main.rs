@@ -2,7 +2,7 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Result;
-use asm::compiler::{lex, Compiler, Config};
+use asm::compiler::{Compiler, Config};
 
 use env_logger::Env;
 

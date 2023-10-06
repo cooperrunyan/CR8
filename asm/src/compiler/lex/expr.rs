@@ -1,7 +1,10 @@
+use std::num::Wrapping;
+
 use failure::Fail;
 
+use crate::compiler::Compiler;
+
 use super::lexable::{collect_while, expect, ignore_whitespace, LexError, LexResult, Lexable};
-use super::NodeTree;
 
 #[derive(Fail, Debug)]
 pub enum ResolutionError {
@@ -20,25 +23,29 @@ pub enum ResolutionError {
 pub struct ApplyError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Expr<'e> {
+pub enum Expr {
     Literal(usize),
-    Variable(&'e str),
+    Variable(String),
     Expr {
-        lhs: Box<Expr<'e>>,
+        lhs: Box<Expr>,
         op: ExprOperation,
-        rhs: Box<Expr<'e>>,
+        rhs: Box<Expr>,
     },
 }
 
-impl<'e> Expr<'e> {
-    pub fn resolve(self, ctx: &NodeTree) -> Result<usize, ResolutionError> {
+impl Expr {
+    pub fn resolve(self, ctx: &Compiler) -> Result<usize, ResolutionError> {
         match self {
             Self::Literal(lit) => Ok(lit),
             Self::Variable(var) => {
-                if let Some(label) = ctx.labels.get(var) {
+                if var.as_str() == "$" {
+                    Ok(ctx.pc)
+                } else if let Some(label) = ctx.labels.get(&var) {
                     Ok(*label)
-                } else if let Some(stat) = ctx.statics.get(var) {
+                } else if let Some(stat) = ctx.statics.get(&var) {
                     Ok(*stat)
+                } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
+                    Ok(*label)
                 } else {
                     Err(ResolutionError::UnknownVariable)
                 }
@@ -61,15 +68,19 @@ fn lex_expr_lhs<'b>(buf: &'b str) -> LexResult<'b, Expr> {
         return Ok((ex, buf));
     }
 
-    if let Ok((lhs, buf)) = usize::lex(buf) {
+    if let Ok(buf) = expect(buf, "$") {
+        Ok((Expr::Variable("$".to_string()), buf))
+    } else if let Ok((lhs, buf)) = usize::lex(buf) {
         Ok((Expr::Literal(lhs), buf))
     } else {
-        let (lhs, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
-        Ok((Expr::Variable(lhs), buf))
+        let (lhs, buf) = collect_while(buf, |c| {
+            c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
+        })?;
+        Ok((Expr::Variable(lhs.to_string()), buf))
     }
 }
 
-fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr<'b>> {
+fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr> {
     let (lhs, buf) = lex_expr_lhs(buf)?;
     let buf = ignore_whitespace(buf);
 
@@ -102,8 +113,8 @@ fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr<'b>> {
     }
 }
 
-impl<'b> Lexable<'b> for Expr<'b> {
-    fn lex(buf: &'b str) -> LexResult<'b, Expr<'b>> {
+impl<'b> Lexable<'b> for Expr {
+    fn lex(buf: &'b str) -> LexResult<'b, Expr> {
         lex_expr(buf)
     }
 }
@@ -116,10 +127,12 @@ pub enum ExprOperation {
     Div,
     And,
     Or,
+    Rsh,
+    Lsh,
 }
 
 impl ExprOperation {
-    pub fn to_expr<'e>(&self, lhs: Expr<'e>, rhs: Expr<'e>) -> Expr<'e> {
+    pub fn to_expr(&self, lhs: Expr, rhs: Expr) -> Expr {
         Expr::Expr {
             lhs: Box::new(lhs),
             op: *self,
@@ -129,12 +142,14 @@ impl ExprOperation {
 
     pub fn apply(self, lhs: usize, rhs: usize) -> Result<usize, ApplyError> {
         match self {
-            Self::Add => Ok(lhs + rhs),
-            Self::Sub => Ok(lhs - rhs),
-            Self::Mul => Ok(lhs * rhs),
-            Self::Div => Ok(lhs / rhs),
-            Self::And => Ok(lhs & rhs),
-            Self::Or => Ok(lhs | rhs),
+            Self::Add => Ok((Wrapping(lhs) + Wrapping(rhs)).0),
+            Self::Sub => Ok((Wrapping(lhs) - Wrapping(rhs)).0),
+            Self::Mul => Ok((Wrapping(lhs) * Wrapping(rhs)).0),
+            Self::Div => Ok((Wrapping(lhs) / Wrapping(rhs)).0),
+            Self::And => Ok((Wrapping(lhs) & Wrapping(rhs)).0),
+            Self::Or => Ok((Wrapping(lhs) | Wrapping(rhs)).0),
+            Self::Rsh => Ok((Wrapping(lhs) >> rhs).0),
+            Self::Lsh => Ok((Wrapping(lhs) << rhs).0),
         }
     }
 }
@@ -153,6 +168,10 @@ impl<'b> Lexable<'b> for ExprOperation {
             (Self::And, buf)
         } else if let Ok(buf) = expect(buf, "|") {
             (Self::Or, buf)
+        } else if let Ok(buf) = expect(buf, ">>") {
+            (Self::Rsh, buf)
+        } else if let Ok(buf) = expect(buf, "<<") {
+            (Self::Lsh, buf)
         } else {
             Err(LexError::UnknownOperator(buf.to_string()))?
         })
@@ -165,7 +184,7 @@ mod test {
 
     #[test]
     fn lex_expression() -> Result<(), Box<dyn std::error::Error>> {
-        let ctx = NodeTree::default();
+        let ctx = Compiler::new();
 
         let (expr, _) = Expr::lex("1 + 0b01 + 2 * 3")?;
         let res = expr.resolve(&ctx).unwrap();

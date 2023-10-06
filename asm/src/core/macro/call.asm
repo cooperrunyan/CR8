@@ -1,4 +1,4 @@
-#[use(std::macro::jmp)]
+#[use(core::macro::jmp)]
 
 #[macro] call: {
     ($addr: imm16) => {

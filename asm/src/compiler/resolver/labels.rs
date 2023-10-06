@@ -1,5 +1,7 @@
-use crate::compiler::ast::{AstNode, Directive, Instruction, Label, Value};
+use crate::compiler::lex::{Instruction, Node, Value};
 use crate::op::Operation;
+
+use anyhow::{bail, Result};
 
 use super::Compiler;
 
@@ -7,23 +9,25 @@ impl Compiler {
     pub(crate) fn resolve_labels(&mut self) {
         for node in self.tree.iter() {
             match node {
-                AstNode::Label(Label::Label(ln)) => {
-                    self.last_label = ln.to_string();
-                    self.labels.insert(ln.to_string(), self.pc);
+                Node::Label(ln) => {
+                    if ln.starts_with(".") {
+                        self.labels
+                            .insert(format!("{}{ln}", self.last_label), self.pc);
+                    } else {
+                        self.last_label = ln.to_string();
+                        self.labels.insert(ln.to_string(), self.pc);
+                    }
                 }
-                AstNode::Label(Label::SubLabel(sub)) => {
-                    self.labels
-                        .insert(format!("{}{sub}", self.last_label), self.pc);
-                }
-                AstNode::Instruction(Instruction::Native(op, args)) => {
-                    let size = match op.size(args) {
+
+                Node::Instruction(inst) => {
+                    let size = match inst.size() {
                         Ok(sz) => sz,
-                        Err(e) => panic!("Argument error for {op:#?}: {e:#?}. At {node:#?}"),
+                        Err(e) => panic!("Argument error for {inst:#?}: {e:#?}. At {node:#?}"),
                     };
                     self.pc += size as usize;
                 }
-                AstNode::Directive(Directive::Rom(name, val)) => {
-                    let len = val.len();
+                Node::Explicit(name, val) => {
+                    let len = val.0.len();
                     self.labels.insert(name.to_string(), self.pc);
                     self.pc += len;
                 }
@@ -34,7 +38,7 @@ impl Compiler {
 }
 
 impl Operation {
-    pub(crate) fn size(&self, _args: &Vec<Value>) -> Result<u8, String> {
+    pub(crate) fn size(&self, _args: &Vec<Value>) -> Result<usize> {
         use Operation::*;
         let mut args = vec![];
         for arg in _args {
@@ -44,10 +48,10 @@ impl Operation {
         macro_rules! none {
             ($a:expr, $n:expr) => {
                 if $a.next().is_none() {
-                    Ok($n as u8)
+                    Ok($n as usize)
                 } else {
                     dbg!(&$a);
-                    Err("Too many arguments".to_string())
+                    bail!("Too many arguments")
                 }
             };
         }
@@ -62,42 +66,42 @@ impl Operation {
                 };
 
                 let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected the first argument of LW to be a register".to_string());
+                    bail!("Expected the first argument of LW to be a register");
                 };
                 match args.next() {
                     None => return Ok(1),
-                    Some(Value::AddrByte(_) | Value::Immediate(_)) => match args.next() {
-                        Some(Value::AddrByte(_) | Value::Immediate(_)) => return none!(args, 3),
-                        _ => return Err("Expected another address byte for LW".to_string()),
+                    Some(Value::Immediate(_)) => match args.next() {
+                        Some(Value::Immediate(_)) => return none!(args, 3),
+                        _ => bail!("Expected another address byte for LW"),
                     },
-                    Some(Value::Expression(_)) => return none!(args, 3),
-                    oth => return Err(format!("Unexpected additional argument: {oth:#?}")),
+                    Some(Value::Expr(_)) => return none!(args, 3),
+                    oth => bail!("Unexpected additional argument: {oth:#?}"),
                 }
             }
             PUSH => {
                 match args.next() {
-                    Some(Value::Immediate(_) | Value::Expression(_)) => return none!(args, 2),
+                    Some(Value::Immediate(_) | Value::Expr(_)) => return none!(args, 2),
                     Some(Value::Register(_)) => return none!(args, 1),
-                    _ => return Err("Expected register or immediate as first argument".to_string()),
+                    _ => bail!("Expected register or immediate as first argument"),
                 };
             }
             JNZ => {
                 let len = match args.next() {
-                    Some(Value::Immediate(_) | Value::Expression(_)) => 2,
+                    Some(Value::Immediate(_) | Value::Expr(_)) => 2,
                     Some(Value::Register(_)) => 1,
-                    _ => return Err("Expected register or immediate as first argument".to_string()),
+                    _ => bail!("Expected register or immediate as first argument"),
                 };
                 return none!(args, len);
             }
             POP => {
                 let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected register as only argument".to_string());
+                    bail!("Expected register as only argument");
                 };
                 return none!(args, 1);
             }
             MB => {
                 let Some(Value::Immediate(_)) = args.next() else {
-                    return Err("Expected immediate as only argument".to_string());
+                    bail!("Expected immediate as only argument");
                 };
                 return none!(args, 2);
             }
@@ -108,13 +112,24 @@ impl Operation {
                 };
 
                 let Some(Value::Register(_)) = args.next() else {
-                    return Err("Expected register argument".to_string());
+                    bail!("Expected register argument");
                 };
                 match args.next() {
-                    None => return Err("Expected another argument".to_string()),
+                    None => bail!("Expected another argument"),
                     Some(_) => return none!(args, 2),
                 }
             }
         }
+    }
+}
+
+impl Instruction {
+    pub fn size(&self) -> Result<usize> {
+        let op = match Operation::try_from(self.id.as_str()) {
+            Ok(o) => o,
+            Err(_) => bail!("Cannot determine size of {:#?}", self.id),
+        };
+
+        op.size(&self.args)
     }
 }

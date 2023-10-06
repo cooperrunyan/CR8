@@ -1,11 +1,5 @@
-#[use(std::arch)]
-#[use(std::macro::call)]
-#[use(std::macro::jmp)]
-#[use(std::macro::math)]
-
 ; CALLER MUST SET mb 1
 ; Draws bytes from ROM to VRAM
-
 #[macro] clrvram: {
     ($from: imm16, $to: imm16) => {
         mov %a, $from.l

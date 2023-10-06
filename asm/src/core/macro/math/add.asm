@@ -1,34 +1,33 @@
-#[use(std::macro::clear)]
+#[use(core::macro::clear)]
 
-#[macro] sub: {
+#[macro] add: {
     ($into: reg, $rhs: reg | imm8) => {
-        clrfb
-        sbb $into, $rhs
+        clrfc
+        adc $into, $rhs
     }
     ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
-        sub $tol, $frl
-        sbb $toh, $frh
+        add $tol, $frl
+        adc $toh, $frh
     }
     ($tol: reg, $toh: reg, $rhs: imm16) => {
-        sub $tol, $rhs.l
-        sbb $toh, $rhs.h
+        add $tol, $rhs.l
+        adc $toh, $rhs.h
     }
 }
 
-#[macro] sbb: {
+#[macro] adc: {
     ($into: reg) => {
-        sbb $into, 0
+        adc $into, 0
     }
 }
 
-#[macro] dec: {
+#[macro] inc: {
     ($into: reg) => {
-        sub $into, 1
+        add $into, 1
     }
     ($lo: reg, $hi: reg) => {
         clrfb
-        dec $lo
-        sbb $hi
+        inc $lo
+        adc $hi
     }
 }
-

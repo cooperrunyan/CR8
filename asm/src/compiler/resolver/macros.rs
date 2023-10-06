@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
-use crate::compiler::ast::{AddrByte, AstNode, Instruction, MacroArg, ToNode, Value};
+use crate::compiler::lex::{Expr, ExprOperation, Instruction, MacroCaptureArgType, Node, Value};
 use crate::op::Operation;
 
 use super::Compiler;
@@ -20,29 +20,30 @@ impl Compiler {
         self.tree = new_tree;
     }
 
-    fn fill_macro(&self, node: AstNode) -> Vec<AstNode> {
+    fn fill_macro(&self, node: Node) -> Vec<Node> {
+        use MacroCaptureArgType as MA;
+        use Value as V;
+
         let mut tree = vec![];
 
         match node {
-            AstNode::Instruction(Instruction::Macro(mac_name, args)) => {
-                use MacroArg as MA;
-                use Value as V;
-                let mac = match self.macros.get(&mac_name) {
+            Node::Instruction(inst) => {
+                let mac = match self.macros.get(&inst.id) {
                     Some(m) => m,
                     None => {
-                        let op = match Operation::try_from(mac_name.as_str()) {
-                            Ok(op) => op,
-                            Err(_) => panic!("Macro '{mac_name}' not defined"),
+                        match Operation::try_from(inst.id.as_str()) {
+                            Ok(_) => {}
+                            Err(_) => panic!("Macro '{}' not defined", inst.id),
                         };
 
-                        return vec![AstNode::Instruction(Instruction::Native(op, args))];
+                        return vec![Node::Instruction(inst)];
                     }
                 };
 
-                let mut captured_args: HashMap<String, Value> = HashMap::new();
+                let mut captured_args: IndexMap<String, Value> = IndexMap::new();
 
                 for capturer in mac.captures.iter() {
-                    if capturer.args.len() != args.len() {
+                    if capturer.args.len() != inst.args.len() {
                         continue;
                     }
 
@@ -57,46 +58,55 @@ impl Compiler {
 
                     macro_rules! insert {
                         ($n:expr, $t:ident($v:expr)) => {{
-                            captured_args.insert($n.to_string(), V::$t($v.clone()));
+                            captured_args.insert($n.to_string(), Value::$t($v.clone()));
                         }};
                     }
 
                     macro_rules! insert_addr {
                         ($n:expr, $f:expr, $r:expr) => {{
-                            captured_args.insert($n.to_string(), $f);
                             captured_args.insert(
                                 format!("{}.l", $n),
-                                V::AddrByte(AddrByte::Low($r.clone())),
+                                Value::Expr(Expr::Expr {
+                                    lhs: Box::new($r),
+                                    op: ExprOperation::And,
+                                    rhs: Box::new(Expr::Literal(0xFF)),
+                                }),
                             );
                             captured_args.insert(
                                 format!("{}.h", $n),
-                                V::AddrByte(AddrByte::High($r.clone())),
+                                Value::Expr(Expr::Expr {
+                                    lhs: Box::new($r),
+                                    op: ExprOperation::Rsh,
+                                    rhs: Box::new(Expr::Literal(0xFF)),
+                                }),
                             );
+                            captured_args.insert($n.to_string(), Value::Expr($r));
                         }};
                     }
 
                     for (i, capture_arg) in capturer.args.iter().enumerate() {
-                        let current = args.get(i).unwrap();
-                        match capture_arg {
-                            MA::Imm8(name) => match current {
+                        let current = inst.args.get(i).unwrap();
+                        let name = &capture_arg.id;
+                        match &capture_arg.ty {
+                            MA::Imm8 => match current {
                                 V::Immediate(v) => insert!(name, Immediate(v)),
-                                V::MacroArg(id) => insert!(name, MacroArg(id)),
-                                V::Expression(e) => insert!(name, Expression(e)),
+                                V::MacroVariable(id) => insert!(name, MacroVariable(id)),
+                                V::Expr(e) => insert!(name, Expr(e)),
                                 _ => invalid!(),
                             },
-                            MA::Register(name) => match current {
+                            MA::Register => match current {
                                 V::Register(r) => insert!(name, Register(r)),
                                 _ => invalid!(),
                             },
-                            MA::ImmReg(name) => match current {
+                            MA::Imm8OrRegister => match current {
                                 V::Immediate(v) => insert!(name, Immediate(v)),
                                 V::Register(r) => insert!(name, Register(r)),
-                                V::MacroArg(id) => insert!(name, MacroArg(id)),
+                                V::MacroVariable(id) => insert!(name, MacroVariable(id)),
                                 _ => invalid!(),
                             },
-                            MA::Imm16(name) => match current {
-                                V::Expression(e) => {
-                                    insert_addr!(name, V::Expression(e.clone()), e);
+                            MA::Imm16 => match current {
+                                V::Expr(e) => {
+                                    insert_addr!(name, V::Expr(e.clone()), e.clone());
                                 }
                                 _ => invalid!(),
                             },
@@ -107,22 +117,17 @@ impl Compiler {
                         continue;
                     }
 
-                    for instruction in capturer.body.iter() {
-                        let (empty, args) = match instruction {
-                            Instruction::Macro(m, args) => {
-                                (Instruction::Macro(m.to_string(), vec![]), args)
-                            }
-                            Instruction::Native(n, args) => {
-                                (Instruction::Native(n.to_owned(), vec![]), args)
-                            }
-                        };
+                    for instruction in capturer.content.iter() {
                         let mut new_args: Vec<Value> = vec![];
 
-                        for arg in args {
+                        for arg in instruction.args.iter() {
                             match arg {
-                                V::MacroArg(ma) => {
+                                V::MacroVariable(ma) => {
                                     let Some(val) = captured_args.get(ma) else {
-                                        panic!("Attempted to use undefined macro arg at {mac_name:#?} {empty:#?}");
+                                        panic!(
+                                            "Attempted to use undefined macro arg {:#?} at {:#?}",
+                                            ma, inst.id
+                                        );
                                     };
                                     new_args.push(val.to_owned());
                                 }
@@ -130,27 +135,25 @@ impl Compiler {
                             }
                         }
 
-                        match instruction {
-                            Instruction::Macro(m, _) => {
-                                let mut nodes = self.fill_macro(
-                                    Instruction::Macro(m.to_owned(), new_args).to_node(),
-                                );
-                                tree.append(&mut nodes);
-                            }
-                            Instruction::Native(n, _) => {
-                                tree.push(Instruction::Native(n.to_owned(), new_args).to_node())
-                            }
-                        };
+                        let mut nodes = self.fill_macro(Node::Instruction(Instruction {
+                            id: instruction.id.clone(),
+                            args: new_args,
+                        }));
+
+                        tree.append(&mut nodes);
                     }
                     return tree;
                 }
 
-                let op = match Operation::try_from(mac_name.as_str()) {
-                    Ok(op) => op,
-                    Err(_) => panic!("Could not find matching macro for {mac_name}"),
+                match Operation::try_from(inst.id.as_str()) {
+                    Ok(_) => {}
+                    Err(_) => panic!(
+                        "Could not find matching macro or instruction for {}",
+                        inst.id
+                    ),
                 };
 
-                return vec![AstNode::Instruction(Instruction::Native(op, args))];
+                return vec![Node::Instruction(inst)];
             }
             _ => tree.push(node),
         };

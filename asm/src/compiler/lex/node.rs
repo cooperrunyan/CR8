@@ -5,28 +5,28 @@ use super::expr::Expr;
 use super::lexable::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Node<'n> {
-    Instruction(Instruction<'n>),
-    Label(&'n str),
-    Explicit(&'n str, ExplicitBytes),
-    Import(Import<'n>),
+pub enum Node {
+    Instruction(Instruction),
+    Label(String),
+    Explicit(String, ExplicitBytes),
+    Import(Import),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Instruction<'i> {
-    pub id: &'i str,
-    pub args: Vec<Value<'i>>,
+pub struct Instruction {
+    pub id: String,
+    pub args: Vec<Value>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Value<'v> {
-    Expr(Expr<'v>),
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Value {
+    Expr(Expr),
     Immediate(usize),
     Register(Register),
-    MacroVariable(&'v str),
+    MacroVariable(String),
 }
 
-impl<'b> Lexable<'b> for Value<'b> {
+impl<'b> Lexable<'b> for Value {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         if let Ok(buf) = expect(buf, "[") {
             let (expr, buf) = collect_until(buf, |c| c == ']')?;
@@ -42,8 +42,10 @@ impl<'b> Lexable<'b> for Value<'b> {
         }
 
         if let Ok(_) = expect(buf, "$") {
-            let (var, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '$')?;
-            return Ok((Value::MacroVariable(var), buf));
+            let (var, buf) = collect_while(buf, |c| {
+                c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
+            })?;
+            return Ok((Value::MacroVariable(var.to_string()), buf));
         }
 
         let (val, buf) = usize::lex(buf)?;
@@ -63,14 +65,14 @@ mod test {
         assert_eq!(
             n,
             Item::Node(Node::Instruction(Instruction {
-                id: "mov",
+                id: "mov".to_string(),
                 args: vec![
                     Value::Register(Register::C),
                     Value::Register(Register::D),
                     Value::Expr(Expr::Expr {
-                        lhs: Box::new(Expr::Variable("BRAM")),
+                        lhs: Box::new(Expr::Variable("BRAM".to_string())),
                         op: ExprOperation::Add,
-                        rhs: Box::new(Expr::Variable("OFFSET"))
+                        rhs: Box::new(Expr::Variable("OFFSET".to_string()))
                     })
                 ]
             }))

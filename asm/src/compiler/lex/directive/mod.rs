@@ -9,17 +9,17 @@ pub use import::*;
 pub use mac::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Directive<'d> {
-    Boot(&'d str),
-    ExplicitBytes(&'d str, ExplicitBytes),
-    Dyn(&'d str, usize),
+pub enum Directive {
+    Boot(String),
+    ExplicitBytes(String, ExplicitBytes),
+    Dyn(String, usize),
     DynOrigin(usize),
-    Macro(Macro<'d>),
-    Static(&'d str, usize),
-    Use(Import<'d>),
+    Macro(Macro),
+    Static(String, usize),
+    Use(Import),
 }
 
-impl<'b> Lexable<'b> for Directive<'b> {
+impl<'b> Lexable<'b> for Directive {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = expect(buf, "#[")?;
         let buf = ignore_whitespace(buf);
@@ -37,7 +37,7 @@ impl<'b> Lexable<'b> for Directive<'b> {
                 let (label, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
                 let buf = ignore_whitespace(buf);
                 let _ = expect(buf, ":")?;
-                Ok((Directive::Boot(label), b))
+                Ok((Directive::Boot(label.to_string()), b))
             }
             "macro" => {
                 expect_complete(dir)?;
@@ -57,7 +57,7 @@ impl<'b> Lexable<'b> for Directive<'b> {
                 let dir = ignore_whitespace(dir);
                 let dir = expect(dir, ")")?;
                 expect_complete(dir)?;
-                Ok((Self::Static(id, num), buf))
+                Ok((Self::Static(id.to_string(), num), buf))
             }
             "use" => {
                 let dir = ignore_whitespace(dir);
@@ -87,9 +87,9 @@ impl<'b> Lexable<'b> for Directive<'b> {
                 let dir = ignore_whitespace(dir);
                 let dir = expect(dir, ")")?;
                 expect_complete(dir)?;
-                Ok((Self::Dyn(id, num), buf))
+                Ok((Self::Dyn(id.to_string(), num), buf))
             }
-            "explicit" => {
+            "const" => {
                 let dir = ignore_whitespace(dir);
                 let dir = expect(dir, "(")?;
                 let dir = ignore_whitespace(dir);
@@ -99,7 +99,7 @@ impl<'b> Lexable<'b> for Directive<'b> {
                 expect_complete(dir)?;
                 let buf = ignore_whitespace(buf);
                 let (explicit, buf) = ExplicitBytes::lex(buf)?;
-                Ok((Self::ExplicitBytes(id, explicit), buf))
+                Ok((Self::ExplicitBytes(id.to_string(), explicit), buf))
             }
             oth => Err(LexError::UnknownSymbol(oth.to_string())),
         }
@@ -113,13 +113,13 @@ mod test {
     #[test]
     fn stat() -> Result<(), Box<dyn std::error::Error>> {
         let (dir, _) = Directive::lex("#[static(HELLO: 0xFF00)]")?;
-        assert_eq!(dir, Directive::Static("HELLO", 0xFF00));
+        assert_eq!(dir, Directive::Static("HELLO".to_string(), 0xFF00));
 
         let (dir, _) = Directive::lex("#[static(HELLO: 2)]")?;
-        assert_eq!(dir, Directive::Static("HELLO", 2));
+        assert_eq!(dir, Directive::Static("HELLO".to_string(), 2));
 
         let (dir, _) = Directive::lex("#[static(HELLO: 0b1001)]")?;
-        assert_eq!(dir, Directive::Static("HELLO", 0b1001));
+        assert_eq!(dir, Directive::Static("HELLO".to_string(), 0b1001));
 
         Ok(())
     }
@@ -127,7 +127,7 @@ mod test {
     #[test]
     fn lex_dyn() -> Result<(), Box<dyn std::error::Error>> {
         let (dir, _) = Directive::lex("#[dyn(TEST: 4)]")?;
-        assert_eq!(dir, Directive::Dyn("TEST", 4));
+        assert_eq!(dir, Directive::Dyn("TEST".to_string(), 4));
 
         let (dir, _) = Directive::lex("#[dyn(&0xC000)]")?;
         assert_eq!(dir, Directive::DynOrigin(0xC000));

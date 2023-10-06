@@ -1,6 +1,3 @@
-#[use(std::macro::call)]
-#[use(std::macro::jmp)]
-#[use(std::macro::math)]
 #[use(std::math::shift::lsh)]
 
 ; Rotate Right

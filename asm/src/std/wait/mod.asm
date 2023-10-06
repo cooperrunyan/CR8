@@ -1,7 +1,3 @@
-#[use(std::macro::math::sub)]
-#[use(std::macro::jmp)]
-#[use(std::macro::call)]
-
 ; Can be shortcut called with the macro: `wait [TICKS]`
 
 #[macro] wait: {

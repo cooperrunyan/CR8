@@ -1,7 +1,3 @@
-#[use(std::arch)]
-#[use(std::macro::call)]
-#[use(std::macro::jmp)]
-#[use(std::macro::math)]
 #[use(std::math::mul::mul)]
 
 ; 16 bit manipulation
