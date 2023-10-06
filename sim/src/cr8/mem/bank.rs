@@ -29,7 +29,7 @@ impl Default for Bank {
 
 impl Bank {
     pub fn get(&self, idx: usize) -> Option<u8> {
-        self.0.get(smallmask(idx)).map(|b| *b)
+        self.0.get(smallmask(idx)).copied()
     }
 
     pub fn get_mut(&mut self, idx: usize) -> Option<&mut u8> {

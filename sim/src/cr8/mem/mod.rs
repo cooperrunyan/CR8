@@ -5,18 +5,18 @@ use std::fmt::Debug;
 
 use bank::{mask, BankCollection, BankId};
 
-pub(self) const ROM_START: usize = 0x0000;
-pub(self) const ROM_LEN: usize = 0x8000;
+const ROM_START: usize = 0x0000;
+const ROM_LEN: usize = 0x8000;
 
-pub(self) const RAM_LEN: usize = 0x8000;
+const RAM_LEN: usize = 0x8000;
 pub const BANK_LEN: usize = 0x4000;
 
-pub(self) const ROM_END: usize = ROM_START + ROM_LEN - 1;
+const ROM_END: usize = ROM_START + ROM_LEN - 1;
 pub const RAM_START: usize = ROM_END + 1;
-pub(self) const BANK_END: usize = RAM_LEN + BANK_LEN - 1;
+const BANK_END: usize = RAM_LEN + BANK_LEN - 1;
 
-pub(self) const BANK_MASK: usize = BANK_LEN - 1;
-pub(self) const RAM_MASK: usize = RAM_LEN - 1;
+const BANK_MASK: usize = BANK_LEN - 1;
+const RAM_MASK: usize = RAM_LEN - 1;
 
 #[derive(Debug)]
 pub struct Mem {
@@ -65,7 +65,7 @@ impl Mem {
             use BankId as B;
             match self.selected {
                 B::Builtin => Ok(self.builtin_ram[mask(addr)]),
-                oth => match self.banks.get(oth.clone()).map(|b| b.unwrap())?.get(addr) {
+                oth => match self.banks.get(oth).map(|b| b.unwrap())?.get(addr) {
                     Some(x) => Ok(x),
                     None => bail!("Address {addr:#06x?} not found in {oth:#?}.",),
                 },
@@ -93,7 +93,7 @@ impl Mem {
                 B::Builtin => Ok(&mut self.builtin_ram[mask(addr)]),
                 oth => Ok(self
                     .banks
-                    .get_mut(oth.clone())
+                    .get_mut(oth)
                     .map(|b| b.unwrap())?
                     .get_mut(addr)
                     .unwrap()),

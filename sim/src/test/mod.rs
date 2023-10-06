@@ -66,16 +66,16 @@ fn mul() -> Result<()> {
     let i1: u16 = 19;
     let o0 = i0.overflowing_mul(i1).0 as u8;
     let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
-    let i0 = 24 as u8;
-    let i1 = 19 as u8;
+    let i0 = 24_u8;
+    let i1 = 19_u8;
     t!("mul"; A: i0, B: i1  =>  D: o1, Z: o0);
 
     let i0: u16 = 7;
     let i1: u16 = 99;
     let o0 = i0.overflowing_mul(i1).0 as u8;
     let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
-    let i0 = 7 as u8;
-    let i1 = 99 as u8;
+    let i0 = 7_u8;
+    let i1 = 99_u8;
     t!("mul"; A: i0, B: i1  =>  D: o1, Z: o0);
 
     Ok(())
@@ -87,16 +87,16 @@ fn mulip() -> Result<()> {
     let i1: u16 = 19;
     let o0 = i0.overflowing_mul(i1).0 as u8;
     let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
-    let i0 = 24 as u8;
-    let i1 = 19 as u8;
+    let i0 = 24_u8;
+    let i1 = 19_u8;
     t!("mulip"; A: i0, B: i1  =>  B: o1, A: o0);
 
     let i0: u16 = 7;
     let i1: u16 = 99;
     let o0 = i0.overflowing_mul(i1).0 as u8;
     let o1 = (i0.overflowing_mul(i1).0 >> 8) as u8;
-    let i0 = 7 as u8;
-    let i1 = 99 as u8;
+    let i0 = 7_u8;
+    let i1 = 99_u8;
     t!("mulip"; A: i0, B: i1  =>  B: o1, A: o0);
 
     Ok(())

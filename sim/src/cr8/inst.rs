@@ -35,7 +35,7 @@ impl CR8 {
     pub fn sw_imm16(&mut self, mem: &RwLock<Mem>, i: u16, from: Register) -> Result<u8> {
         trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, i);
         let mut mem = mem.write().unwrap();
-        mem.set(i, self.reg[from as usize].clone())?;
+        mem.set(i, self.reg[from as usize])?;
         Ok(3)
     }
 
@@ -120,7 +120,7 @@ impl CR8 {
             return Ok(1);
         }
         self.jnz_imm8(self.reg[reg as usize])?;
-        return Ok(0);
+        Ok(0)
     }
 
     pub fn in_imm8(&mut self, dev: &RwLock<Devices>, into: Register, port: u8) -> Result<u8> {
@@ -145,7 +145,7 @@ impl CR8 {
         trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc);
         let mut devices = dev.write().unwrap();
         let mem = mem.read().unwrap();
-        devices.send(&self, &mem, port, self.reg[send as usize])?;
+        devices.send(self, &mem, port, self.reg[send as usize])?;
         Ok(2)
     }
 

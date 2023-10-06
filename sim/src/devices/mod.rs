@@ -28,11 +28,11 @@ impl TryFrom<u8> for DeviceId {
     }
 }
 
-impl Into<u8> for DeviceId {
-    fn into(self) -> u8 {
-        match self {
-            Self::SysControl => 0x00,
-            Self::Keyboard => 0x01,
+impl From<DeviceId> for u8 {
+    fn from(val: DeviceId) -> Self {
+        match val {
+            DeviceId::SysControl => 0x00,
+            DeviceId::Keyboard => 0x01,
         }
     }
 }

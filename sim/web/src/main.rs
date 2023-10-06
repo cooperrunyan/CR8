@@ -159,17 +159,15 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
                     } else {
                         d.sysctrl.state |= 1
                     }
-                    return;
                 }
                 "2" => {
                     state.cr8.read().unwrap().debug(
                         &state.mem.read().unwrap(),
                         state.dev.read().unwrap().snapshot(),
                     );
-                    return;
                 }
-                _ => return,
-            };
+                _ => (),
+            }
             // state.dev.write().unwrap().keyboard.set(k, false);
         })
     };

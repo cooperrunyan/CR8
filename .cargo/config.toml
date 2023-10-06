@@ -1,9 +1,9 @@
 [alias]
   sim = "run --bin sim --no-default-features -F jit -- -r 4ghz -i"
-  dbg = "run --bin sim --no-default-features -F jit -- -r 4ghz --dbg -i"
+  dbg = "run --bin sim --no-default-features -F jit -- -r 4hz --dbg -i"
   asm = "run --bin asm -- -o target/test.bin -i"
   web = "run --bin asm -- -o target/web.bin -i"
   png = "run --bin png --"
 
 [env]
-  RUST_LOG = "sim=trace,asm=trace"
+  RUST_LOG = "sim=debug,asm=debug"

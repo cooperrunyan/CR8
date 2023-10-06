@@ -59,11 +59,11 @@ impl Runner {
 
     pub fn parse_duration(inpt: &str) -> Result<Duration> {
         if let Some(hz) = inpt.strip_suffix("hz") {
-            let (val, modif) = if let Some(as_khz) = hz.strip_suffix("k") {
+            let (val, modif) = if let Some(as_khz) = hz.strip_suffix('k') {
                 (as_khz.parse::<f64>(), 1_000)
-            } else if let Some(as_mhz) = hz.strip_suffix("m") {
+            } else if let Some(as_mhz) = hz.strip_suffix('m') {
                 (as_mhz.parse::<f64>(), 1_000_000)
-            } else if let Some(as_ghz) = hz.strip_suffix("g") {
+            } else if let Some(as_ghz) = hz.strip_suffix('g') {
                 (as_ghz.parse::<f64>(), 1_000_000_000)
             } else {
                 (hz.parse::<f64>(), 1)

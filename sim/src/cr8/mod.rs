@@ -38,7 +38,7 @@ impl Joinable for (u8, u8) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CR8 {
     pub reg: [u8; 8],
     pub pc: u16,
@@ -48,9 +48,8 @@ pub struct CR8 {
 impl CR8 {
     pub fn new() -> Self {
         Self {
-            reg: [0; 8],
-            pc: 0,
             sp: STACK,
+            ..Default::default()
         }
     }
 
