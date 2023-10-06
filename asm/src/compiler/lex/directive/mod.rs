@@ -1,4 +1,5 @@
 use crate::compiler::lex::lexable::*;
+use anyhow::bail;
 
 mod bytes;
 mod import;
@@ -101,7 +102,7 @@ impl<'b> Lexable<'b> for Directive {
                 let (explicit, buf) = ExplicitBytes::lex(buf)?;
                 Ok((Self::ExplicitBytes(id.to_string(), explicit), buf))
             }
-            oth => Err(LexError::UnknownSymbol(oth.to_string())),
+            oth => bail!("Unknown directive {oth:#?} at {buf}"),
         }
     }
 }

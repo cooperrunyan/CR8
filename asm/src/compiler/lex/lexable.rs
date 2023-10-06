@@ -1,49 +1,9 @@
-use std::error::Error;
-use std::fmt::Debug;
-use std::num::ParseIntError;
-use thiserror as e;
-
 use crate::op::Operation;
 use crate::reg::Register;
 
-#[derive(e::Error)]
-pub enum LexError {
-    #[error("unexpected: {}", .0)]
-    Unexpected(String),
+use anyhow::{bail, Result};
 
-    #[error("unexpected end of input")]
-    UnexpectedEndOfInput,
-
-    #[error("expected: {}", .0)]
-    Expected(String),
-
-    #[error("cannot redefine: {}", .0)]
-    Redefinition(String),
-
-    #[error("unknown symbol: {}", .0)]
-    UnknownSymbol(String),
-
-    #[error("unknown register: {}", .0)]
-    UnknownRegister(String),
-
-    #[error("unknown operator at: {}", .0)]
-    UnknownOperator(String),
-
-    #[error("invalid number")]
-    ParseNumberError(#[from] ParseIntError),
-}
-
-impl Debug for LexError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self)?;
-        if let Some(source) = self.source() {
-            writeln!(f, "Caused by:\n\t{}", source)?;
-        }
-        Ok(())
-    }
-}
-
-pub type LexResult<'b, T> = Result<(T, &'b str), LexError>;
+pub type LexResult<'b, T> = Result<(T, &'b str)>;
 
 pub trait Lexable<'b>: Sized {
     fn lex(buf: &'b str) -> LexResult<'b, Self>;
@@ -80,10 +40,10 @@ pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b,
         if check(ch) {
             let remaining = &buf[i..];
             if i == 0 {
-                return Err(LexError::Unexpected(buf.to_string()));
+                bail!("Unexpected {:#?}", buf.split_ascii_whitespace().next());
             }
             return if remaining.len() == 0 {
-                Err(LexError::UnexpectedEndOfInput)
+                bail!("Unexpected end of input");
             } else {
                 Ok(buf.split_at(i))
             };
@@ -104,16 +64,19 @@ pub fn collect_while<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResu
 pub fn expect_complete<'b>(buf: &'b str) -> LexResult<'b, ()> {
     let buf = ignore_whitespace(buf);
     if buf.len() != 0 {
-        return Err(LexError::Unexpected(buf.to_string()));
+        bail!("Unexpected {:#?}", buf);
     }
     Ok(((), buf))
 }
 
-pub fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str, LexError> {
+pub fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str> {
     if buf.starts_with(expect) {
         Ok(&buf[expect.len()..])
     } else {
-        Err(LexError::Expected(expect.to_string()))
+        bail!(
+            "Expected {expect:#?}, got {:#?}",
+            buf.split_ascii_whitespace().next()
+        );
     }
 }
 
@@ -156,7 +119,7 @@ impl<'b> Lexable<'b> for usize {
         let num = &num.replace('_', "");
         match usize::from_str_radix(&num, radix) {
             Ok(val) => Ok((val, buf)),
-            Err(e) => Err(LexError::ParseNumberError(e)),
+            Err(_) => bail!("Failed to parse number {num:#?} at {buf:#?}"),
         }
     }
 }
@@ -175,7 +138,7 @@ impl<'b> Lexable<'b> for Register {
             "l" => R::L,
             "h" => R::H,
             "f" => R::F,
-            _ => Err(LexError::UnknownRegister(reg.to_string()))?,
+            _ => bail!("Unknown register {reg:#?} at {buf:#?}"),
         };
         Ok((reg, buf))
     }
@@ -201,7 +164,7 @@ impl<'b> Lexable<'b> for Operation {
             "nor" => O::NOR,
             "and" => O::AND,
             "mb" => O::MB,
-            _ => Err(LexError::UnknownSymbol(op.to_string()))?,
+            _ => bail!("Unknown operation {op:#?} at {buf:#?}"),
         };
         Ok((op, buf))
     }

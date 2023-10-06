@@ -1,5 +1,7 @@
 use crate::compiler::lex::lexable::*;
 
+use anyhow::bail;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ExplicitBytes(pub Vec<u8>);
 
@@ -24,7 +26,7 @@ impl<'b> Lexable<'b> for ExplicitBytes {
             if let Ok(buf) = expect(buf, "}") {
                 return Ok((Self(bytes), buf));
             }
-            Err(LexError::Expected(",".to_string()))?;
+            bail!("Expected ',' at {buf:#?}");
         }
     }
 }

@@ -1,6 +1,8 @@
 use crate::compiler::lex::lexable::*;
 use crate::compiler::lex::node::{Instruction, Value};
 
+use anyhow::bail;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Macro {
     pub id: String,
@@ -80,7 +82,7 @@ impl<'b> Lexable<'b> for MacroCapture {
                 buf = b;
                 break;
             }
-            Err(LexError::Expected(",".to_string()))?;
+            bail!("Expected ',' or ')' after macro arg. \n\n{buf}");
         }
 
         let buf = ignore_whitespace(buf);
@@ -150,7 +152,7 @@ impl<'b> Lexable<'b> for MacroCaptureArgType {
             if (ty0 == "reg" && ty1 == "imm8") || (ty1 == "reg" && ty0 == "imm8") {
                 return Ok((Self::Imm8OrRegister, buf));
             }
-            return Err(LexError::Expected("`reg`, `imm8` or `imm16`".to_string()));
+            bail!("Expected `reg`, `imm8` or `imm16` at {buf:#?}");
         }
 
         Ok((
@@ -158,7 +160,7 @@ impl<'b> Lexable<'b> for MacroCaptureArgType {
                 "reg" => Self::Register,
                 "imm8" => Self::Imm8,
                 "imm16" => Self::Imm16,
-                _ => Err(LexError::UnknownSymbol(ty0.to_string()))?,
+                _ => bail!("Unknown macro type {ty0:#?}"),
             },
             buf,
         ))

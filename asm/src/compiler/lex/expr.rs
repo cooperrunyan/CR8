@@ -1,26 +1,10 @@
 use std::num::Wrapping;
 
-use failure::Fail;
+use anyhow::{bail, Result};
 
 use crate::compiler::Compiler;
 
-use super::lexable::{collect_while, expect, ignore_whitespace, LexError, LexResult, Lexable};
-
-#[derive(Fail, Debug)]
-pub enum ResolutionError {
-    #[fail(display = "Unknown operation")]
-    UnknownOperation,
-
-    #[fail(display = "Unknown variable")]
-    UnknownVariable,
-
-    #[fail(display = "Operation failed")]
-    OperationFailed,
-}
-
-#[derive(Fail, Debug)]
-#[fail(display = "Operator application error")]
-pub struct ApplyError;
+use super::lexable::{collect_while, expect, ignore_whitespace, LexResult, Lexable};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
@@ -34,7 +18,7 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn resolve(self, ctx: &Compiler) -> Result<usize, ResolutionError> {
+    pub fn resolve(self, ctx: &Compiler) -> Result<usize> {
         match self {
             Self::Literal(lit) => Ok(lit),
             Self::Variable(var) => {
@@ -47,12 +31,10 @@ impl Expr {
                 } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
                     Ok(*label)
                 } else {
-                    Err(ResolutionError::UnknownVariable)
+                    bail!("Unknown variable: {var:#?}");
                 }
             }
-            Self::Expr { lhs, op, rhs } => op
-                .apply(lhs.resolve(ctx)?, rhs.resolve(ctx)?)
-                .map_err(|_| ResolutionError::OperationFailed),
+            Self::Expr { lhs, op, rhs } => Ok(op.apply(lhs.resolve(ctx)?, rhs.resolve(ctx)?)?),
         }
     }
 }
@@ -140,7 +122,7 @@ impl ExprOperation {
         }
     }
 
-    pub fn apply(self, lhs: usize, rhs: usize) -> Result<usize, ApplyError> {
+    pub fn apply(self, lhs: usize, rhs: usize) -> Result<usize> {
         match self {
             Self::Add => Ok((Wrapping(lhs) + Wrapping(rhs)).0),
             Self::Sub => Ok((Wrapping(lhs) - Wrapping(rhs)).0),
@@ -173,7 +155,11 @@ impl<'b> Lexable<'b> for ExprOperation {
         } else if let Ok(buf) = expect(buf, "<<") {
             (Self::Lsh, buf)
         } else {
-            Err(LexError::UnknownOperator(buf.to_string()))?
+            bail!(
+                "Unknown operator: {:#?} at {}",
+                buf.split_ascii_whitespace().next(),
+                buf
+            );
         })
     }
 }
