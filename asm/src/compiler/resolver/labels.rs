@@ -10,7 +10,7 @@ impl Compiler {
         for node in self.tree.iter() {
             match node {
                 Node::Label(ln) => {
-                    if ln.starts_with(".") {
+                    if ln.starts_with('.') {
                         self.labels
                             .insert(format!("{}{ln}", self.last_label), self.pc);
                     } else {
@@ -71,41 +71,39 @@ impl Operation {
                     bail!("Expected the first argument of LW to be a register");
                 };
                 match args.next() {
-                    None => return Ok(1),
+                    None => Ok(1),
                     Some(Value::Immediate(_)) => match args.next() {
-                        Some(Value::Immediate(_)) => return none!(args, 3),
+                        Some(Value::Immediate(_)) => none!(args, 3),
                         _ => bail!("Expected another address byte for LW"),
                     },
-                    Some(Value::Expr(_)) => return none!(args, 3),
+                    Some(Value::Expr(_)) => none!(args, 3),
                     oth => bail!("Unexpected additional argument: {oth:#?}"),
                 }
             }
-            PUSH => {
-                match args.next() {
-                    Some(Value::Immediate(_) | Value::Expr(_)) => return none!(args, 2),
-                    Some(Value::Register(_)) => return none!(args, 1),
-                    _ => bail!("Expected register or immediate as first argument"),
-                };
-            }
+            PUSH => match args.next() {
+                Some(Value::Immediate(_) | Value::Expr(_)) => none!(args, 2),
+                Some(Value::Register(_)) => none!(args, 1),
+                _ => bail!("Expected register or immediate as first argument"),
+            },
             JNZ => {
                 let len = match args.next() {
                     Some(Value::Immediate(_) | Value::Expr(_)) => 2,
                     Some(Value::Register(_)) => 1,
                     _ => bail!("Expected register or immediate as first argument"),
                 };
-                return none!(args, len);
+                none!(args, len)
             }
             POP => {
                 let Some(Value::Register(_)) = args.next() else {
                     bail!("Expected register as only argument");
                 };
-                return none!(args, 1);
+                none!(args, 1)
             }
             MB => {
                 let Some(Value::Immediate(_)) = args.next() else {
                     bail!("Expected immediate as only argument");
                 };
-                return none!(args, 2);
+                none!(args, 2)
             }
             OUT | IN | MOV | CMP | ADC | SBB | OR | NOR | AND => {
                 let mut args = match self {
@@ -118,7 +116,7 @@ impl Operation {
                 };
                 match args.next() {
                     None => bail!("Expected another argument"),
-                    Some(_) => return none!(args, 2),
+                    Some(_) => none!(args, 2),
                 }
             }
         }

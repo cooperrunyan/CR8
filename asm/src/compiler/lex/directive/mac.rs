@@ -172,7 +172,7 @@ mod test {
     use crate::compiler::lex::*;
 
     #[test]
-    fn lex_macro<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_macro() -> Result<(), Box<dyn std::error::Error>> {
         let (mac, remaining) = Macro::lex(
             r#"jnz: {
                 ($addr: imm16, $if: imm8 | reg) => {
@@ -193,7 +193,7 @@ mod test {
     }
 
     #[test]
-    fn lex_macro_capture<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_macro_capture() -> Result<(), Box<dyn std::error::Error>> {
         let (cap, remaining) = MacroCapture::lex(
             r#"($addr: imm16, $if: imm8 | reg) => {
                 ldhl $addr
@@ -235,7 +235,7 @@ mod test {
     }
 
     #[test]
-    fn lex_macro_capture_arg_imm16<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_macro_capture_arg_imm16() -> Result<(), Box<dyn std::error::Error>> {
         let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: imm16"#)?;
 
         assert!(remaining.is_empty());
@@ -246,7 +246,7 @@ mod test {
     }
 
     #[test]
-    fn lex_macro_capture_arg_either<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_macro_capture_arg_either() -> Result<(), Box<dyn std::error::Error>> {
         let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: imm8 | reg"#)?;
 
         assert!(remaining.is_empty());
@@ -257,7 +257,7 @@ mod test {
     }
 
     #[test]
-    fn lex_macro_capture_arg_type<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_macro_capture_arg_type() -> Result<(), Box<dyn std::error::Error>> {
         let (arg, remaining) = MacroCaptureArgType::lex(r#"imm16"#)?;
         assert!(arg == MacroCaptureArgType::Imm16);
         assert!(remaining.is_empty());

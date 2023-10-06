@@ -21,25 +21,23 @@ impl Expr {
     pub fn resolve(self, ctx: &Compiler) -> Result<usize> {
         match self {
             Self::Literal(lit) => Ok(lit),
-            Self::Variable(var) => {
-                if var.as_str() == "$" {
-                    Ok(ctx.pc)
-                } else if let Some(label) = ctx.labels.get(&var) {
-                    Ok(*label)
-                } else if let Some(stat) = ctx.statics.get(&var) {
-                    Ok(*stat)
-                } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
-                    Ok(*label)
-                } else {
-                    bail!("Unknown variable: {var:#?}");
-                }
-            }
+            Self::Variable(var) => Ok(if var.as_str() == "$" {
+                ctx.bin.len()
+            } else if let Some(label) = ctx.labels.get(&var) {
+                *label
+            } else if let Some(stat) = ctx.statics.get(&var) {
+                *stat
+            } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
+                *label
+            } else {
+                bail!("Unknown variable: {var:#?}");
+            }),
             Self::Expr { lhs, op, rhs } => Ok(op.apply(lhs.resolve(ctx)?, rhs.resolve(ctx)?)?),
         }
     }
 }
 
-fn lex_expr_lhs<'b>(buf: &'b str) -> LexResult<'b, Expr> {
+fn lex_expr_lhs(buf: &str) -> LexResult<'_, Expr> {
     let buf = ignore_whitespace(buf);
 
     if let Ok(buf) = expect(buf, "(") {
@@ -62,7 +60,7 @@ fn lex_expr_lhs<'b>(buf: &'b str) -> LexResult<'b, Expr> {
     }
 }
 
-fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr> {
+fn lex_expr(buf: &str) -> LexResult<'_, Expr> {
     let (lhs, buf) = lex_expr_lhs(buf)?;
     let buf = ignore_whitespace(buf);
 
@@ -79,17 +77,17 @@ fn lex_expr<'b>(buf: &'b str) -> LexResult<'b, Expr> {
 
                 let (rhs, buf) = Expr::lex(buf)?;
 
-                return Ok((next_op.to_expr(lhs, rhs), buf));
+                Ok((next_op.to_expr(lhs, rhs), buf))
             } else {
-                return Ok((lhs, buf));
+                Ok((lhs, buf))
             }
         } else {
             let buf = ignore_whitespace(buf);
 
             let (rhs, buf) = Expr::lex(buf)?;
 
-            return Ok((op.to_expr(lhs, rhs), buf));
-        };
+            Ok((op.to_expr(lhs, rhs), buf))
+        }
     } else {
         Ok((lhs, buf))
     }

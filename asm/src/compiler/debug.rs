@@ -29,9 +29,7 @@ impl Compiler {
 
     fn debug_statics(&self) {
         info!("======== Statics: ========");
-        let mut sorted: Vec<_> = self.statics.iter().collect();
-        sorted.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
-        for (k, v) in sorted {
+        for (k, v) in self.statics.iter() {
             info!("  - {}: {:#06X}", k, v);
         }
         info!("");
@@ -47,10 +45,7 @@ impl Compiler {
 
     fn debug_labels(&self) {
         info!("===== Labels: =====");
-        let mut sorted: Vec<_> = self.labels.iter().collect();
-        sorted.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap());
-
-        for (name, location) in sorted {
+        for (name, location) in self.labels.iter() {
             info!("  - {name}: {:?}", location);
         }
         info!("");
@@ -60,7 +55,7 @@ impl Compiler {
         let mut label_reverse_lookup: HashMap<usize, &str> = HashMap::new();
 
         for (name, location) in self.labels.iter() {
-            label_reverse_lookup.insert(*location, &name);
+            label_reverse_lookup.insert(*location, name);
         }
 
         debug!("===== Binary: =====");
@@ -68,18 +63,8 @@ impl Compiler {
             if let Some(label) = label_reverse_lookup.get(&location) {
                 debug!("");
                 debug!("{}:", label);
-                if let Some(marker) = self.markers.get(&location) {
-                    debug!("  {location:04x}: {byte:02x}    {marker}");
-                } else {
-                    debug!("  {location:04x}: {byte:02x}");
-                }
-            } else {
-                if let Some(marker) = self.markers.get(&location) {
-                    debug!("  {location:04x}: {byte:02x}    {marker}");
-                } else {
-                    debug!("  {location:04x}: {byte:02x}");
-                }
             }
+            debug!("  {location:04x}:  {byte:02x} {byte:3} {byte:08b}");
         }
         debug!("");
     }

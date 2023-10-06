@@ -9,33 +9,40 @@ pub trait Lexable<'b>: Sized {
     fn lex(buf: &'b str) -> LexResult<'b, Self>;
 }
 
-pub fn ignore_comment<'b>(buf: &'b str) -> &'b str {
-    if buf.starts_with(";") {
+pub trait LexableWith<'b, W>: Sized {
+    fn lex_with(buf: &'b str, with: W) -> LexResult<'b, Self>;
+}
+
+impl<'b, W, T: Lexable<'b>> LexableWith<'b, W> for T {
+    fn lex_with(buf: &'b str, _with: W) -> LexResult<'b, Self> {
+        T::lex(buf)
+    }
+}
+
+pub fn ignore_comment(buf: &str) -> &str {
+    if buf.starts_with(';') {
         if let Some(nl) = buf.find('\n') {
-            ignore_comment(&buf[nl..].trim_start_matches(char::is_whitespace))
+            ignore_comment(buf[nl..].trim_start_matches(char::is_whitespace))
         } else {
-            &""
+            ""
         }
     } else {
         buf
     }
 }
 
-pub fn ignore_whitespace<'b>(buf: &'b str) -> &'b str {
+pub fn ignore_whitespace(buf: &str) -> &str {
     let buf = buf.trim_start_matches(char::is_whitespace);
     let buf = ignore_comment(buf);
     let buf = buf.trim_start_matches(char::is_whitespace);
     buf
 }
 
-pub fn ignore_whitespace_noline<'b>(buf: &'b str) -> &'b str {
-    let buf = buf.trim_start_matches(&[' ', '\t']);
-    let buf = ignore_comment(buf);
-    let buf = buf.trim_start_matches(&[' ', '\t']);
-    buf
+pub fn ignore_whitespace_noline(buf: &str) -> &str {
+    buf.trim_start_matches([' ', '\t'])
 }
 
-pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
+pub fn collect<M: Fn(char) -> bool>(buf: &str, check: M) -> LexResult<'_, &str> {
     for (i, ch) in buf.chars().enumerate() {
         if check(ch) {
             let remaining = &buf[i..];
@@ -45,7 +52,7 @@ pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b,
                     buf.split_ascii_whitespace().next().unwrap_or_default()
                 );
             }
-            return if remaining.len() == 0 {
+            return if remaining.is_empty() {
                 bail!("Unexpected end of input");
             } else {
                 Ok(buf.split_at(i))
@@ -56,25 +63,25 @@ pub fn collect<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b,
     Ok((buf, ""))
 }
 
-pub fn collect_until<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
+pub fn collect_until<M: Fn(char) -> bool>(buf: &str, check: M) -> LexResult<'_, &str> {
     collect(buf, check)
 }
 
-pub fn collect_while<'b, M: Fn(char) -> bool>(buf: &'b str, check: M) -> LexResult<'b, &'b str> {
+pub fn collect_while<M: Fn(char) -> bool>(buf: &str, check: M) -> LexResult<'_, &str> {
     collect(buf, |ch| !check(ch))
 }
 
-pub fn expect_complete<'b>(buf: &'b str) -> LexResult<'b, ()> {
+pub fn expect_complete(buf: &str) -> LexResult<'_, ()> {
     let buf = ignore_whitespace(buf);
-    if buf.len() != 0 {
+    if !buf.is_empty() {
         bail!("Unexpected {:#?}", buf);
     }
     Ok(((), buf))
 }
 
 pub fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str> {
-    if buf.starts_with(expect) {
-        Ok(&buf[expect.len()..])
+    if let Some(buf) = buf.strip_prefix(expect) {
+        Ok(buf)
     } else {
         bail!(
             "Expected {expect:#?}, got {:#?}",
@@ -88,14 +95,20 @@ impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {
         let mut values = vec![];
         let mut buf = buf;
         let buf = loop {
-            buf = buf.trim_start_matches(&[' ', '\t']);
+            buf = buf.trim_start_matches([' ', '\t']);
+            if buf.is_empty() {
+                break buf;
+            }
             if let Ok(b) = expect(buf, "\n") {
                 buf = b;
                 break buf;
             }
             let (val, b) = T::lex(buf)?;
             buf = b;
-            buf = buf.trim_start_matches(&[' ', '\t']);
+            buf = buf.trim_start_matches([' ', '\t']);
+            if buf.is_empty() {
+                break buf;
+            }
             values.push(val);
             if let Ok(b) = expect(buf, ",") {
                 buf = b;
@@ -104,7 +117,7 @@ impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {
 
             break buf;
         };
-        return Ok((values, buf));
+        Ok((values, buf))
     }
 }
 
@@ -120,7 +133,7 @@ impl<'b> Lexable<'b> for usize {
 
         let (num, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
         let num = &num.replace('_', "");
-        match usize::from_str_radix(&num, radix) {
+        match usize::from_str_radix(num, radix) {
             Ok(val) => Ok((val, buf)),
             Err(_) => bail!("Failed to parse number {num:#?}"),
         }

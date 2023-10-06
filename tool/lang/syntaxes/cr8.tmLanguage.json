@@ -59,7 +59,7 @@
         "2": {
           "patterns": [
             {
-              "match": "\\b(use|boot|macro|static|dyn|mem)\\b",
+              "match": "\\b(use|boot|macro|static|dyn|const)\\b",
               "name": "keyword.control"
             },
             {
@@ -75,7 +75,7 @@
                   "patterns": [
                     { "include": "#num" },
                     {
-                      "match": "std",
+                      "match": "std|core",
                       "name": "entity.name.namespace"
                     },
                     {

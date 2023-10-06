@@ -80,7 +80,7 @@ impl Compiler {
                                 Value::Expr(Expr::Expr {
                                     lhs: Box::new($r),
                                     op: ExprOperation::Rsh,
-                                    rhs: Box::new(Expr::Literal(0xFF)),
+                                    rhs: Box::new(Expr::Literal(8)),
                                 }),
                             );
                             captured_args.insert($n.to_string(), Value::Expr($r));

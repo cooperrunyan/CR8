@@ -2,9 +2,10 @@
 
 #[boot]
 main:
-    mov %a, 20
-    mov %b, 15
-    mov %c, 94
-    mov %d, 87
+    mov %a, 2
+    mov %b, 2
+    mov %c, 2
+    mov %d, 2
+    call [lsa]
     dbg
     halt

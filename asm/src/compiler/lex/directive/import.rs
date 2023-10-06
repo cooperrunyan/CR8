@@ -32,7 +32,7 @@ mod test {
     use crate::compiler::lex::*;
 
     #[test]
-    fn lex_import_str<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_import_str() -> Result<(), Box<dyn std::error::Error>> {
         let (imp, remaining) = Import::lex(r#""./test.asm""#)?;
 
         assert!(remaining.is_empty());
@@ -42,7 +42,7 @@ mod test {
     }
 
     #[test]
-    fn lex_import_mod<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_import_mod() -> Result<(), Box<dyn std::error::Error>> {
         let (imp, remaining) = Import::lex(r#"std::math"#)?;
 
         assert!(remaining.is_empty());

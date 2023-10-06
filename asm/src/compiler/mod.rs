@@ -15,14 +15,13 @@ use crate::op::Operation;
 
 pub use config::*;
 
-use self::lex::{ignore_whitespace, Item, Lexable, Macro};
+use self::lex::{ignore_whitespace, Item, LexableWith, Macro};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Compiler {
     bin: Vec<u8>,
     tree: Vec<Node>,
     preamble: Option<Vec<Node>>,
-    markers: IndexMap<usize, String>,
     labels: IndexMap<String, usize>,
     last_label: String,
     pc: usize,
@@ -36,21 +35,7 @@ pub struct Compiler {
 
 impl Compiler {
     pub fn new() -> Self {
-        let mut ctx = Self {
-            bin: vec![],
-            tree: vec![],
-            markers: IndexMap::new(),
-            labels: IndexMap::new(),
-            last_label: String::new(),
-            pc: 0,
-            preamble: None,
-            files: vec![],
-            macros: IndexMap::new(),
-            statics: IndexMap::new(),
-            ram_locations: IndexMap::new(),
-            ram_length: 0,
-            ram_origin: 0,
-        };
+        let mut ctx = Self::default();
 
         ctx.push(
             Input::File("core".to_string()),
@@ -84,7 +69,7 @@ impl Compiler {
             match node {
                 Node::Explicit(_, mut val) => self.bin.append(&mut val.0),
                 Node::Label(ln) => {
-                    if !ln.contains(".") {
+                    if !ln.contains('.') {
                         self.last_label = ln.to_string();
                     }
                 }
@@ -158,7 +143,7 @@ impl Compiler {
             if buf.is_empty() {
                 break;
             }
-            let (item, b) = Item::lex(buf).map_err(|e| {
+            let (item, b) = Item::lex_with(buf, path.clone()).map_err(|e| {
                 e.context(find_err_location(
                     buf,
                     &content,
@@ -194,5 +179,5 @@ pub fn find_err_location(at: &str, file_content: &str, file_path: &str) -> Strin
             col += 1;
         }
     }
-    return format!("{file_path}:{}:{}", lines + 1, col + 1);
+    format!("{file_path}:{}:{}", lines + 1, col + 1)
 }

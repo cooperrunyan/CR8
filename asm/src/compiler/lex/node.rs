@@ -41,7 +41,7 @@ impl<'b> Lexable<'b> for Value {
             return Ok((Value::Register(reg), buf));
         }
 
-        if let Ok(_) = expect(buf, "$") {
+        if expect(buf, "$").is_ok() {
             let (var, buf) = collect_while(buf, |c| {
                 c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
             })?;
@@ -49,22 +49,25 @@ impl<'b> Lexable<'b> for Value {
         }
 
         let (val, buf) = usize::lex(buf)?;
-        return Ok((Value::Immediate(val), buf));
+        Ok((Value::Immediate(val), buf))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::compiler::lex::{ExprOperation, Item};
+    use std::path::PathBuf;
+    use std::sync::Arc;
+
+    use crate::compiler::lex::{ExprOperation, Item, ItemInner};
 
     use super::*;
 
     #[test]
     fn lex_instruction() -> Result<(), Box<dyn std::error::Error>> {
-        let (n, _) = Item::lex("mov %c, %d, [BRAM + OFFSET]")?;
+        let (n, _) = Item::lex_with("mov %c, %d, [BRAM + OFFSET]", Arc::new(PathBuf::new()))?;
         assert_eq!(
-            n,
-            Item::Node(Node::Instruction(Instruction {
+            n.item,
+            ItemInner::Node(Node::Instruction(Instruction {
                 id: "mov".to_string(),
                 args: vec![
                     Value::Register(Register::C),

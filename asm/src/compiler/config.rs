@@ -26,7 +26,7 @@ pub enum Output {
 }
 
 impl Output {
-    pub fn write(&self, bin: &Vec<u8>) -> Result<(), io::Error> {
+    pub fn write(&self, bin: &[u8]) -> Result<(), io::Error> {
         match self {
             Output::None => Ok(()),
             Output::File(f) => {
@@ -55,9 +55,7 @@ impl Config {
                     if input.is_some() {
                         panic!("Attempted to set input flag twice");
                     }
-                    input = Some(Input::File(
-                        std::env::args().nth(i + 1).unwrap_or_default().into(),
-                    ));
+                    input = Some(Input::File(std::env::args().nth(i + 1).unwrap_or_default()));
                 }
                 "-o" | "--output" => {
                     output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
@@ -103,10 +101,10 @@ impl Input {
                     } else {
                         let possibilities = match from {
                             Some(f) => vec![
-                                f.parent().unwrap_or(&f).join(&pb),
-                                f.parent().unwrap_or(&f).join(&pb).with_extension("asm"),
-                                f.parent().unwrap_or(&f).join(&pb).join("mod.asm"),
-                                f.parent().unwrap_or(&f).join(&pb).join("main.asm"),
+                                f.parent().unwrap_or(f).join(&pb),
+                                f.parent().unwrap_or(f).join(&pb).with_extension("asm"),
+                                f.parent().unwrap_or(f).join(&pb).join("mod.asm"),
+                                f.parent().unwrap_or(f).join(&pb).join("main.asm"),
                                 pb.with_extension("asm"),
                                 pb.join("main.asm"),
                                 pb.join("mod.asm"),

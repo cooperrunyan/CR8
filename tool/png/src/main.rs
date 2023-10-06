@@ -62,7 +62,7 @@ fn main() {
 
 {def}
 
-#[mem( {name} )] {{
+#[const( {name} )] {{
     {bytes}
 }}"#
         ),

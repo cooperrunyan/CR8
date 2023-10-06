@@ -36,7 +36,7 @@ mod test {
     use crate::compiler::lex::*;
 
     #[test]
-    fn lex_bytes<'s>() -> Result<(), Box<dyn std::error::Error>> {
+    fn lex_bytes() -> Result<(), Box<dyn std::error::Error>> {
         let (b, remaining) = ExplicitBytes::lex(r#"{ 0, 0, 1, 0 }"#)?;
 
         assert!(remaining.is_empty());
