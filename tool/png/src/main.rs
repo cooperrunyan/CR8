@@ -4,8 +4,8 @@ use std::fs;
 fn main() {
     let args = args().collect::<Vec<_>>();
     let input = args.get(1).expect("Expected input file");
-    let dindx = input.rfind(".").expect("Expected a '.' in file path");
-    let slindx = input.rfind("/").map(|i| i + 1).unwrap_or(0);
+    let dindx = input.rfind('.').expect("Expected a '.' in file path");
+    let slindx = input.rfind('/').map(|i| i + 1).unwrap_or(0);
 
     let name = &input[slindx..dindx].to_ascii_uppercase();
 
@@ -18,7 +18,7 @@ fn main() {
     let mut bytes = String::new();
     let mut len = 0;
 
-    for x in img.chunks_exact(24).into_iter() {
+    for x in img.chunks_exact(24) {
         len += 1;
         let mut byte = 0;
         for j in 0..8 {

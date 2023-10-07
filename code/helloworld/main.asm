@@ -8,7 +8,7 @@
 
 #[boot]
 main:
-    mb 0x01
+    mov %mb, 0x01
     jmp [hello]
 
 hello:

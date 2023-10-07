@@ -2,7 +2,7 @@
   "name": "cr8",
   "displayName": "CR8",
   "description": "CR8 Assembly",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "cooperrunyan",
   "engines": {
     "vscode": "^1.54.0"

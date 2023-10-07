@@ -4,7 +4,7 @@
 
 #[boot]
 main:
-    mb 1
+    mov %mb, 1
     mov %a, 0
     mov %b, 0
     mov %c, [(0x4000 - 32) & 0xFF]

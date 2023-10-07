@@ -26,7 +26,7 @@ impl CR8 {
         let amt = OperationArgAmt::from(bytes[0]);
 
         match instruction {
-            O::MOV => self.mov(amt, bytes),
+            O::MOV => self.mov(mem, amt, bytes),
             O::JNZ => self.jnz(amt, bytes),
             O::LW => self.lw(mem, amt, bytes),
             O::SW => self.sw(mem, amt, bytes),
@@ -73,11 +73,11 @@ impl CR8 {
         };
         trace!("{:04x}: SW {val:#?} {addr:04x}", self.pc());
         let mut mem = mem.write().unwrap();
-        mem.set(addr, self.reg[val as usize])?;
+        mem.set(addr, val)?;
         Ok(sz)
     }
 
-    fn mov(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+    fn mov(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (into, val, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
@@ -85,6 +85,9 @@ impl CR8 {
         };
         trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc());
         self.reg[into as usize] = val;
+        if Register::MB as u8 == into {
+            mem.write().unwrap().select(val)?;
+        }
         Ok(sz)
     }
 

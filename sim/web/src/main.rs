@@ -1,5 +1,6 @@
 use gloo_events::EventListener;
 use gloo_timers::callback::Interval;
+use log::info;
 use sim::cr8::mem::Mem;
 use sim::cr8::CR8;
 use sim::devices::keyboard::Key;
@@ -74,6 +75,7 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
             let status = { state.dev.read().unwrap().sysctrl.state };
 
             if status == 1 {
+                info!("Halt");
                 return;
             }
 
