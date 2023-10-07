@@ -10,6 +10,11 @@ pub enum Register {
     L,
     H,
     F,
+    PCL,
+    PCH,
+    SPL,
+    SPH,
+    MB,
 }
 
 impl Display for Register {
@@ -24,6 +29,11 @@ impl Display for Register {
             R::L => "l",
             R::H => "h",
             R::F => "f",
+            R::PCL => "pcl",
+            R::PCH => "pch",
+            R::SPL => "spl",
+            R::SPH => "sph",
+            R::MB => "mb",
         };
         f.write_str(str)
     }
@@ -42,6 +52,11 @@ impl TryFrom<&str> for Register {
             "l" => R::L,
             "h" => R::H,
             "f" => R::F,
+            "pcl" => R::PCL,
+            "pch" => R::PCH,
+            "spl" => R::SPL,
+            "sph" => R::SPH,
+            "mb" => R::MB,
             _ => Err(())?,
         })
     }
@@ -60,6 +75,11 @@ impl TryFrom<u8> for Register {
             5 => R::L,
             6 => R::H,
             7 => R::F,
+            8 => R::PCL,
+            9 => R::PCH,
+            10 => R::SPL,
+            11 => R::SPH,
+            12 => R::MB,
             _ => Err(())?,
         })
     }

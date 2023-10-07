@@ -18,14 +18,14 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn resolve(self, ctx: &Compiler) -> Result<usize> {
+    pub fn resolve(&self, ctx: &Compiler) -> Result<usize> {
         match self {
-            Self::Literal(lit) => Ok(lit),
+            Self::Literal(lit) => Ok(*lit),
             Self::Variable(var) => Ok(if var.as_str() == "$" {
                 ctx.bin.len()
-            } else if let Some(label) = ctx.labels.get(&var) {
+            } else if let Some(label) = ctx.labels.get(var) {
                 *label
-            } else if let Some(stat) = ctx.statics.get(&var) {
+            } else if let Some(stat) = ctx.statics.get(var) {
                 *stat
             } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
                 *label

@@ -15,6 +15,7 @@
 ;            [bc] [bc]
 ;                 [bd] [bd]
 mul16:
+dbg
     push %d
     push %c
     push %b

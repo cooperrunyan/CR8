@@ -2,10 +2,9 @@
 
 #[boot]
 main:
-    mov %a, 2
-    mov %b, 2
-    mov %c, 2
-    mov %d, 2
-    call [lsa]
-    dbg
+    mov %a, 4
+    mov %b, 0
+    mov %c, 0
+    mov %d, 1
+    call [mul16]
     halt

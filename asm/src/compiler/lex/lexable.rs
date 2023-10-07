@@ -139,19 +139,11 @@ impl<'b> Lexable<'b> for usize {
 
 impl<'b> Lexable<'b> for Register {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        use Register as R;
         let buf = expect(buf, "%")?;
         let (reg, buf) = collect_while(buf, |c| c.is_alphabetic())?;
-        let reg = match reg {
-            "a" => R::A,
-            "b" => R::B,
-            "c" => R::C,
-            "d" => R::D,
-            "z" => R::Z,
-            "l" => R::L,
-            "h" => R::H,
-            "f" => R::F,
-            _ => bail!("Unknown register {reg:#?} at {buf:#?}"),
+        let reg = match Register::try_from(reg) {
+            Ok(r) => r,
+            Err(()) => bail!("Unknown register {reg:#?} at {buf:#?}"),
         };
         Ok((reg, buf))
     }
@@ -159,25 +151,10 @@ impl<'b> Lexable<'b> for Register {
 
 impl<'b> Lexable<'b> for Operation {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        use Operation as O;
         let (op, buf) = collect_while(buf, |c| c.is_alphabetic())?;
-        let op = match op {
-            "mov" => O::MOV,
-            "lw" => O::LW,
-            "sw" => O::SW,
-            "push" => O::PUSH,
-            "pop" => O::POP,
-            "jnz" => O::JNZ,
-            "in" => O::IN,
-            "out" => O::OUT,
-            "cmp" => O::CMP,
-            "adc" => O::ADC,
-            "sbb" => O::SBB,
-            "or" => O::OR,
-            "nor" => O::NOR,
-            "and" => O::AND,
-            "mb" => O::MB,
-            _ => bail!("Unknown operation {op:#?} at {buf:#?}"),
+        let op = match Operation::try_from(op) {
+            Ok(o) => o,
+            Err(()) => bail!("Unknown operation {op:#?} at {buf:#?}"),
         };
         Ok((op, buf))
     }

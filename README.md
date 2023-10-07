@@ -8,16 +8,23 @@
 
 ## Registers
 
-| Number | Name | Size  | Description          |
-| ------ | ---- | ----- | -------------------- |
-| 0      | `A`  | 8-bit | GP - arg 0           |
-| 1      | `B`  | 8-bit | GP - arg 1           |
-| 2      | `C`  | 8-bit | GP - arg 2           |
-| 3      | `D`  | 8-bit | GP - arg 3           |
-| 4      | `Z`  | 8-bit | GP - return          |
-| 5      | `L`  | 8-bit | Low index byte       |
-| 6      | `H`  | 8-bit | High index byte      |
-| 7      | `F`  | 8-bit | Flags / Intermediate |
+Represented with 4 bits.
+
+| Number | Name  | Size  | Description          |
+| ------ | ----- | ----- | -------------------- |
+| 0      | `A`   | 8-bit | GP - arg 0           |
+| 1      | `B`   | 8-bit | GP - arg 1           |
+| 2      | `C`   | 8-bit | GP - arg 2           |
+| 3      | `D`   | 8-bit | GP - arg 3           |
+| 4      | `Z`   | 8-bit | GP - return          |
+| 5      | `L`   | 8-bit | Low index byte       |
+| 6      | `H`   | 8-bit | High index byte      |
+| 7      | `F`   | 8-bit | Flags / Intermediate |
+| 8      | `PCL` | 8-bit | Program counter LOW  |
+| 9      | `PCH` | 8-bit | Program counter HIGH |
+| A      | `SPL` | 8-bit | Stack pointer LOW    |
+| B      | `SPH` | 8-bit | Stack pointer HIGH   |
+| C      | `MB`  | 8-bit | Memory Bank          |
 
 > `F` Is commonly used as an intermediate register in `std` macros, meaning
 > certain macros will overwrite its state.
@@ -29,48 +36,67 @@
 - 2: `CF`: Carry
 - 4: `BF`: Borrow
 
-### System Registers
-
-| Name  | Size  | Description          |
-| ----- | ----- | -------------------- |
-| `PCL` | 8-bit | Program counter LOW  |
-| `PCH` | 8-bit | Program counter HIGH |
-| `SPL` | 8-bit | Stack pointer LOW    |
-| `SPH` | 8-bit | Stack pointer HIGH   |
-| `MB`  | 8-bit | Memory Bank          |
-
 ## Instructions
 
-> - 0x00 is effectively a `NOP` because it moves A to A
-> - `JNZ` with the is-imm bit set to 1 is effectively `JMP`
-
-| Code | Pnuemonic | Args               | Result                                   |
-| ---- | --------- | ------------------ | ---------------------------------------- |
-| 0    | `MOV`     | `reg`, `reg/imm8`  | `reg = reg/imm8`                         |
-| 1    | `LW`      | `reg`, `HL/imm16`  | `reg` = `[HL/imm16]`                     |
-| 2    | `SW`      | `HL/imm16`, `reg`, | `[HL/imm16]` = `reg`                     |
-| 3    | `PUSH`    | `reg/imm8`         | `[SP++] = reg/imm8`                      |
-| 4    | `POP`     | `reg`              | `reg = [SP--]`                           |
-| 5    | `JNZ`     | `reg/imm8`,        | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
-| 6    | `IN`      | `reg`, `reg/imm8`  | `reg = PORT[reg/imm8]`                   |
-| 7    | `OUT`     | `reg/imm8`, `reg`  | `PORT[reg/imm8] = reg`                   |
-| 8    | `CMP*`    | `reg`, `reg/imm8`  | `reg - reg/imm8`                         |
-| 9    | `ADC*`    | `reg`, `reg/imm8`  | `reg = reg + reg/imm8 + CF`              |
-| A    | `SBB*`    | `reg`, `reg/imm8`  | `reg = reg - (reg/imm8 + BF)`            |
-| B    | `OR`      | `reg`, `reg/imm8`  | `reg = reg \| reg/imm8`                  |
-| C    | `NOR`     | `reg`, `reg/imm8`  | `reg = !(reg \| reg/imm8)`               |
-| D    | `AND`     | `reg`, `reg/imm8`  | `reg = reg & reg/imm8`                   |
-| E    | `MB`      | `imm8`             | `SYSTEM_REGISTER[MB] = imm8`             |
+| Code   | Pnuemonic | Args               | Result                                   |
+| ------ | --------- | ------------------ | ---------------------------------------- |
+| 000000 | `MOV`     | `reg`, `reg/imm8`  | `reg = reg/imm8`                         |
+| 000001 | `JNZ`     | `reg/imm8`,        | `if reg/imm8 != 0; PC = [HL]; else: NOP` |
+| 000010 | `LW`      | `reg`, `HL/imm16`  | `reg = [HL/imm16]`                       |
+| 000011 | `SW`      | `HL/imm16`, `reg`, | `[HL/imm16] = reg`                       |
+| 000100 | `PUSH`    | `reg/imm8`         | `[SP++] = reg/imm8`                      |
+| 000101 | `POP`     | `reg`              | `reg = [SP--]`                           |
+| 000110 | `IN`      | `reg`, `reg/imm8`  | `reg = PORT[reg/imm8]`                   |
+| 000111 | `OUT`     | `reg/imm8`, `reg`  | `PORT[reg/imm8] = reg`                   |
+| 001000 |           |                    |                                          |
+| 001001 |           |                    |                                          |
+| 001010 |           |                    |                                          |
+| 001011 |           |                    |                                          |
+| 001100 |           |                    |                                          |
+| 001101 |           |                    |                                          |
+| 001110 |           |                    |                                          |
+| 001111 |           |                    |                                          |
+| 010000 | `ADD*`    | `reg`, `reg/imm8`  | `reg = reg + reg/imm8`                   |
+| 010001 | `ADC*`    | `reg`, `reg/imm8`  | `reg = reg + reg/imm8 + CF`              |
+| 010010 | `SUB*`    | `reg`, `reg/imm8`  | `reg = reg + ~(reg/imm8 + 1)`            |
+| 010011 | `SBB*`    | `reg`, `reg/imm8`  | `reg = reg + ~(reg/imm8 + BF)`           |
+| 010100 |           |                    |                                          |
+| 010101 |           |                    |                                          |
+| 010110 |           |                    |                                          |
+| 010111 |           |                    |                                          |
+| 011000 | `CMP*`    | `reg`, `reg/imm8`  | `reg - reg/imm8`                         |
+| 011001 | `NOT`     | `reg`              | `reg = ~reg`                             |
+| 011010 | `AND`     | `reg`, `reg/imm8`  | `reg = reg & reg/imm8`                   |
+| 011011 | `NAND`    | `reg`, `reg/imm8`  | `reg = ~(reg & reg/imm8)`                |
+| 011100 | `OR`      | `reg`, `reg/imm8`  | `reg = reg \| reg/imm8`                  |
+| 011101 | `NOR`     | `reg`, `reg/imm8`  | `reg = ~(reg \| reg/imm8)`               |
+| 011110 | `XOR`     | `reg`, `reg/imm8`  | `reg = reg ^ reg/imm8`                   |
+| 011111 | `XNOR`    | `reg`, `reg/imm8`  | `reg = ~(reg ^ reg/imm8)`                |
 
 > `*`: Updates FLAG register
 
 ### Instruction Layout
 
 - Instructions are 2-3 bytes long.
-- First byte of the instruction looks like `OOOOIRRR`, where:
-  - `I`: Is-immediate?
-  - `O`: Operation
-  - `R`: Register value
+- First byte of the instruction looks like `XXXXXXYY`, where:
+  - `X`: Instruction code (see above)
+  - `Y`: Argument type
+    - `00`: 1 Register + 0 Immediate
+    - `01`: 1 Register + 1 Immediate
+    - `10`: 2 Register + 0 Immediate
+    - `11`: 0 Register + 1 Immediate
+
+### Register/Immediate Encoding
+
+Bytes following the byte at `[PC]`
+
+```text
+    reg1
+    ┌──┐
+00000000    00000000    00000000
+└──┘        └──────┘    └──────┘
+reg2        imm(low)    imm2(high)
+```
 
 ## Memory Layout
 

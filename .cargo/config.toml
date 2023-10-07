@@ -6,4 +6,4 @@
   png = "run --bin png --"
 
 [env]
-  RUST_LOG = "sim=debug,asm=debug"
+  RUST_LOG = "sim=trace,asm=debug"

@@ -1,169 +1,205 @@
+use asm::op::{Operation, OperationArgAmt};
 use log::trace;
 use std::num::Wrapping;
 use std::sync::RwLock;
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use asm::reg::Register;
 
+use crate::cr8::Joinable;
 use crate::devices::Devices;
 
 use super::mem::Mem;
 use super::{CR8, STACK, STACK_END};
+use Operation as O;
+use OperationArgAmt as A;
 
 impl CR8 {
-    pub fn lw_imm16(&mut self, mem: &RwLock<Mem>, to: Register, i: u16) -> Result<u8> {
-        trace!("{:04x}: LW {to:#?} {i:04x}", self.pc);
+    pub fn delegate(
+        &mut self,
+        mem: &RwLock<Mem>,
+        dev: &RwLock<Devices>,
+        bytes: [u8; 4],
+    ) -> Result<u8> {
+        let instruction =
+            Operation::try_from(bytes[0] >> 2).map_err(|_| anyhow!("Invalid operation"))?;
+        let amt = OperationArgAmt::from(bytes[0]);
+
+        match instruction {
+            O::MOV => self.mov(amt, bytes),
+            O::JNZ => self.jnz(amt, bytes),
+            O::LW => self.lw(mem, amt, bytes),
+            O::SW => self.sw(mem, amt, bytes),
+            O::PUSH => self.push(mem, amt, bytes),
+            O::POP => self.pop(mem, amt, bytes),
+            O::IN => self.r#in(dev, amt, bytes),
+            O::OUT => self.out(mem, dev, amt, bytes),
+            O::ADC => self.add(amt, bytes),
+            O::SBB => self.sub(amt, bytes),
+            O::CMP => self.cmp(amt, bytes),
+            O::NOT => self.not(amt, bytes),
+            O::AND => self.and(amt, bytes, false),
+            O::NAND => self.and(amt, bytes, true),
+            O::OR => self.or(amt, bytes, false),
+            O::NOR => self.or(amt, bytes, true),
+            O::XOR => self.xor(amt, bytes, false),
+            O::XNOR => self.xor(amt, bytes, true),
+        }
+    }
+
+    fn lw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (to, addr, sz) = match amt {
+            A::R1I0 => (bytes[1] & 0b1111, self.hl(), 2),
+            A::R1I1 => (bytes[1] & 0b1111, (bytes[2], bytes[3]).join(), 4),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: LW {to:#?} {addr:04x}", self.pc());
         self.reg[to as usize] = {
             let mem = mem.read().unwrap();
-            mem.get(i)?
+            mem.get(addr)?
         };
-        Ok(3)
+        Ok(sz)
     }
 
-    pub fn lw_hl(&mut self, mem: &RwLock<Mem>, to: Register) -> Result<u8> {
-        trace!("{:04x}: LW {to:#?}, {:04x}", self.pc, self.hl());
-        self.lw_imm16(mem, to, self.hl())?;
-        Ok(1)
-    }
-
-    pub fn sw_hl(&mut self, mem: &RwLock<Mem>, from: Register) -> Result<u8> {
-        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, self.hl());
-        self.sw_imm16(mem, self.hl(), from)?;
-        Ok(1)
-    }
-
-    pub fn sw_imm16(&mut self, mem: &RwLock<Mem>, i: u16, from: Register) -> Result<u8> {
-        trace!("{:04x}: SW {:04x}, {from:#?}", self.pc, i);
+    fn sw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (val, addr, sz) = match amt {
+            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], self.hl(), 2),
+            A::R1I1 => (
+                self.reg[(bytes[1] & 0b1111) as usize],
+                (bytes[2], bytes[3]).join(),
+                4,
+            ),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: SW {val:#?} {addr:04x}", self.pc());
         let mut mem = mem.write().unwrap();
-        mem.set(i, self.reg[from as usize])?;
-        Ok(3)
+        mem.set(addr, self.reg[val as usize])?;
+        Ok(sz)
     }
 
-    pub fn mov_reg(&mut self, to: Register, from: Register) -> Result<u8> {
-        trace!("{:04x}: MOV {to:#?}, {from:#?}", self.pc);
-
-        self.reg[to as usize] = self.reg[from as usize];
-        Ok(2)
+    fn mov(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (into, val, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc());
+        self.reg[into as usize] = val;
+        Ok(sz)
     }
 
-    pub fn mov_imm8(&mut self, to: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: MOV {to:#?}, {imm8:02x} | {imm8:?}", self.pc);
-        self.reg[to as usize] = imm8;
-        Ok(2)
-    }
-
-    pub fn push_imm8(&mut self, mem: &RwLock<Mem>, imm8: u8) -> Result<u8> {
-        if self.sp >= STACK_END {
+    fn push(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        if self.sp() >= STACK_END {
             bail!("Stack overflow");
         }
 
-        self.sp += 1;
+        self.set_sp(self.sp() + 1);
 
+        let (val, sz) = match amt {
+            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], 2),
+            A::R0I1 => (bytes[1], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
         {
             let mut mem = mem.write().unwrap();
-            mem.set(self.sp, imm8)?;
+            mem.set(self.sp(), val)?;
         };
 
         trace!(
             "{:04x}: PUSHED: [{:04x}] {:02x}",
-            self.pc,
-            self.sp as i128 - STACK as i128,
-            imm8,
+            self.pc(),
+            self.sp() as i128 - STACK as i128,
+            val,
         );
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn push_reg(&mut self, mem: &RwLock<Mem>, reg: Register) -> Result<u8> {
-        self.push_imm8(mem, self.reg[reg as usize])?;
-        Ok(1)
-    }
-
-    pub fn pop(&mut self, mem: &RwLock<Mem>, reg: Register) -> Result<u8> {
-        if self.sp < STACK {
+    fn pop(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        if self.sp() < STACK {
             bail!("Cannot pop empty stack");
         }
 
+        let reg = match amt {
+            A::R1I0 => bytes[1] & 0b1111,
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+
         {
             let mut mem = mem.write().unwrap();
-            self.reg[reg as usize] = mem.get(self.sp)?;
-            mem.set(self.sp, 0)?;
+            self.reg[reg as usize] = mem.get(self.sp())?;
+            mem.set(self.sp(), 0)?;
         };
 
         trace!(
             "{:04x}: POPPED: [{:04x}] {:?}",
-            self.pc,
-            self.sp - STACK,
-            self.reg[reg as usize],
+            self.pc(),
+            self.sp() - STACK,
+            reg,
         );
 
-        self.sp -= 1;
-        Ok(1)
+        self.set_sp(self.sp() - 1);
+        Ok(2)
     }
 
-    pub fn jnz_imm8(&mut self, imm8: u8) -> Result<u8> {
-        if imm8 == 0 {
-            trace!("{:04x}: No JNZ", self.pc);
-            return Ok(2);
+    fn jnz(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (condition, sz) = match amt {
+            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], 2),
+            A::R0I1 => (1, 1),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        if condition == 0 {
+            trace!("{:04x}: No JNZ", self.pc());
+            return Ok(sz);
         }
 
-        let old = self.pc;
+        let old = self.pc();
 
-        self.pc = self.hl();
+        self.set_pc(self.hl());
 
-        trace!("{:04x}: JNZ to {:04x}", old, self.pc);
+        trace!("{:04x}: JNZ to {:04x}", old, self.pc());
         Ok(0)
     }
 
-    pub fn jnz_reg(&mut self, reg: Register) -> Result<u8> {
-        let v = self.reg[reg as usize];
-        if v == 0 {
-            return Ok(1);
-        }
-        self.jnz_imm8(self.reg[reg as usize])?;
-        Ok(0)
-    }
-
-    pub fn in_imm8(&mut self, dev: &RwLock<Devices>, into: Register, port: u8) -> Result<u8> {
-        trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc);
+    fn r#in(&mut self, dev: &RwLock<Devices>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (into, port, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc());
         let mut devices = dev.write().unwrap();
         self.reg[into as usize] = devices.receive(port)?;
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn in_reg(&mut self, dev: &RwLock<Devices>, into: Register, port: Register) -> Result<u8> {
-        self.in_imm8(dev, into, self.reg[port as usize])?;
-        Ok(2)
-    }
-
-    pub fn out_imm8(
+    fn out(
         &mut self,
         mem: &RwLock<Mem>,
         dev: &RwLock<Devices>,
-        port: u8,
-        send: Register,
+        amt: OperationArgAmt,
+        bytes: [u8; 4],
     ) -> Result<u8> {
-        trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc);
+        let (send, port, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc());
         let mut devices = dev.write().unwrap();
         let mem = mem.read().unwrap();
         devices.send(self, &mem, port, self.reg[send as usize])?;
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn out_reg(
-        &mut self,
-        mem: &RwLock<Mem>,
-        dev: &RwLock<Devices>,
-        port: Register,
-        send: Register,
-    ) -> Result<u8> {
-        self.out_imm8(mem, dev, self.reg[port as usize], send)?;
-        Ok(2)
-    }
+    fn cmp(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: CMP {lhs:#?}, {rhs:02x}", self.pc());
 
-    pub fn cmp_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: CMP {lhs:#?}, {imm8:02x}", self.pc);
-
-        let diff = (self.reg[lhs as usize] as i16) - (imm8 as i16);
+        let diff = (self.reg[lhs as usize] as i16) - (rhs as i16);
         let mut f = 0;
 
         if diff == 0 {
@@ -175,95 +211,102 @@ impl CR8 {
         }
 
         self.reg[Register::F as usize] = f;
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn cmp_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.cmp_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
-    }
-
-    pub fn adc_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: ADC {lhs:#?}, {imm8:02x}", self.pc);
+    fn add(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: ADD {lhs:#?}, {rhs:02x}", self.pc());
 
         let f = self.reg[Register::F as usize];
         let cf = (f >> 2) & 1;
 
-        let res = Wrapping(self.reg[lhs as usize]) + Wrapping(imm8) + Wrapping(cf);
+        let res = Wrapping(self.reg[lhs as usize]) + Wrapping(rhs) + Wrapping(cf);
         let res = res.0;
 
-        if res < self.reg[lhs as usize] || res < imm8 || res < cf {
+        if res < self.reg[lhs as usize] || res < rhs || res < cf {
             self.reg[Register::F as usize] |= 0b0100;
         }
 
         self.reg[lhs as usize] = res;
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn adc_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.adc_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
-    }
-
-    pub fn sbb_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: SBB {lhs:#?}, {imm8:02x}", self.pc);
+    fn sub(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: SUB {lhs:#?}, {rhs:02x}", self.pc());
 
         let f = self.reg[Register::F as usize];
         let bf = (f >> 3) & 1;
 
-        let res = Wrapping(self.reg[lhs as usize]) + (Wrapping(!imm8) + Wrapping(1) - Wrapping(bf));
+        let res = Wrapping(self.reg[lhs as usize]) + (Wrapping(!rhs) + Wrapping(1) - Wrapping(bf));
         let res = res.0;
 
-        if res > self.reg[lhs as usize] {
-            self.reg[Register::F as usize] = 0b1000;
+        if res < self.reg[lhs as usize] || res < rhs || res < bf {
+            self.reg[Register::F as usize] |= 0b1000;
         }
 
         self.reg[lhs as usize] = res;
-        Ok(2)
+        Ok(sz)
     }
 
-    pub fn sbb_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.sbb_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
+    fn or(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: OR {lhs:#?}, {rhs:02x}", self.pc());
+        self.reg[lhs as usize] |= rhs;
+        if not {
+            self.reg[lhs as usize] = !self.reg[lhs as usize];
+        }
+        Ok(sz)
     }
 
-    pub fn or_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: OR {lhs:#?}, {imm8:02x}", self.pc);
-        self.reg[lhs as usize] |= imm8;
-        Ok(2)
+    fn not(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (lhs, sz) = match amt {
+            A::R1I0 => (bytes[1] & 0b1111, 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: NOT {lhs:#?}", self.pc());
+        self.reg[lhs as usize] = !self.reg[lhs as usize];
+        Ok(sz)
     }
 
-    pub fn or_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.or_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
+    fn and(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: AND {lhs:#?}, {rhs:02x}", self.pc());
+        self.reg[lhs as usize] &= rhs;
+        if not {
+            self.reg[lhs as usize] = !self.reg[lhs as usize];
+        }
+        Ok(sz)
     }
 
-    pub fn nor_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: NOR {lhs:#?}, {imm8:02x}", self.pc);
-        self.reg[lhs as usize] = !(self.reg[lhs as usize] | imm8);
-        Ok(2)
-    }
-
-    pub fn nor_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.nor_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
-    }
-
-    pub fn and_imm8(&mut self, lhs: Register, imm8: u8) -> Result<u8> {
-        trace!("{:04x}: AND {lhs:#?}, {imm8:02x}", self.pc);
-        self.reg[lhs as usize] &= imm8;
-        Ok(2)
-    }
-
-    pub fn and_reg(&mut self, lhs: Register, reg: Register) -> Result<u8> {
-        self.and_imm8(lhs, self.reg[reg as usize])?;
-        Ok(2)
-    }
-
-    pub fn set_mb(&mut self, mem: &RwLock<Mem>, bank: u8) -> Result<u8> {
-        trace!("{:04x}: MB {bank:02x}", self.pc);
-        let mut mem = mem.write().unwrap();
-        mem.select(bank)?;
-        Ok(2)
+    fn xor(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
+        let (lhs, rhs, sz) = match amt {
+            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
+            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: XOR {lhs:#?}, {rhs:02x}", self.pc());
+        self.reg[lhs as usize] ^= rhs;
+        if not {
+            self.reg[lhs as usize] = !self.reg[lhs as usize];
+        }
+        Ok(sz)
     }
 }

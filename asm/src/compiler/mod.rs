@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use indexmap::IndexMap;
 use path_clean::clean;
 use std::env;
@@ -11,7 +11,7 @@ pub mod lex;
 mod resolver;
 
 use crate::compiler::lex::{Node, Value};
-use crate::op::Operation;
+use crate::op::{Operation, OperationArgAmt};
 
 pub use config::*;
 
@@ -47,8 +47,6 @@ impl Compiler {
     }
 
     pub fn compile(mut self) -> Result<Vec<u8>> {
-        use Operation::*;
-
         if let Some(mut preamble) = self.preamble {
             let mut old = self.tree;
             preamble.append(&mut old);
@@ -74,45 +72,65 @@ impl Compiler {
                     }
                 }
                 Node::Instruction(inst) => {
-                    let op = Operation::try_from(inst.id.as_str()).unwrap(); // FIXME
-                    let mut header = (op as u8) << 4;
-                    let mut compiled_args: Vec<u8> = vec![];
-                    let mut regn = 0;
+                    let op = Operation::try_from(inst.id.as_str())
+                        .map_err(|_| anyhow!("Invalid operation {:#?}", inst.id))?;
+                    let mut header = (op as u8) << 2;
+                    let arg_amt = OperationArgAmt::from_args(&inst.args)?;
+                    header |= arg_amt as u8;
 
-                    for arg in inst.args {
-                        match arg {
-                            Value::Register(r) => {
-                                if regn > 0 {
-                                    compiled_args.push(r as u8)
-                                } else {
-                                    header |= r as u8
-                                }
-                                regn += 1;
-                            }
-                            Value::Immediate(imm) => compiled_args.push(imm as u8),
-                            Value::Expr(exp) => match exp.resolve(&self) {
-                                Err(e) => bail!("Failed to resolve: {e:#?}"),
-                                Ok(v) => {
-                                    compiled_args.push(v as u8);
-                                    if op == LW || op == SW {
-                                        compiled_args.push((v >> 8) as u8);
-                                    }
-                                }
-                            },
-                            _ => {}
-                        }
+                    if arg_amt == OperationArgAmt::R0I1 && &inst.id == "jnz" {
+                        self.bin.push(header);
+                        continue;
                     }
-                    match (op, regn, compiled_args.len()) {
-                        (LW, 1, 2) => header |= 0b00001000,
-                        (SW, 1, 2) => header |= 0b00001000,
-                        (PUSH | JNZ, 0, 1) => header |= 0b00001000,
-                        (MOV | OUT | IN | CMP | ADC | SBB | OR | NOR | AND, 1, 1) => {
-                            header |= 0b00001000
+
+                    let mut bin = match arg_amt {
+                        OperationArgAmt::R1I0 => match &inst.args[..] {
+                            &[Value::Register(r)] => vec![header, r as u8],
+                            _ => bail!("Invalid args for {:#?}", inst.id),
+                        },
+                        OperationArgAmt::R2I0 => match &inst.args[..] {
+                            &[Value::Register(r1), Value::Register(r2)] => {
+                                vec![header, (r1 as u8) | ((r2 as u8) << 4)]
+                            }
+                            _ => bail!("Invalid args for {:#?}", inst.id),
+                        },
+                        OperationArgAmt::R0I1 => match inst.args.get(0) {
+                            Some(Value::Immediate(imm8)) => {
+                                vec![header, (*imm8 as u8)]
+                            }
+                            Some(Value::Expr(e)) => match op {
+                                Operation::LW | Operation::SW => {
+                                    let r = e.resolve(&self)?;
+                                    vec![header, r as u8, (r >> 8) as u8]
+                                }
+                                _ => vec![header, e.resolve(&self)? as u8],
+                            },
+                            _ => bail!("Invalid args for {:#?}", inst.id),
+                        },
+                        OperationArgAmt::R1I1 => {
+                            let mut reg = 0;
+                            let mut trail = vec![];
+                            for arg in inst.args {
+                                match arg {
+                                    Value::Register(r) => reg = r as u8,
+                                    Value::Immediate(imm) => trail.push(imm as u8),
+                                    Value::Expr(e) => match op {
+                                        Operation::LW | Operation::SW => {
+                                            let r = e.resolve(&self)?;
+                                            trail.push(r as u8);
+                                            trail.push((r >> 8) as u8);
+                                        }
+                                        _ => trail.push(e.resolve(&self)? as u8),
+                                    },
+                                    _ => {}
+                                }
+                            }
+                            let mut b = vec![header, reg];
+                            b.append(&mut trail);
+                            b
                         }
-                        _ => {}
                     };
-                    self.bin.push(header);
-                    self.bin.append(&mut compiled_args);
+                    self.bin.append(&mut bin);
                 }
                 _ => {}
             }
