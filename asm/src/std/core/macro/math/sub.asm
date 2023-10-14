@@ -1,4 +1,4 @@
-#[use(prelude::macro::clear)]
+#[use(core::macro::clear)]
 
 #[macro] sub: {
     ($into: reg, $rhs: reg | imm8) => {
@@ -28,7 +28,9 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         dec $lo
+        dbg
         sbb $hi
+        dbg
     }
 }
 

@@ -1,6 +1,5 @@
 use asm::op::{Operation, OperationArgAmt};
 use log::trace;
-use std::num::Wrapping;
 use std::sync::RwLock;
 
 use anyhow::{anyhow, bail, Result};
@@ -228,11 +227,12 @@ impl CR8 {
         let f = self.reg[Register::F as usize];
         let cf = (f >> 2) & 1;
 
-        let res = Wrapping(self.reg[lhs as usize]) + Wrapping(rhs) + Wrapping(cf);
-        let res = res.0;
+        let (res, carry) = self.reg[lhs as usize].carrying_add(rhs, cf == 1);
 
-        if res < self.reg[lhs as usize] || res < rhs || res < cf {
+        if carry {
             self.reg[Register::F as usize] |= 0b0100;
+        } else {
+            self.reg[Register::F as usize] &= 0b1011;
         }
 
         self.reg[lhs as usize] = res;
@@ -250,11 +250,12 @@ impl CR8 {
         let f = self.reg[Register::F as usize];
         let bf = (f >> 3) & 1;
 
-        let res = Wrapping(self.reg[lhs as usize]) + (Wrapping(!rhs) + Wrapping(1) - Wrapping(bf));
-        let res = res.0;
+        let (res, borrow) = self.reg[lhs as usize].borrowing_sub(rhs, bf == 1);
 
-        if res < self.reg[lhs as usize] || res < rhs || res < bf {
+        if borrow {
             self.reg[Register::F as usize] |= 0b1000;
+        } else {
+            self.reg[Register::F as usize] &= 0b0111;
         }
 
         self.reg[lhs as usize] = res;

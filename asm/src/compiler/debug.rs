@@ -10,6 +10,7 @@ impl Compiler {
         self.debug_labels();
         self.debug_files();
         self.debug_statics();
+        self.debug_vars();
 
         if log_enabled!(Level::Debug) {
             self.debug_macros();
@@ -31,6 +32,14 @@ impl Compiler {
         info!("======== Statics: ========");
         for (k, v) in self.statics.iter() {
             info!("  - {}: {:#06X}", k, v);
+        }
+        info!("");
+    }
+
+    fn debug_vars(&self) {
+        info!("======= Variables: ========");
+        for (k, v) in self.ram_locations.iter() {
+            info!("  - {}: {:#06X}", k, *v);
         }
         info!("");
     }

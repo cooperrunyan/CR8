@@ -1,4 +1,4 @@
-#[use(prelude::arch)]
+#[use(core::sys)]
 
 #[macro] send: {
     ($port: imm8, $b: imm8) => {

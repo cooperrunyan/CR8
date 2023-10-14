@@ -1,4 +1,4 @@
-#[use(prelude::macro::clear)]
+#[use(core::macro::clear)]
 
 #[macro] add: {
     ($into: reg, $rhs: reg | imm8) => {

@@ -144,6 +144,11 @@ the system or `receive` a byte from the system.
   - `6`: `+`
   - `7`: `-`
 
+### `0x02`: Rng
+
+- `send`: Sends a random byte
+- `receive`: Does nothing
+
 ## Macros
 
 Instruction-set is extremely minimal but the assembler offers extensibility with

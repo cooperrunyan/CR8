@@ -57,7 +57,8 @@ impl Compiler {
                     if self.ram_locations.contains_key(&k) {
                         bail!("Error: attempted to set #dyn {k:#?} twice");
                     }
-                    self.ram_locations.insert(k, self.ram_length);
+                    self.ram_locations
+                        .insert(k, self.ram_length + self.ram_origin);
                     self.ram_length += v;
                 }
                 ItemInner::Directive(Directive::DynOrigin(v)) => {

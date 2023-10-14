@@ -29,6 +29,8 @@ impl Expr {
                 *stat
             } else if let Some(label) = ctx.labels.get(&format!("{}{var}", &ctx.last_label)) {
                 *label
+            } else if let Some(d) = ctx.ram_locations.get(var) {
+                *d
             } else {
                 bail!("Unknown variable: {var:#?}");
             }),
@@ -173,6 +175,14 @@ mod test {
         let (expr, _) = Expr::lex("1 + 0b01 + 2 * 3")?;
         let res = expr.resolve(&ctx).unwrap();
         assert_eq!(res, 1 + 0b01 + 2 * 3);
+
+        let (expr, _) = Expr::lex("0xC011 & 0xFF")?;
+        let res = expr.resolve(&ctx).unwrap();
+        assert_eq!(res, 0xC011 & 0xFF);
+
+        let (expr, _) = Expr::lex("0xC011 >> 8")?;
+        let res = expr.resolve(&ctx).unwrap();
+        assert_eq!(res, 0xC011 >> 8);
 
         let (expr, _) = Expr::lex("1 + (0b01 + 2) * 3")?;
         let res = expr.resolve(&ctx).unwrap();

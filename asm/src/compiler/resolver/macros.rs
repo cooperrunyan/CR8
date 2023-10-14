@@ -105,7 +105,7 @@ impl Compiler {
                                 V::Immediate(v) => insert!(name, Immediate(v)),
                                 V::Register(r) => insert!(name, Register(r)),
                                 V::MacroVariable(id) => insert!(name, MacroVariable(id)),
-                                _ => invalid!(),
+                                V::Expr(e) => insert!(name, Expr(e)),
                             },
                             MA::Imm16 => match current {
                                 V::Expr(e) => {

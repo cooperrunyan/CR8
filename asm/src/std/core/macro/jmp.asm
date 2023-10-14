@@ -1,4 +1,4 @@
-#[use(prelude::macro::logic)]
+#[use(core::macro::logic)]
 
 #[macro] ldhl: {
     ($addr: imm16) => {

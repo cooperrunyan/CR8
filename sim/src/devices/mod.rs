@@ -11,10 +11,14 @@ pub mod sysctrl;
 #[cfg(feature = "keyboard")]
 pub mod keyboard;
 
+#[cfg(feature = "rng")]
+pub mod rng;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceId {
     SysControl,
     Keyboard,
+    Rng,
 }
 
 impl TryFrom<u8> for DeviceId {
@@ -23,6 +27,7 @@ impl TryFrom<u8> for DeviceId {
         match value {
             0x00 => Ok(Self::SysControl),
             0x01 => Ok(Self::Keyboard),
+            0x02 => Ok(Self::Rng),
             _ => Err(()),
         }
     }
@@ -33,6 +38,7 @@ impl From<DeviceId> for u8 {
         match val {
             DeviceId::SysControl => 0x00,
             DeviceId::Keyboard => 0x01,
+            DeviceId::Rng => 0x02,
         }
     }
 }
@@ -40,6 +46,10 @@ impl From<DeviceId> for u8 {
 #[derive(Debug, Default)]
 pub struct Devices {
     pub sysctrl: SysCtrl,
+
+    #[cfg(feature = "rng")]
+    pub rng: rng::Rng,
+
     #[cfg(feature = "keyboard")]
     pub keyboard: keyboard::Keyboard,
 }
@@ -47,6 +57,10 @@ pub struct Devices {
 #[derive(Debug)]
 pub struct DeviceSnapshot {
     pub sysctrl: u8,
+
+    #[cfg(feature = "rng")]
+    pub rng: u8,
+
     #[cfg(feature = "keyboard")]
     pub keyboard: u8,
 }
@@ -70,6 +84,12 @@ impl Devices {
         match to.try_into() {
             Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, cr8, mem, self.snapshot()),
 
+            #[cfg(feature = "rng")]
+            Ok(DeviceId::Rng) => {
+                self.rng.receive();
+                Ok(())
+            }
+
             #[cfg(feature = "keyboard")]
             Ok(DeviceId::Keyboard) => Ok(()),
 
@@ -83,6 +103,9 @@ impl Devices {
         match to.try_into() {
             Ok(DeviceId::SysControl) => self.sysctrl.send(),
 
+            #[cfg(feature = "rng")]
+            Ok(DeviceId::Rng) => Ok(self.rng.send()),
+
             #[cfg(feature = "keyboard")]
             Ok(DeviceId::Keyboard) => Ok(self.keyboard.flush()),
 
@@ -94,6 +117,10 @@ impl Devices {
     pub fn snapshot(&self) -> DeviceSnapshot {
         DeviceSnapshot {
             sysctrl: self.sysctrl.state,
+
+            #[cfg(feature = "rng")]
+            rng: self.rng.send(),
+
             #[cfg(feature = "keyboard")]
             keyboard: self.keyboard.0,
         }

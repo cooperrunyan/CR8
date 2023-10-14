@@ -1,6 +1,6 @@
 [workspace]
-  members  = ["asm", "sim", "sim/web", "tool/png"]
-  resolver = "2"
+members = ["asm", "sim", "sim/web", "tool/png"]
+resolver = "2"
 
 [profile.release]
-  debug = true
+debug = true

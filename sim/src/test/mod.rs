@@ -126,3 +126,21 @@ fn mul16() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn dec() -> Result<()> {
+    t!(r#"mov %a, 2
+    mov %b, 1
+    dec %a, %b
+    "# => A: 1, B: 1);
+
+    t!(r#"
+    mov %a, 0
+    mov %b, 1
+
+    sub %a, 1
+    sbb %b
+    "# => B: 0, A: 255);
+
+    Ok(())
+}

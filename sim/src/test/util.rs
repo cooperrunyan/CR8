@@ -1,5 +1,4 @@
 use anyhow::Result;
-use asm::reg::Register;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,18 +9,30 @@ use crate::cr8::CR8;
 use crate::runner::Runner;
 
 macro_rules! t {
-    ($call:literal; $start:ident: $val:expr $(, $oth_start:ident: $oth_val:expr)* => $exp:ident: $tobe:expr $(, $oth_exp:ident: $oth_tobe:expr)* ) => {
-        crate::test::util::run_test($call.to_string(), vec![
-            (Register::$start, $val),
-            $( (Register::$oth_start, $oth_val), )*
-        ], vec![
-            (Register::$exp, $tobe),
-            $( (Register::$oth_exp, $oth_tobe), )*
-        ])?
-    }
+    ($call:literal; $start:ident: $val:expr $(, $oth_start:ident: $oth_val:expr)* => $exp:ident: $tobe:expr $(, $oth_exp:ident: $oth_tobe:expr)* ) => {{
+
+        let mut mov = String::new();
+
+        mov.push_str(&format!("mov %{}, {}\n", Register::$start, $val));
+         $(  mov.push_str(&format!("mov %{}, {}\n", Register::$oth_start, $oth_val));  )*
+
+        let state = $crate::test::util::run_asm(format!("{mov}\n call [{}]", $call))?;
+
+        assert!(state.reg[Register::$exp as usize] == $tobe);
+        $( assert!(state.reg[Register::$oth_exp as usize] ==  $oth_tobe); )*
+
+
+    }};
+
+    ($call:literal => $exp:ident: $tobe:expr $(, $oth_exp:ident: $oth_tobe:expr)* ) => {{
+        let state = $crate::test::util::run_asm($call.to_string())?;
+
+        assert!(state.reg[Register::$exp as usize] == $tobe);
+        $( assert!(state.reg[Register::$oth_exp as usize] ==  $oth_tobe); )*
+    }};
 }
 
-fn run_asm(asm: String) -> Result<CR8> {
+pub fn run_asm(asm: String) -> Result<CR8> {
     let asm = format!(
         r#"
     #[use( std )]
@@ -43,22 +54,4 @@ fn run_asm(asm: String) -> Result<CR8> {
             break Ok(runner.cr8.into_inner().unwrap());
         }
     }
-}
-
-pub(super) fn run_test(
-    call: String,
-    start: Vec<(Register, u8)>,
-    expect: Vec<(Register, u8)>,
-) -> Result<()> {
-    let mut mov = String::new();
-    for (r, v) in start {
-        mov.push_str(&format!("mov %{r}, {v}\n"));
-    }
-
-    let state = run_asm(format!("{mov}\n call [{call}]"))?;
-    for (r, exp) in expect {
-        assert_eq!(state.reg[r as usize], exp);
-    }
-
-    Ok(())
 }
