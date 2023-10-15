@@ -1,5 +1,5 @@
-#[use(std)]
-#[use("../lib/box")]
+#[use(std::gfx::grid::box::clear)]
+#[use(std::sleep)]
 
 #[boot]
 main:
@@ -8,7 +8,7 @@ main:
     .loop:
         in %a, [RNG]
         in %b, [RNG]
-        call [box]
+        call [filled_box]
 
         ; ~ 1s
         mov %a, 0

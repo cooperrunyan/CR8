@@ -22,7 +22,7 @@ impl<'b> Lexable<'b> for Import {
             return Ok((Self::File(file.to_string()), buf));
         }
 
-        let (module, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == ':')?;
+        let (module, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == ':' || c == '_')?;
         Ok((Self::Module(module.to_string()), buf))
     }
 }

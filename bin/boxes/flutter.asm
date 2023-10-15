@@ -1,8 +1,5 @@
-#[use(std)]
-#[use("../lib/box")]
-
-#[dyn(COUNTER: 2)]
-#[static(COUNTER_VAL: 10)]
+#[use(std::gfx::grid::box::filled)]
+#[use(std::gfx::grid::box::clear)]
 
 #[boot]
 main:
@@ -14,7 +11,7 @@ main:
     .loop:
         in %a, [RNG]
         in %b, [RNG]
-        call [box]
+        call [filled_box]
 
         lw %a, %b, [COUNTER]
         dec %a, %b

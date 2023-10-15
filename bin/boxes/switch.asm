@@ -1,5 +1,5 @@
-#[use(std)]
-#[use("../lib/box")]
+#[use(std::gfx::grid::box::filled)]
+#[use(std::gfx::grid::box::clear)]
 
 #[boot]
 main:
@@ -28,7 +28,7 @@ main:
         .box:
             in %a, [RNG]
             in %b, [RNG]
-            call [box]
+            call [filled_box]
             jmp [.loop]
 
     .switch:
