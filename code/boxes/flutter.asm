@@ -1,5 +1,5 @@
 #[use(std)]
-#[use("./lib/box")]
+#[use("../lib/box")]
 
 #[dyn(COUNTER: 2)]
 #[static(COUNTER_VAL: 10)]

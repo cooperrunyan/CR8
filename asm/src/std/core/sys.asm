@@ -25,4 +25,7 @@
 #[static(SIGDBG: 0x02)]
 #[static(SIGBRKPT: 0x03)]
 
+#[static(KB: 0x01)]
+
 #[static(RNG: 0x02)]
+
