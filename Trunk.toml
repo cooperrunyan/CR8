@@ -1,3 +1,8 @@
+[[hooks]]
+stage = "pre_build"
+command = "cargo"
+command_arguments = ["web", "bin/boxes/switch"]
+
 [build]
 target = "./sim/web/index.html"
 release = true
@@ -7,28 +12,14 @@ filehash = true
 inject_scripts = true
 
 [watch]
-watch = ["./sim", "./target/web", "./code", "./asm/src/std"]
+watch = ["./sim", "./target/web", "./bin", "./asm/src/std"]
 ignore = []
 
 [serve]
 address = "127.0.0.1"
 port = 3000
+open = true
 
 [clean]
 dist = "./target/dist"
 cargo = true
-
-[[hooks]]
-stage = "pre_build"
-command = "cargo"
-command_arguments = ["web", "code/boxes/switch"]
-# command_arguments = [
-#   "run",
-#   "--bim",
-#   "asm",
-#   "--",
-#   "-o",
-#   "target/web/exec.bin",
-#   "-i",
-#   "code/boxes/switch",
-# ]
