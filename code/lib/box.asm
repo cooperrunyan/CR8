@@ -1,5 +1,6 @@
 #[use(std)]
 
+; 181 bytes long
 ; Draws %d as an 8x8 px box 
 ; Args: 
 ;   - %a:  x-value (0-31)
@@ -63,6 +64,7 @@ clear_box:
 }
 
 
+; 59 bytes long
 ; Calculate the address of a grid point (32x32 blocks)
 ; Mutates %a and %b as the return value
 ; Args: 

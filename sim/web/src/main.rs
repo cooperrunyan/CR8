@@ -87,12 +87,10 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
                     break;
                 }
 
-                let ticks_in_this_cycle = state
-                    .cr8
-                    .write()
-                    .unwrap()
-                    .cycle(&state.mem, &state.dev)
-                    .unwrap() as usize;
+                let ticks_in_this_cycle = {
+                    let mut cr8 = state.cr8.write().unwrap();
+                    cr8.cycle(&state.mem, &state.dev).unwrap() as usize
+                };
 
                 ticks += ticks_in_this_cycle;
 

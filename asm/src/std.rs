@@ -24,5 +24,5 @@ pub static STD: phf::Map<&'static str, &'static str> = phf_map! {
     "std::math::shift::rsh" => include_str!("std/math/shift/rsh.asm"),
     "std::gfx" => include_str!("std/gfx/mod.asm"),
     "std::gfx::frame" => include_str!("std/gfx/frame.asm"),
-    "std::wait" => include_str!("std/wait/mod.asm"),
+    "std::sleep" => include_str!("std/sleep.asm"),
 };
