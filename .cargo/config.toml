@@ -2,7 +2,7 @@
 sim = "run --bin sim -q -F jit -- -r 4ghz -i"
 dbg = "run --bin sim -F jit -- -r 4hz --dbg -i"
 asm = "run --bin asm -- -o target/test.bin -i"
-web = "run --bin asm -- -o target/web.bin -i"
+web = "run --bin asm -- -o target/web/exec.bin -i"
 png = "run --bin png --"
 
 [env]

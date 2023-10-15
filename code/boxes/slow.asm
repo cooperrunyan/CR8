@@ -10,8 +10,6 @@ main:
         in %b, [RNG]
         call [box]
 
-        ; ~200-ticks
-
         ; ~ 1s
         mov %a, 0
         mov %b, 128

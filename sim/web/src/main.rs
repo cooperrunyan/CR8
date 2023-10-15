@@ -21,7 +21,7 @@ struct State {
 fn main() -> Result<(), JsValue> {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
 
-    let (int, kd, ku) = run(include_bytes!("../../../target/web.bin"))?;
+    let (int, kd, ku) = run(include_bytes!("../../../target/web/exec.bin"))?;
 
     int.forget();
     kd.forget();
