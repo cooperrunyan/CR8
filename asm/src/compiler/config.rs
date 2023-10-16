@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::std::STD;
+use crate::builtin::BUILTIN;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -92,7 +92,7 @@ impl Input {
                             }
                         }
                     }
-                    if let Some(content) = STD.get(&path) {
+                    if let Some(content) = BUILTIN.get(&path) {
                         Ok((Some(content.to_string()), path.into()))
                     } else {
                         bail!("No std module: {path}");

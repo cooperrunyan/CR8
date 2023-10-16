@@ -1,6 +1,6 @@
 pub mod op;
 pub mod reg;
 
-mod std;
+mod builtin;
 
 pub mod compiler;

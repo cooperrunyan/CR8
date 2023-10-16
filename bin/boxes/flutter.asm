@@ -1,5 +1,5 @@
-#[use(std::gfx::grid::box::filled)]
-#[use(std::gfx::grid::box::clear)]
+#[use(std::gfx::grid::block::filled)]
+#[use(std::gfx::grid::block::clear)]
 
 #[boot]
 main:

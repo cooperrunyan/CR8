@@ -1,5 +1,5 @@
-#[use(std::gfx::grid::box::filled)]
-#[use(std::gfx::grid::box::clear)]
+#[use(std::gfx::grid::block::filled)]
+#[use(std::gfx::grid::block::clear)]
 
 #[boot]
 main:
@@ -12,7 +12,7 @@ main:
         and %d, 0b00010000
 
         jnz [.switch], %d
-        
+
         .finish_loop:
             pop %d
             push %d ; clone it in the stack

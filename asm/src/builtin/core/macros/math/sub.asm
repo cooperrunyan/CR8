@@ -1,4 +1,4 @@
-#[use(core::macro::clear)]
+#[use(core::macros::clear)]
 
 #[macro] sub: {
     ($into: reg, $rhs: reg | imm8) => {

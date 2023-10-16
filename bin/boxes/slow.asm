@@ -1,4 +1,4 @@
-#[use(std::gfx::grid::box::clear)]
+#[use(std::gfx::grid::block::clear)]
 #[use(std::sleep)]
 
 #[boot]
@@ -13,11 +13,11 @@ main:
         ; ~ 1s
         mov %a, 0
         mov %b, 128
-        mov %c, 0     
-        mov %d, 0     
+        mov %c, 0
+        mov %d, 0
 
         call [sleep]
 
         jmp [.loop]
 
-    
+

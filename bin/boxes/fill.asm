@@ -1,4 +1,4 @@
-#[use(std::gfx::grid::box::filled)]
+#[use(std::gfx::grid::block::filled)]
 
 #[boot]
 main:
