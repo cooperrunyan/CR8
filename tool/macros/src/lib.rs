@@ -121,9 +121,8 @@ fn gen(node: Node, base: &str, travelled: &[String]) -> proc_macro2::TokenStream
 
             quote! {
                 #[doc = #doc]
-                #[doc = include_str!(#realpath)]
                 pub mod #id {
-                    pub static __FILE__: &str = #fi;
+                    pub static __FILE__: &'static str = #fi;
                 }
             }
         }
@@ -146,12 +145,11 @@ fn gen(node: Node, base: &str, travelled: &[String]) -> proc_macro2::TokenStream
                 .into_iter()
                 .map(|item| gen(item, base, &travelled));
 
-            let fi = quote!(include_str!(#realpath));
+            let fi = quote! { include_str!(#realpath) };
             quote! {
                 #[doc = #doc]
-                #[doc = include_str!(#realpath)]
                 pub mod #id {
-                    pub static __FILE__: &str = #fi;
+                    pub static __FILE__: &'static str = #fi;
 
                     #( #children )*
                 }
