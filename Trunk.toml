@@ -1,25 +1,25 @@
 [[hooks]]
-    stage             = "pre_build"
-    command           = "cargo"
-    command_arguments = ["web", "bin/boxes/switch"]
+stage = "pre_build"
+command = "cargo"
+command_arguments = ["web", "bin/snake"]
 
 [build]
-    target         = "./sim/web/index.html"
-    release        = true
-    dist           = "./target/dist"
-    public_url     = "/"
-    filehash       = true
-    inject_scripts = true
+target = "./sim/web/index.html"
+release = true
+dist = "./target/dist"
+public_url = "/"
+filehash = true
+inject_scripts = true
 
 [watch]
-    watch  = ["./sim", "./target/web", "./bin", "./asm/src/builtin"]
-    ignore = []
+watch = ["./sim", "./target/web", "./bin", "./asm/src/builtin"]
+ignore = []
 
 [serve]
-    address = "127.0.0.1"
-    port    = 3000
-    open    = true
+address = "127.0.0.1"
+port = 3000
+open = true
 
 [clean]
-    dist  = "./target/dist"
-    cargo = true
+dist = "./target/dist"
+cargo = true

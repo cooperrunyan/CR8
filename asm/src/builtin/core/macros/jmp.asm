@@ -43,6 +43,14 @@
     }
 }
 
+#[macro] jneq: {
+    ($addr: imm16) => {
+        not %f
+        and %f, 0b0010
+        jnz $addr, %f
+    }
+}
+
 #[macro] jlt: {
     ($addr: imm16) => {
         and %f, 0b0001

@@ -25,8 +25,8 @@ point_addr:
     mov %b, [SCREEN_WIDTH]
     call [mulip] ; %b * 32 -> %ab
 
-    pop %d ; add %a 
-    add %a, %b, %d, 0
+    pop %z ; add %a 
+    add %a, %b, %z, 0
 
     ; add the address of the base of banked ram
     add %a, %b, [BRAM]

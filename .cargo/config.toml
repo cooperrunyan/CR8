@@ -6,4 +6,4 @@ web = "run --bin asm -- -o target/web/exec.bin -i"
 png = "run --bin png --"
 
 [env]
-RUST_LOG = "sim=debug,asm=warn"
+RUST_LOG = "sim=debug,asm=trace"

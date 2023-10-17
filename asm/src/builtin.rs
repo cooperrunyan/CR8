@@ -26,7 +26,7 @@ modules! {
                     point,
                     inline_box,
                     cfg,
-                    block::{bordered, clear, custom, filled}
+                    block::{bordered, thick_bordered, clear, custom, filled}
                 }
             }
         }

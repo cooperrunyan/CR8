@@ -28,9 +28,7 @@
     ($lo: reg, $hi: reg) => {
         clrfb
         dec $lo
-        dbg
         sbb $hi
-        dbg
     }
 }
 
