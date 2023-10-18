@@ -2,10 +2,10 @@
 *flamegraph*
 **/dist/
 *.vsix
-tool/tree-sitter-cr8/bindings
-tool/tree-sitter-cr8/src
-tool/tree-sitter-cr8/binding.gyp
-tool/tree-sitter-cr8/Cargo.toml
-tool/tree-sitter-cr8/node_modules
+tool/lang/tree-sitter-cr8/bindings
+tool/lang/tree-sitter-cr8/src
+tool/lang/tree-sitter-cr8/binding.gyp
+tool/lang/tree-sitter-cr8/Cargo.toml
+tool/lang/tree-sitter-cr8/node_modules
 **/.DS_Store
-
+**/node_modules
