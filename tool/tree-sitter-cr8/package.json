@@ -1,0 +1,31 @@
+{
+  "name": "tree-sitter-cr8",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bindings/node",
+  "tree-sitter": [
+    {
+      "scope": "source.cr8",
+      "file-types": [
+        "asm",
+        "cr8"
+      ],
+      "highlights": [
+        "queries/highlights.scm"
+      ]
+    }
+  ],
+  "scripts": {
+    "test": "tree-sitter parse ../../../**/*.asm --quiet --stat",
+    "build": "tree-sitter generate"
+  },
+  "keywords": [],
+  "author": "cooperrunyan",
+  "license": "MIT",
+  "dependencies": {
+    "nan": "^2.18.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.8"
+  }
+}
