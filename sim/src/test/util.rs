@@ -37,7 +37,7 @@ pub fn run_asm(asm: String) -> Result<CR8> {
         r#"
     #[use( std )]
 
-    #[boot]
+    #[main]
     test:
     {asm}
         halt"#

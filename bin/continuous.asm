@@ -2,7 +2,7 @@
 
 #[static(LEN: 4)]
 
-#[boot]
+#[main]
 main:
     mov %mb, 1
     mov %a, 0

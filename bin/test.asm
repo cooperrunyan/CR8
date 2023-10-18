@@ -1,6 +1,6 @@
 #[use(std)]
 
-#[boot]
+#[main]
 main:
     mov %a, 4
     mov %b, 0

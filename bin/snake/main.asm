@@ -33,7 +33,7 @@
 
 #[static(DEFAULT_SNAKE_LEN: 5)]
 
-#[boot]
+#[main]
 main:
   jmp game_start
 

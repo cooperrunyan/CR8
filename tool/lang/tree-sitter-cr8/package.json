@@ -16,7 +16,7 @@
     }
   ],
   "scripts": {
-    "test": "tree-sitter parse ../../../**/*.asm --quiet --stat",
+    "test": "tree-sitter parse ../../../../**/*.asm --quiet --stat",
     "build": "tree-sitter generate"
   },
   "keywords": [],

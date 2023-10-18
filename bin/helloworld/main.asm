@@ -6,7 +6,7 @@
 #[static(WAIT: 0x2000)]
 #[static(OFFSET: 0x0400)]
 
-#[boot]
+#[main]
 main:
     mov %mb, 0x01
     jmp hello

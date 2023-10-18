@@ -1,7 +1,7 @@
 #[use(std::gfx::grid::block::clear)]
 #[use(std::sleep)]
 
-#[boot]
+#[main]
 main:
     mov %mb, 1
 

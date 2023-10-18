@@ -31,7 +31,7 @@ impl<'b> Lexable<'b> for Meta {
         let dir = ignore_whitespace(dir);
 
         match word {
-            "boot" => {
+            "main" => {
                 expect_complete(dir)?;
                 let buf = ignore_whitespace(buf);
                 let b = buf;

@@ -1,6 +1,6 @@
 #[use(std::gfx::grid::block::filled)]
 
-#[boot]
+#[main]
 main:
     mov %mb, 1
 
