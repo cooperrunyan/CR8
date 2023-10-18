@@ -1,20 +1,20 @@
 #[macro] mov: {
-    ($inlo: reg, $inhi: reg, $frlo: reg | imm8, $frhi: reg | imm8) => {
+    ($inlo: reg, $inhi: reg, $frlo: reg | lit, $frhi: reg | lit) => {
         mov $inlo, $frlo
         mov $inhi, $frhi
     }
-    ($inlo: reg, $inhi: reg, $from: imm16) => {
+    ($inlo: reg, $inhi: reg, $from: expr) => {
         mov $inlo, $from.l
         mov $inhi, $from.h
     }
 }
 
 #[macro] sw: {
-    ($to: imm16, $b: imm8) => {
+    ($to: expr, $b: lit) => {
         mov %f, $b
         sw $to, %f
     }
-    ($b: imm8) => {
+    ($b: lit) => {
         mov %f, $b
         sw %f
     }
@@ -23,23 +23,27 @@
         inc %l, %h
         sw $vh
     }
-    ($to: imm16, $vl: reg, $vh: reg) => {
+    ($to: expr, $vl: reg, $vh: reg) => {
         ldhl $to
         sw $vl, $vh
     }
+    ($to: expr, $b: expr) => {
+        mov %f, $b.l
+        sw $to, %f
+    }
 }
-
+  
 #[macro] lw: {
     ($tol: reg, $toh: reg) => {
         lw $tol
         inc %l, %h
         lw $toh
     }
-    ($tol: reg, $toh: reg, $addr: imm16) => {
+    ($tol: reg, $toh: reg, $addr: expr) => {
         ldhl $addr
         lw $tol, $toh
     }
-    ($tol: reg, $toh: reg, $addrl: imm8 | reg, $addrh: imm8 | reg) => {
+    ($tol: reg, $toh: reg, $addrl: lit | reg, $addrh: lit | reg) => {
         mov %l, $addrl 
         mov %h, $addrh
         lw $tol, $toh
@@ -54,14 +58,14 @@
 }
 
 #[macro] push: {
-    ($l: imm8 | reg, $h: imm8 | reg) => {
+    ($l: lit | reg, $h: lit | reg) => {
         push $l
         push $h
     }
 }
 
 #[macro] pushx: {
-    ($a: imm16) => {
+    ($a: expr) => {
         push $a.l
         push $a.h
     }

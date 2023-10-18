@@ -9,7 +9,7 @@ rrt:
     and %c, 0b1111
 
     mov %b, %c
-    call [lrt]
+    call lrt
     ret
 
 ; Logical Right Shift
@@ -19,7 +19,7 @@ rsh:
     mov %c, %b
     sub %c, 8
     and %c, 0b1111
-    jnz [.mask], %c
+    jnz .mask, %c
     mov %z, %a
     ret
 
@@ -27,10 +27,10 @@ rsh:
         dec %c
         add %d, %d  ; Single left-shift
         or %d, 1
-        jnz [.mask], %c
-        jmp [.shift]
+        jnz .mask, %c
+        jmp .shift
 
     .shift:
-        call [rrt]
+        call rrt
         and %z, %d
         ret

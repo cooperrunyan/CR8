@@ -18,9 +18,9 @@ pub struct MacroCapture {
 #[derive(Debug, PartialEq, Eq)]
 pub enum MacroCaptureArgType {
     Register,
-    Imm8,
-    Imm16,
-    Imm8OrRegister,
+    Literal,
+    Expr,
+    LiteralOrRegister,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -149,17 +149,17 @@ impl<'b> Lexable<'b> for MacroCaptureArgType {
         if let Ok(buf) = expect(buf, "|") {
             let buf = ignore_whitespace(buf);
             let (ty1, buf) = collect_while(buf, |c| c.is_alphanumeric())?;
-            if (ty0 == "reg" && ty1 == "imm8") || (ty1 == "reg" && ty0 == "imm8") {
-                return Ok((Self::Imm8OrRegister, buf));
+            if (ty0 == "reg" && ty1 == "lit") || (ty1 == "reg" && ty0 == "lit") {
+                return Ok((Self::LiteralOrRegister, buf));
             }
-            bail!("Expected `reg`, `imm8` or `imm16` at {buf:#?}");
+            bail!("Expected `reg`, `lit` or `expr` at {buf:#?}");
         }
 
         Ok((
             match ty0 {
                 "reg" => Self::Register,
-                "imm8" => Self::Imm8,
-                "imm16" => Self::Imm16,
+                "lit" => Self::Literal,
+                "expr" => Self::Expr,
                 _ => bail!("Unknown macro type {ty0:#?}"),
             },
             buf,
@@ -175,11 +175,11 @@ mod test {
     fn lex_macro() -> Result<(), Box<dyn std::error::Error>> {
         let (mac, remaining) = Macro::lex(
             r#"jnz: {
-                ($addr: imm16, $if: imm8 | reg) => {
+                ($addr: expr, $if: lit | reg) => {
                     ldhl $addr
                     jnz $if
                 }
-                ($addr: imm8, $if: imm8 | reg) => {
+                ($addr: lit, $if: lit | reg) => {
                     jnz $if
                 }
             }"#,
@@ -195,7 +195,7 @@ mod test {
     #[test]
     fn lex_macro_capture() -> Result<(), Box<dyn std::error::Error>> {
         let (cap, remaining) = MacroCapture::lex(
-            r#"($addr: imm16, $if: imm8 | reg) => {
+            r#"($addr: expr, $if: lit | reg) => {
                 ldhl $addr
                 jnz $if
             }"#,
@@ -222,11 +222,11 @@ mod test {
             vec![
                 MacroCaptureArg {
                     id: "$addr".to_string(),
-                    ty: MacroCaptureArgType::Imm16
+                    ty: MacroCaptureArgType::Expr
                 },
                 MacroCaptureArg {
                     id: "$if".to_string(),
-                    ty: MacroCaptureArgType::Imm8OrRegister
+                    ty: MacroCaptureArgType::LiteralOrRegister
                 },
             ]
         );
@@ -236,46 +236,46 @@ mod test {
 
     #[test]
     fn lex_macro_capture_arg_imm16() -> Result<(), Box<dyn std::error::Error>> {
-        let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: imm16"#)?;
+        let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: expr"#)?;
 
         assert!(remaining.is_empty());
         assert!(arg.id == "$addr");
-        assert!(arg.ty == MacroCaptureArgType::Imm16);
+        assert!(arg.ty == MacroCaptureArgType::Expr);
 
         Ok(())
     }
 
     #[test]
     fn lex_macro_capture_arg_either() -> Result<(), Box<dyn std::error::Error>> {
-        let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: imm8 | reg"#)?;
+        let (arg, remaining) = MacroCaptureArg::lex(r#"$addr: lit | reg"#)?;
 
         assert!(remaining.is_empty());
         assert!(arg.id == "$addr");
-        assert!(arg.ty == MacroCaptureArgType::Imm8OrRegister);
+        assert!(arg.ty == MacroCaptureArgType::LiteralOrRegister);
 
         Ok(())
     }
 
     #[test]
     fn lex_macro_capture_arg_type() -> Result<(), Box<dyn std::error::Error>> {
-        let (arg, remaining) = MacroCaptureArgType::lex(r#"imm16"#)?;
-        assert!(arg == MacroCaptureArgType::Imm16);
+        let (arg, remaining) = MacroCaptureArgType::lex(r#"expr"#)?;
+        assert!(arg == MacroCaptureArgType::Expr);
         assert!(remaining.is_empty());
 
-        let (arg, remaining) = MacroCaptureArgType::lex(r#"imm8"#)?;
-        assert!(arg == MacroCaptureArgType::Imm8);
+        let (arg, remaining) = MacroCaptureArgType::lex(r#"lit"#)?;
+        assert!(arg == MacroCaptureArgType::Literal);
         assert!(remaining.is_empty());
 
         let (arg, remaining) = MacroCaptureArgType::lex(r#"reg"#)?;
         assert!(arg == MacroCaptureArgType::Register);
         assert!(remaining.is_empty());
 
-        let (arg, remaining) = MacroCaptureArgType::lex(r#"reg | imm8"#)?;
-        assert!(arg == MacroCaptureArgType::Imm8OrRegister);
+        let (arg, remaining) = MacroCaptureArgType::lex(r#"reg | lit"#)?;
+        assert!(arg == MacroCaptureArgType::LiteralOrRegister);
         assert!(remaining.is_empty());
 
-        let (arg, remaining) = MacroCaptureArgType::lex(r#"imm8 | reg"#)?;
-        assert!(arg == MacroCaptureArgType::Imm8OrRegister);
+        let (arg, remaining) = MacroCaptureArgType::lex(r#"lit | reg"#)?;
+        assert!(arg == MacroCaptureArgType::LiteralOrRegister);
         assert!(remaining.is_empty());
 
         Ok(())

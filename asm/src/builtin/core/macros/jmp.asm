@@ -1,22 +1,22 @@
 #[use(core::macros::logic)]
 
 #[macro] ldhl: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         mov %h, $addr.h
         mov %l, $addr.l
     }
-    ($l: imm8 | reg, $h: imm8 | reg) => {
+    ($l: lit | reg, $h: lit | reg) => {
         mov %h, $h
         mov %l, $l
     }
 }
 
 #[macro] jnz: {
-    ($addr: imm16, $if: imm8 | reg) => {
+    ($addr: expr, $if: lit | reg) => {
         ldhl $addr
         jnz $if
     }
-    ($addr: imm16, $ifl: reg, $ifh: reg) => {
+    ($addr: expr, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh
         jnz $addr, %f
@@ -24,10 +24,10 @@
 }
 
 #[macro] jmp: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         jnz $addr, 1
     }
-    ($l: imm8 | reg, $h: imm8 | reg) => {
+    ($l: lit | reg, $h: lit | reg) => {
         ldhl $l, $h
         jmp
     }
@@ -37,14 +37,14 @@
 }
 
 #[macro] jeq: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         and %f, 0b0010
         jnz $addr, %f
     }
 }
 
 #[macro] jneq: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         not %f
         and %f, 0b0010
         jnz $addr, %f
@@ -52,21 +52,21 @@
 }
 
 #[macro] jlt: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         and %f, 0b0001
         jnz $addr, %f
     }
 }
 
 #[macro] jle: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         and %f, 0b0011
         jnz $addr, %f
     }
 }
 
 #[macro] jgt: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         not %f
         and %f, 0b0001
         jnz $addr, %f
@@ -74,7 +74,7 @@
 }
 
 #[macro] jge: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         nand %f, 0b0001
         and %f, 0b0011
         jnz $addr, %f
@@ -82,7 +82,7 @@
 }
 
 #[macro] jne: {
-    ($addr: imm16) => {
+    ($addr: expr) => {
         not %f
         and %f, 0b0010
         jnz $addr, %f
@@ -90,7 +90,7 @@
 }
 
 #[macro] jz: {
-    ($addr: imm16, $if: reg) => {
+    ($addr: expr, $if: reg) => {
         cmp $if, 0b0010
         jeq $addr
     }

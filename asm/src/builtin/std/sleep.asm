@@ -32,9 +32,9 @@ sleep:
         sbb %c
         sbb %d
 
-        jnz [.loop], %a
-        jnz [.loop], %b
-        jnz [.loop], %c
-        jnz [.loop], %d
+        jnz .loop, %a
+        jnz .loop, %b
+        jnz .loop, %c
+        jnz .loop, %d
         ret
 

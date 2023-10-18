@@ -3,31 +3,31 @@
 ; Draws a box at the address: [%ab]
 #[macro] inline_box: {
     (
-      $l0: imm8 | reg,
-      $l1: imm8 | reg,
-      $l2: imm8 | reg,
-      $l3: imm8 | reg,
-      $l4: imm8 | reg,
-      $l5: imm8 | reg,
-      $l6: imm8 | reg,
-      $l7: imm8 | reg) => {
+      $l0: lit | reg,
+      $l1: lit | reg,
+      $l2: lit | reg,
+      $l3: lit | reg,
+      $l4: lit | reg,
+      $l5: lit | reg,
+      $l6: lit | reg,
+      $l7: lit | reg) => {
         ldhl %a, %b
         sw $l0
 
         ; Draw next 7 lines (block height - 1)
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH 
         sw $l1
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l2
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l3
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l4
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l5
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l6
-        add %l, %h, [SCREEN_WIDTH], 0
+        add %l, %h, SCREEN_WIDTH
         sw $l6
     }
 }

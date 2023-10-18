@@ -6,9 +6,9 @@ main:
     mov %mb, 1
 
     .loop:
-        in %a, [RNG]
-        in %b, [RNG]
-        call [filled_box]
+        in %a, RNG
+        in %b, RNG
+        call filled_box
 
         ; ~ 1s
         mov %a, 0
@@ -16,8 +16,8 @@ main:
         mov %c, 0
         mov %d, 0
 
-        call [sleep]
+        call sleep
 
-        jmp [.loop]
+        jmp .loop
 
 

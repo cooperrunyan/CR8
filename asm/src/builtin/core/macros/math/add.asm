@@ -1,15 +1,15 @@
 #[use(core::macros::clear)]
 
 #[macro] add: {
-    ($into: reg, $rhs: reg | imm8) => {
+    ($into: reg, $rhs: reg | lit) => {
         clrfc
         adc $into, $rhs
     }
-    ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
+    ($tol: reg, $toh: reg, $frl: reg | lit, $frh: reg | lit) => {
         add $tol, $frl
         adc $toh, $frh
     }
-    ($tol: reg, $toh: reg, $rhs: imm16) => {
+    ($tol: reg, $toh: reg, $rhs: expr) => {
         add $tol, $rhs.l
         adc $toh, $rhs.h
     }

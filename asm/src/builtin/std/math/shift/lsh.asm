@@ -2,13 +2,13 @@
 ; Side effects: %z, %b
 lsh:
     mov %z, %a
-    jnz [.loop], %b
+    jnz .loop, %b
     ret
 
     .loop:
         dec %b
         add %z, %z
-        jnz [.loop], %b
+        jnz .loop, %b
         ret
 
 ; Algorithmic Left Shift
@@ -16,7 +16,7 @@ lsh:
 lsa:
     mov %d, %a
     and %d, 0b10000000
-    call [lsh]
+    call lsh
     or %z, %d
     ret
 
@@ -24,13 +24,13 @@ lsa:
 ; Side effects: %z, %b
 lrt:
     mov %z, %a
-    jnz [.loop], %b
+    jnz .loop, %b
     ret
 
     .loop:
         dec %b
         add %z, %z
         adc %z
-        jnz [.loop], %b
+        jnz .loop, %b
         ret
 

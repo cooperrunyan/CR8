@@ -91,8 +91,8 @@ impl Compiler {
                         let current = inst.args.get(i).unwrap();
                         let name = &capture_arg.id;
                         match &capture_arg.ty {
-                            MA::Imm8 => match current {
-                                V::Immediate(v) => insert!(name, Immediate(v)),
+                            MA::Literal => match current {
+                                V::Literal(v) => insert!(name, Literal(v)),
                                 V::MacroVariable(id) => insert!(name, MacroVariable(id)),
                                 V::Expr(e) => insert!(name, Expr(e)),
                                 _ => invalid!(),
@@ -101,15 +101,22 @@ impl Compiler {
                                 V::Register(r) => insert!(name, Register(r)),
                                 _ => invalid!(),
                             },
-                            MA::Imm8OrRegister => match current {
-                                V::Immediate(v) => insert!(name, Immediate(v)),
+                            MA::LiteralOrRegister => match current {
+                                V::Literal(v) => insert!(name, Literal(v)),
                                 V::Register(r) => insert!(name, Register(r)),
                                 V::MacroVariable(id) => insert!(name, MacroVariable(id)),
                                 V::Expr(e) => insert!(name, Expr(e)),
                             },
-                            MA::Imm16 => match current {
+                            MA::Expr => match current {
                                 V::Expr(e) => {
                                     insert_addr!(name, V::Expr(e.clone()), e.clone());
+                                }
+                                V::Literal(v) => {
+                                    insert_addr!(
+                                        name,
+                                        V::Expr(Expr::Literal(*v)),
+                                        Expr::Literal(*v)
+                                    );
                                 }
                                 _ => invalid!(),
                             },

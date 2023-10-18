@@ -1,7 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "CR8 Assembly",
-  "fileTypes": ["asm", "cr8"],
+  "fileTypes": [
+    "asm",
+    "cr8"
+  ],
   "scopeName": "source.cr8",
   "repository": {
     "num": {
@@ -46,7 +49,9 @@
       "match": "\\[|\\]|\\(|\\)|\\:|\\,|\\{|\\}",
       "name": "punctuation"
     },
-    { "include": "#num" },
+    {
+      "include": "#num"
+    },
     {
       "match": "(#\\[)\\s*(.*)\\s*(\\])",
       "captures": {
@@ -59,7 +64,7 @@
         "2": {
           "patterns": [
             {
-              "match": "\\b(use|boot|macro|static|dyn|const)\\b",
+              "match": "\\b(use|main|macro|static|dyn|const)\\b",
               "name": "keyword.control"
             },
             {
@@ -73,7 +78,9 @@
                 },
                 "2": {
                   "patterns": [
-                    { "include": "#num" },
+                    {
+                      "include": "#num"
+                    },
                     {
                       "match": "std|core|prelude",
                       "name": "entity.name.namespace"
@@ -119,28 +126,30 @@
       "name": "entity.name.function"
     },
     {
-      "match": "(?<=\\[[^\\]]*\\b)(\\.?[a-z0-9_]+)(?=\\b[^\\]]*\\])",
+      "match": "(\\.?[a-z0-9_]+)",
       "name": "entity.name.function"
     },
     {
       "match": "\\%[a-z]+\\b",
       "name": "variable.name"
     },
-
     {
       "match": "(?<=\\()(.*?)(?=\\)\\s*?\\=\\>)",
       "captures": {
         "1": {
           "patterns": [
             {
-              "match": "\\b(imm8|reg|imm16)\\b",
+              "match": "\\b(lit|reg|expr)\\b",
               "name": "support.type"
             },
             {
               "match": "\\$\\w(\\w|\\d|_)*",
               "name": "variable.parameter"
             },
-            { "match": "\\|", "name": "keyword.control" }
+            {
+              "match": "\\|",
+              "name": "keyword.control"
+            }
           ]
         }
       }

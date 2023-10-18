@@ -11,31 +11,31 @@ custom_box:
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 
-    add %l, %h, [SCREEN_WIDTH], 0
+    add %l, %h, SCREEN_WIDTH, 0
     pop %z
     sw %z
 

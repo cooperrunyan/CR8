@@ -22,12 +22,12 @@ point_addr:
 
     ; multiply %b * SCREEN_WIDTH
     mov %a, %b
-    mov %b, [SCREEN_WIDTH]
-    call [mulip] ; %b * 32 -> %ab
+    mov %b, SCREEN_WIDTH
+    call mulip ; %b * 32 -> %ab
 
     pop %z ; add %a 
     add %a, %b, %z, 0
 
     ; add the address of the base of banked ram
-    add %a, %b, [BRAM]
+    add %a, %b, BRAM
     ret

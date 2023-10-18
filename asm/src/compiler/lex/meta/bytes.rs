@@ -3,9 +3,9 @@ use crate::compiler::lex::lexable::*;
 use anyhow::bail;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ExplicitBytes(pub Vec<u8>);
+pub struct Constant(pub Vec<u8>);
 
-impl<'b> Lexable<'b> for ExplicitBytes {
+impl<'b> Lexable<'b> for Constant {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut buf = expect(buf, "{")?;
         let mut bytes = vec![];
@@ -37,7 +37,7 @@ mod test {
 
     #[test]
     fn lex_bytes() -> Result<(), Box<dyn std::error::Error>> {
-        let (b, remaining) = ExplicitBytes::lex(r#"{ 0, 0, 1, 0 }"#)?;
+        let (b, remaining) = Constant::lex(r#"{ 0, 0, 1, 0 }"#)?;
 
         assert!(remaining.is_empty());
         assert!(b.0 == vec![0, 0, 1, 0]);

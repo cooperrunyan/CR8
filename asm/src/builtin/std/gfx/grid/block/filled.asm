@@ -7,7 +7,7 @@
 ;   - %a:  x-value (0-31)
 ;   - %b:  y-value (0-31)
 filled_box:
-    call [point_addr]
+    call point_addr
 
     ; Draw %ab
     inline_box 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111

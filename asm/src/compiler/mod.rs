@@ -65,7 +65,7 @@ impl Compiler {
 
         for node in tree {
             match node {
-                Node::Explicit(_, mut val) => self.bin.append(&mut val.0),
+                Node::Constant(_, mut val) => self.bin.append(&mut val.0),
                 Node::Label(ln) => {
                     if !ln.contains('.') {
                         self.last_label = ln.to_string();
@@ -95,7 +95,7 @@ impl Compiler {
                             _ => bail!("Invalid args for {:#?}", inst.id),
                         },
                         OperationArgAmt::R0I1 => match inst.args.get(0) {
-                            Some(Value::Immediate(imm8)) => {
+                            Some(Value::Literal(imm8)) => {
                                 vec![header, (*imm8 as u8)]
                             }
                             Some(Value::Expr(e)) => match op {
@@ -113,7 +113,7 @@ impl Compiler {
                             for arg in inst.args {
                                 match arg {
                                     Value::Register(r) => reg = r as u8,
-                                    Value::Immediate(imm) => trail.push(imm as u8),
+                                    Value::Literal(imm) => trail.push(imm as u8),
                                     Value::Expr(e) => match op {
                                         Operation::LW | Operation::SW => {
                                             let r = e.resolve(&self)?;
@@ -172,7 +172,7 @@ impl Compiler {
             buf = b;
         }
 
-        self.resolve_directives(nodes)?;
+        self.resolve_meta(nodes)?;
 
         Ok(())
     }

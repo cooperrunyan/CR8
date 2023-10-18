@@ -35,12 +35,12 @@
 
 #[boot]
 main:
-  jmp [game_start]
+  jmp game_start
 
 ; Grab random numbers for x and y coordinates
 rand_coords:
-  in %a, [RNG]
-  in %b, [RNG]
+  in %a, RNG
+  in %b, RNG
   and %a, 0b00011111 ; limit to 0-31
   and %b, 0b00011111
   ret
@@ -49,16 +49,16 @@ game_start:
   mov %mb, 1
 
   ; new coords for apple
-  call [rand_coords]
-  sw [APPLE], %a, %b
+  call rand_coords
+  sw APPLE, %a, %b
 
-  mov %a, [DEFAULT_SNAKE_LEN]
+  mov %a, DEFAULT_SNAKE_LEN
   mov %b, 0
-  sw [SNAKE_LEN], %a, %b
+  sw SNAKE_LEN, %a, %b
 
   mov %a, 2
   mov %b, 1
-  ldhl [SNAKE]
+  ldhl SNAKE
 
   sw %a, %b
 
@@ -78,24 +78,24 @@ game_start:
   inc %a
   sw %a, %b
 
-  call [render_clear]
-  call [render_draw]
+  call render_clear
+  call render_draw
   
-  jmp [game_loop]
+  jmp game_loop
 
 full_render:
-  call [render_draw]
+  call render_draw
   mov %a, 0
   mov %b, 255
   mov %c, 0
   mov %d, 0
-  call [sleep]
-  call [render_clear]
+  call sleep
+  call render_clear
   mov %a, 0
   mov %b, 255
   mov %c, 0
   mov %d, 0
-  call [sleep]
+  call sleep
   ret
 
 
@@ -106,13 +106,13 @@ render_clear:
   ;
   ; .loop:
   ;   dec %a, %b
-  ;   ldhl [BRAM]
+  ;   ldhl BRAM
   ;   add %l, %h, %a, %b
   ;   sw 0
-  ;   jnz [.loop], %a, %b
+  ;   jnz .loop, %a, %b
   ;   ret
-  mov %a, %b, [BRAM]
-  mov %c, %d, [0x2000]
+  mov %a, %b, BRAM
+  mov %c, %d, 0x2000
     mov %z, 0
 
     .loop:
@@ -121,37 +121,37 @@ render_clear:
         sw %z
         inc %a, %b
         dec %c, %d
-        jnz [.loop], %c
-        jnz [.loop], %d
+        jnz .loop, %c
+        jnz .loop, %d
         ret
 
 
 render_draw:
-  lw %a, %b, [APPLE]
-  call [thick_bordered_box]
+  lw %a, %b, APPLE
+  call thick_bordered_box
   ; inline_box 0b00000000, 0b00000000, 0b00111100, 0b00111100, 0b00111100, 0b00111100, 0b00000000, 0b00000000
 
-  lw %c, %d, [SNAKE_LEN]
+  lw %c, %d, SNAKE_LEN
   
   .loop:
     dec %c, %d
-    mov %l, %h, [SNAKE]
+    mov %l, %h, SNAKE
     add %l, %h, %c, %d
     add %l, %h, %c, %d
     lw %a, %b
     push %c, %d
-    call [filled_box]
+    call filled_box
     pop %c, %d
-    jnz [.loop], %c, %d
+    jnz .loop, %c, %d
     ret
 
 ; move snake
 ; requires shifting the snake in memory to pop the tail 
 ; and push a new head
 move:
-  lw %c, %d, [SNAKE_LEN]
+  lw %c, %d, SNAKE_LEN
 
-  ldhl [SNAKE]
+  ldhl SNAKE
   lw %a, %b ; push the current head to stack to duplicate later
   dec %l, %h
   push %a, %b
@@ -161,7 +161,7 @@ move:
   dec %l, %h
   dec %l, %h
   lw %a, %b
-  call [clear_box]
+  call clear_box
 
   .loop:
     pop %l, %h ; get the address of the last iteration
@@ -173,28 +173,28 @@ move:
     push %l, %h
 
     ; if this iteration is not == start address of SNAKE
-    cmp %l, [(SNAKE + 2) & 0xFF]
+    cmp %l, (SNAKE + 2) & 0xFF
     mov %d, %f
-    cmp %h, [(SNAKE + 2) >> 8]
+    cmp %h, (SNAKE + 2) >> 8
     and %f, %d
 
     ; continue loop
-    jneq [.loop]
+    jneq .loop
 
   pop %f, %f ; address of the last iteration doesn't matter anymore
   pop %a, %b ; original head from before the .loop
 
   inc %b   ; move down
-  sw [SNAKE], %a, %b
-  call [filled_box]
+  sw SNAKE, %a, %b
+  call filled_box
   ret
   
     
 game_loop:
-  call [move]
+  call move
   mov %a, 0
   mov %b, 10
   mov %c, 0
   mov %d, 0
-  call [sleep]
-  jmp [game_loop]
+  call sleep
+  jmp game_loop

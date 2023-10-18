@@ -26,7 +26,7 @@ impl Compiler {
                     };
                     self.pc += size as usize;
                 }
-                Node::Explicit(name, val) => {
+                Node::Constant(name, val) => {
                     let len = val.0.len();
                     self.labels.insert(name.to_string(), self.pc);
                     self.pc += len;

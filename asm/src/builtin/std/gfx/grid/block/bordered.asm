@@ -3,7 +3,7 @@
 
 ; Draws a box with a border
 bordered_box:
-    call [point_addr]
+    call point_addr
 
     ; Draw %ab
     inline_box 0, 0b01111110, 0b01111110, 0b01111110, 0b01111110, 0b01111110, 0b01111110, 0

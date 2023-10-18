@@ -1,5 +1,5 @@
 #[macro] nand: {
-    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+    ($inl: reg, $inh: reg, $frl: lit | reg, $frh: lit | reg) => {
         nand $inl, $frl
         nand $inh, $frh
     }
@@ -13,7 +13,7 @@
 }
 
 #[macro] xnor: {
-    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+    ($inl: reg, $inh: reg, $frl: lit | reg, $frh: lit | reg) => {
         xnor $inl, $frl
         xnor $inh, $frh
     }
@@ -21,7 +21,7 @@
 
 
 #[macro] xor: {
-    ($inl: reg, $inh: reg, $frl: imm8 | reg, $frh: imm8 | reg) => {
+    ($inl: reg, $inh: reg, $frl: lit | reg, $frh: lit | reg) => {
         xor $inl, $frl
         xor $inh, $frh
     }

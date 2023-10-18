@@ -1,33 +1,37 @@
 #[use(core::sys)]
 
 #[macro] send: {
-    ($port: imm8, $b: imm8) => {
+    ($port: lit, $b: lit) => {
         mov %f, $b
+        out $port, %f
+    }
+    ($port: expr, $b: expr) => {
+        mov %f, $b.l
         out $port, %f
     }
 }
 
 #[macro] halt: {
     () => {
-        send [CTRL], [SIGHALT]
+        send CTRL, SIGHALT
     }
 }
 
 #[macro] ping: {
     () => {
-        send [CTRL], [SIGPING]
+        send CTRL, SIGPING
     }
 }
 
 #[macro] brkpt: {
     () => {
-        send [CTRL], [SIGBRKPT]
+        send CTRL, SIGBRKPT
     }
 }
 
 #[macro] dbg: {
     () => {
-        send [CTRL], [SIGDBG]
+        send CTRL, SIGDBG
     }
 }
 

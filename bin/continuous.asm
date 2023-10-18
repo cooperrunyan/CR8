@@ -7,18 +7,18 @@ main:
     mov %mb, 1
     mov %a, 0
     mov %b, 0
-    mov %c, [(0x4000 - 32) & 0xFF]
-    mov %d, [(0x4000 - 32) >> 8]
+    mov %c, (0x4000 - 32) & 0xFF
+    mov %d, (0x4000 - 32) >> 8
     mov %z, 1
 
     .loop:
-        ldhl [BRAM]
+        ldhl BRAM
         add %l, %a
         add %h, %b
         mov %z, 0xff
         sw %z
 
-        ldhl [BRAM]
+        ldhl BRAM
         add %l, %c
         add %h, %d
         mov %z, 0
@@ -121,8 +121,8 @@ main:
         mov %a, %a
         mov %a, %a
 
-        call [cycle]
-        jmp [.loop]
+        call cycle
+        jmp .loop
 
 cycle:
     inc %a, %b

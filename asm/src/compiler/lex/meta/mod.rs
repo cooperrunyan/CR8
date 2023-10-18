@@ -10,17 +10,17 @@ pub use import::*;
 pub use mac::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Directive {
-    Boot(String),
-    ExplicitBytes(String, ExplicitBytes),
+pub enum Meta {
+    Main(String),
+    Constant(String, Constant),
     Dyn(String, usize),
     DynOrigin(usize),
     Macro(Macro),
     Static(String, usize),
-    Use(Import),
+    Use(Use),
 }
 
-impl<'b> Lexable<'b> for Directive {
+impl<'b> Lexable<'b> for Meta {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = expect(buf, "#[")?;
         let buf = ignore_whitespace(buf);
@@ -38,13 +38,13 @@ impl<'b> Lexable<'b> for Directive {
                 let (label, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
                 let buf = ignore_whitespace(buf);
                 let _ = expect(buf, ":")?;
-                Ok((Directive::Boot(label.to_string()), b))
+                Ok((Meta::Main(label.to_string()), b))
             }
             "macro" => {
                 expect_complete(dir)?;
                 let buf = ignore_whitespace(buf);
                 let (mac, buf) = Macro::lex(buf)?;
-                Ok((Directive::Macro(mac), buf))
+                Ok((Meta::Macro(mac), buf))
             }
             "static" => {
                 let dir = ignore_whitespace(dir);
@@ -64,7 +64,7 @@ impl<'b> Lexable<'b> for Directive {
                 let dir = ignore_whitespace(dir);
                 let dir = expect(dir, "(")?;
                 let dir = ignore_whitespace(dir);
-                let (import, dir) = Import::lex(dir)?;
+                let (import, dir) = Use::lex(dir)?;
                 let dir = ignore_whitespace(dir);
                 let dir = expect(dir, ")")?;
                 expect_complete(dir)?;
@@ -99,8 +99,8 @@ impl<'b> Lexable<'b> for Directive {
                 let dir = expect(dir, ")")?;
                 expect_complete(dir)?;
                 let buf = ignore_whitespace(buf);
-                let (explicit, buf) = ExplicitBytes::lex(buf)?;
-                Ok((Self::ExplicitBytes(id.to_string(), explicit), buf))
+                let (explicit, buf) = Constant::lex(buf)?;
+                Ok((Self::Constant(id.to_string(), explicit), buf))
             }
             oth => bail!("Unknown directive {oth:#?} at {buf}"),
         }
@@ -113,25 +113,25 @@ mod test {
 
     #[test]
     fn stat() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = Directive::lex("#[static(HELLO: 0xFF00)]")?;
-        assert_eq!(dir, Directive::Static("HELLO".to_string(), 0xFF00));
+        let (dir, _) = Meta::lex("#[static(HELLO: 0xFF00)]")?;
+        assert_eq!(dir, Meta::Static("HELLO".to_string(), 0xFF00));
 
-        let (dir, _) = Directive::lex("#[static(HELLO: 2)]")?;
-        assert_eq!(dir, Directive::Static("HELLO".to_string(), 2));
+        let (dir, _) = Meta::lex("#[static(HELLO: 2)]")?;
+        assert_eq!(dir, Meta::Static("HELLO".to_string(), 2));
 
-        let (dir, _) = Directive::lex("#[static(HELLO: 0b1001)]")?;
-        assert_eq!(dir, Directive::Static("HELLO".to_string(), 0b1001));
+        let (dir, _) = Meta::lex("#[static(HELLO: 0b1001)]")?;
+        assert_eq!(dir, Meta::Static("HELLO".to_string(), 0b1001));
 
         Ok(())
     }
 
     #[test]
     fn lex_dyn() -> Result<(), Box<dyn std::error::Error>> {
-        let (dir, _) = Directive::lex("#[dyn(TEST: 4)]")?;
-        assert_eq!(dir, Directive::Dyn("TEST".to_string(), 4));
+        let (dir, _) = Meta::lex("#[dyn(TEST: 4)]")?;
+        assert_eq!(dir, Meta::Dyn("TEST".to_string(), 4));
 
-        let (dir, _) = Directive::lex("#[dyn(&0xC000)]")?;
-        assert_eq!(dir, Directive::DynOrigin(0xC000));
+        let (dir, _) = Meta::lex("#[dyn(&0xC000)]")?;
+        assert_eq!(dir, Meta::DynOrigin(0xC000));
 
         Ok(())
     }

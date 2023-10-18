@@ -1,15 +1,15 @@
 #[use(core::macros::clear)]
 
 #[macro] sub: {
-    ($into: reg, $rhs: reg | imm8) => {
+    ($into: reg, $rhs: reg | lit) => {
         clrfb
         sbb $into, $rhs
     }
-    ($tol: reg, $toh: reg, $frl: reg | imm8, $frh: reg | imm8) => {
+    ($tol: reg, $toh: reg, $frl: reg | lit, $frh: reg | lit) => {
         sub $tol, $frl
         sbb $toh, $frh
     }
-    ($tol: reg, $toh: reg, $rhs: imm16) => {
+    ($tol: reg, $toh: reg, $rhs: expr) => {
         sub $tol, $rhs.l
         sbb $toh, $rhs.h
     }

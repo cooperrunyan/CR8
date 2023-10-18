@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::compiler::lex::{lexable::*, Directive, Instruction, Node, Value};
+use crate::compiler::lex::{lexable::*, Instruction, Meta, Node, Value};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum ItemInner {
-    Directive(Directive),
+    Meta(Meta),
     Node(Node),
 }
 
@@ -25,8 +25,8 @@ impl<'b> LexableWith<'b, Arc<PathBuf>> for Item {
 impl<'b> Lexable<'b> for ItemInner {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         if buf.starts_with('#') {
-            let (dir, buf) = Directive::lex(buf)?;
-            return Ok((Self::Directive(dir), buf));
+            let (dir, buf) = Meta::lex(buf)?;
+            return Ok((Self::Meta(dir), buf));
         }
 
         if expect(buf, ".").is_ok() {

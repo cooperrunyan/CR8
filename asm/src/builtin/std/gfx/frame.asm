@@ -1,12 +1,12 @@
 ; CALLER MUST SET mb 1
 ; Draws bytes from ROM to VRAM
 #[macro] clrvram: {
-    ($from: imm16, $to: imm16) => {
+    ($from: expr, $to: expr) => {
         mov %a, $from.l
         mov %b, $from.h
         mov %c, $to.l
         mov %d, $to.h
-        call [_clrvram]
+        call _clrvram
     }
 }
 
@@ -22,8 +22,8 @@ _clrvram:
         sw %z
         inc %a, %b
         dec %c, %d
-        jnz [.loop], %c
-        jnz [.loop], %d
+        jnz .loop, %c
+        jnz .loop, %d
         ret
 
 ; ab: Frame address
@@ -43,14 +43,14 @@ frmwof:
         inc %l, %h
         push %l ; c
         push %h ; d
-        lw %c, [PSR0]
-        lw %d, [PSR1]
+        lw %c, PSR0
+        lw %d, PSR1
         dec %c, %d
-        sw [PSR0], %c
-        sw [PSR1], %d
+        sw PSR0, %c
+        sw PSR1, %d
         mov %z, %c
         or %z, %d
         pop %d
         pop %c
-        jnz [.loop], %z
+        jnz .loop, %z
         ret

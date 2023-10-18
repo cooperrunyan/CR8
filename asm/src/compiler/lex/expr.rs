@@ -108,6 +108,7 @@ pub enum ExprOperation {
     Mul,
     Div,
     And,
+    Xor,
     Or,
     Rsh,
     Lsh,
@@ -129,6 +130,7 @@ impl ExprOperation {
             Self::Mul => Ok((Wrapping(lhs) * Wrapping(rhs)).0),
             Self::Div => Ok((Wrapping(lhs) / Wrapping(rhs)).0),
             Self::And => Ok((Wrapping(lhs) & Wrapping(rhs)).0),
+            Self::Xor => Ok((Wrapping(lhs) ^ Wrapping(rhs)).0),
             Self::Or => Ok((Wrapping(lhs) | Wrapping(rhs)).0),
             Self::Rsh => Ok((Wrapping(lhs) >> rhs).0),
             Self::Lsh => Ok((Wrapping(lhs) << rhs).0),
@@ -148,6 +150,8 @@ impl<'b> Lexable<'b> for ExprOperation {
             (Self::Div, buf)
         } else if let Ok(buf) = expect(buf, "&") {
             (Self::And, buf)
+        } else if let Ok(buf) = expect(buf, "^") {
+            (Self::Xor, buf)
         } else if let Ok(buf) = expect(buf, "|") {
             (Self::Or, buf)
         } else if let Ok(buf) = expect(buf, ">>") {

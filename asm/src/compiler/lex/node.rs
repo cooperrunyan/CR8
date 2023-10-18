@@ -1,15 +1,15 @@
 use crate::reg::Register;
 
-use super::directive::{ExplicitBytes, Import};
 use super::expr::Expr;
 use super::lexable::*;
+use super::meta::{Constant, Use};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Node {
     Instruction(Instruction),
     Label(String),
-    Explicit(String, ExplicitBytes),
-    Import(Import),
+    Constant(String, Constant),
+    Use(Use),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -21,21 +21,17 @@ pub struct Instruction {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Value {
     Expr(Expr),
-    Immediate(usize),
+    Literal(usize),
     Register(Register),
     MacroVariable(String),
 }
 
 impl<'b> Lexable<'b> for Value {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        if let Ok(buf) = expect(buf, "[") {
-            let (expr, buf) = collect_until(buf, |c| c == ']')?;
-            let buf = expect(buf, "]")?;
-            let (expr, eb) = Expr::lex(expr)?;
-            let eb = ignore_whitespace(eb);
-            expect_complete(eb)?;
-            return Ok((Value::Expr(expr), buf));
+        if let Ok((lit, buf)) = usize::lex(buf) {
+            return Ok((Value::Literal(lit), buf));
         }
+
         if buf.chars().nth(0) == Some('%') {
             let (reg, buf) = Register::lex(buf)?;
             return Ok((Value::Register(reg), buf));
@@ -47,9 +43,12 @@ impl<'b> Lexable<'b> for Value {
             })?;
             return Ok((Value::MacroVariable(var.to_string()), buf));
         }
+        let (expr_buf, buf) = collect_until(buf, |c| c == ',' || c == '\n')?;
+        let (expr, expr_buf) = Expr::lex(expr_buf)?;
+        let expr_buf = ignore_whitespace(expr_buf);
+        expect_complete(expr_buf)?;
 
-        let (val, buf) = usize::lex(buf)?;
-        Ok((Value::Immediate(val), buf))
+        Ok((Value::Expr(expr), buf))
     }
 }
 
@@ -64,7 +63,7 @@ mod test {
 
     #[test]
     fn lex_instruction() -> Result<(), Box<dyn std::error::Error>> {
-        let (n, _) = Item::lex_with("mov %c, %d, [BRAM + OFFSET]", Arc::new(PathBuf::new()))?;
+        let (n, _) = Item::lex_with("mov %c, %d, BRAM + OFFSET", Arc::new(PathBuf::new()))?;
         assert_eq!(
             n.item,
             ItemInner::Node(Node::Instruction(Instruction {

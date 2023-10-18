@@ -3,7 +3,7 @@
 
 ; Clears a box 
 clear_box:
-    call [point_addr]
+    call point_addr
 
     ; Draw %ab
     inline_box 0, 0, 0, 0, 0, 0, 0, 0
