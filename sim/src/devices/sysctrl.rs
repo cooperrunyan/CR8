@@ -64,10 +64,10 @@ impl SysCtrl {
         Ok(self.state)
     }
 
-    pub fn receive(&mut self, byte: u8, dev: DeviceSnapshot) -> Result<()> {
+    pub fn receive<T: Fn() -> DeviceSnapshot>(&mut self, byte: u8, dev: T) -> Result<()> {
         if let Some(ref mut debugger) = &mut self.debugger {
             if debugger.next(byte) {
-                debugger.debug(dev);
+                debugger.debug(dev());
                 self.debugger = None;
             } else {
                 return Ok(());
@@ -152,8 +152,6 @@ impl Debugger {
     fn debug(&self, dev: DeviceSnapshot) {
         let mut snapshot = String::new();
 
-        snapshot.push_str(&format!("    - sysctrl: {:#010b}", dev.sysctrl));
-
         #[cfg(feature = "keyboard")]
         snapshot.push_str(&format!("\n    - keyboard: {:#010b}", dev.keyboard));
 
@@ -178,8 +176,6 @@ impl Debugger {
   {}
   {}
 
-  Memory banks:
-{:?}
 
   Devices:
 {}
@@ -194,8 +190,7 @@ impl Debugger {
                 byte!("F", f),
                 byte!("L", l),
                 byte!("H", h),
-                byte!("MB", mb),
-                "banks",
+                byte!("M", mb),
                 snapshot
             )
         );

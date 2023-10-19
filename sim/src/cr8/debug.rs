@@ -22,8 +22,6 @@ impl CR8 {
     pub fn debug(&self, mem: &Mem, dev: DeviceSnapshot) {
         let mut snapshot = String::new();
 
-        snapshot.push_str(&format!("    - sysctrl: {:#010b}", dev.sysctrl));
-
         #[cfg(feature = "keyboard")]
         snapshot.push_str(&format!("\n    - keyboard: {:#010b}", dev.keyboard));
 

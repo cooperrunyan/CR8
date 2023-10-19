@@ -53,8 +53,6 @@ pub struct Devices {
 
 #[derive(Debug)]
 pub struct DeviceSnapshot {
-    pub sysctrl: u8,
-
     #[cfg(feature = "rng")]
     pub rng: u8,
 
@@ -73,7 +71,13 @@ impl Devices {
     pub fn send(&mut self, to: impl TryInto<DeviceId> + Debug + Copy, byte: u8) -> Result<()> {
         #[allow(unreachable_patterns)]
         match to.try_into() {
-            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, self.snapshot()),
+            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, || DeviceSnapshot {
+                #[cfg(feature = "rng")]
+                rng: self.rng.send(),
+
+                #[cfg(feature = "keyboard")]
+                keyboard: self.keyboard.0,
+            }),
 
             #[cfg(feature = "rng")]
             Ok(DeviceId::Rng) => {
@@ -107,8 +111,6 @@ impl Devices {
 
     pub fn snapshot(&self) -> DeviceSnapshot {
         DeviceSnapshot {
-            sysctrl: self.sysctrl.state,
-
             #[cfg(feature = "rng")]
             rng: self.rng.send(),
 
