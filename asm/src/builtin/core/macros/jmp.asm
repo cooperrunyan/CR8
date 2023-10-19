@@ -45,6 +45,10 @@
         cmp $r, $cmp
         jeq $addr
     }
+    () => {
+      and %f, 0b0010
+      jnz %f
+    }
 }
 
 #[macro] jneq: {
@@ -52,6 +56,11 @@
         not %f
         and %f, 0b0010
         jnz $addr, %f
+    }
+    () => {
+        not %f
+        and %f, 0b0010
+        jnz %f
     }
 }
 

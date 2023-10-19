@@ -21,6 +21,7 @@ Builtin macros to effectively expand the machine's instruction-set.
 | `jmp`    | None                         | 2    | Unconditional jump to `HL`                           |
 | `jeq`    | `imm16`                      | 12   | Jump to `imm16` if `F` has `Equal`                   |
 | `jneq`   | `imm16`                      | 13   | Jump to `imm16` if `F` has no `Equal`                |
+| `jneq`   |                              | 7    | Jump to `HL` if `F` has no `Equal`                   |
 | `jle`    | `imm16`                      | 12   | Jump to `imm16` if `F` has `Equal` or `LessThan`     |
 | `jlt`    | `imm16`                      | 12   | Jump to `imm16` if `F` has `LessThan`                |
 | `jgt`    | `imm16`                      | 13   | Jump to `imm16` if `F` has no `Equal` nor `LessThan` |

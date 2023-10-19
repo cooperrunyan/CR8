@@ -25,120 +25,50 @@
 
 #[dyn(SNAKE: 2048)] ; (32 * 32) * 2
 
-
-
-#[static(DEFAULT_HEAD_X: 5)]
-#[static(DEFAULT_HEAD_Y: 5)]
-
-#[static(DEFAULT_SNAKE_LEN: 5)]
-
 #[main]
 main:
   mov %mb, 1
 
+  call erase
+
   ; new coords for apple
-  call rand_coords
+  rand_coord %a
+  rand_coord %b
   sw APPLE, %a, %b
 
-  mov %a, DEFAULT_SNAKE_LEN
+  mov %a, 5
   mov %b, 0
   sw SNAKE_LEN, %a, %b
 
-  mov %a, 2
+  mov %a, 5
   mov %b, 1
   ldhl SNAKE
 
   sw %a, %b
 
   inc %l, %h
-  inc %a
+  dec %a
   sw %a, %b
 
   inc %l, %h
-  inc %a
+  dec %a
   sw %a, %b
 
   inc %l, %h
-  inc %a
+  dec %a
   sw %a, %b
 
   inc %l, %h
-  inc %a
+  dec %a
   sw %a, %b
 
-  mov %d, 0b01 ; down
+  mov %d, 0b11 ; right
   sw %d, DIRECTION
-
-  call render_clear
-  call render_draw
   
-  jmp loop
-
-; Grab random numbers for x and y coordinates
-rand_coords:
-  in %a, RNG
-  in %b, RNG
-  and %a, 0b00011111 ; limit to 0-31
-  and %b, 0b00011111
-  ret
-
-full_render:
-  call render_draw
-  call render_clear
-  mov %a, 0
-  mov %b, 255
-  mov %c, 0
-  mov %d, 0
-  call sleep
-  ret
-
-
-render_clear:
-  ; Length of VRAM render window
-  ; mov %a, 0x00
-  ; mov %b, 0x20
-  ;
-  ; .loop:
-  ;   dec %a, %b
-  ;   ldhl BRAM
-  ;   add %l, %h, %a, %b
-  ;   sw 0
-  ;   jnz .loop, %a, %b
-  ;   ret
-  mov %a, %b, BRAM
-  mov %c, %d, 0x2000
-  mov %z, 0
-
-  .loop:
-    mov %l, %a
-    mov %h, %b
-    sw %z
-    inc %a, %b
-    dec %c, %d
-    jnz .loop, %c
-    jnz .loop, %d
-    ret
-
-
-render_draw:
-  lw %a, %b, APPLE
-  call thick_bordered_box
-  ; inline_box 0b00000000, 0b00000000, 0b00111100, 0b00111100, 0b00111100, 0b00111100, 0b00000000, 0b00000000
-
-  lw %c, %d, SNAKE_LEN
+  call full_draw
+  ; `loop` is right after main so as long as nothing new
+  ; is put here, `jmp loop` is unnecessary.
   
-  .loop:
-    dec %c, %d
-    mov %l, %h, SNAKE
-    add %l, %h, %c, %d
-    add %l, %h, %c, %d
-    lw %a, %b
-    push %c, %d
-    call filled_box
-    pop %c, %d
-    jnz .loop, %c, %d
-    ret
-
 ; move snake
 ; requires shifting the snake in memory to pop the tail 
 ; and push a new head
@@ -146,8 +76,8 @@ loop:
   lw %a, %b, SNAKE
   call update_direction
   call move 
-  call check
   push %a, %b ; store the next head for later
+  ; call check_bounds
 
 
   lw %c, %d, SNAKE_LEN
@@ -158,8 +88,7 @@ loop:
   add %l, %h, %c, %d
   add %l, %h, %c, %d
   push %l, %h ; push the current addr
-  dec %l, %h
-  dec %l, %h
+  sub %l, %h, 2, 0 ; comment this to make the snake grow on every tick
   lw %a, %b ; old tail
   call clear_box
   
@@ -177,25 +106,18 @@ loop:
     dec %l, %h 
     push %l, %h
 
-    ; if this iteration is not == start address of SNAKE
-    cmp %l, (SNAKE + 2) & 0xFF
-    mov %z, %f
-    cmp %h, (SNAKE + 2) >> 8
-    and %z, %f
-    and %z, 0b0010
+    ; if this iteration == start address of SNAKE
+    cmp16 %z, %l, %h, SNAKE + 2
     ; then end
-    jnz .end_shift, %z
+    jeq .end_shift
 
     ; Check if this block is equal to the next head coords (collision)
-    cmp %a, %c
-    mov %z, %f
-    cmp %b, %d
-    and %f, %z
-    and %f, 0b0010
-    jnz main, %f ; restart
+    cmp16 %z, %a, %b, %c, %d
+    jeq main ; restart
 
     ; continue loop
     jmp .shift
+
   .end_shift:
 
   pop %f, %f ; address of the last iteration doesn't matter anymore
@@ -210,7 +132,7 @@ loop:
   call filled_box
 
   mov %a, 0
-  mov %b, 5
+  mov %b, 1
   mov %c, 0
   mov %d, 0
   call sleep
@@ -237,32 +159,35 @@ update_direction:
   and %f, 0b1000 ; right arrow
   jnz .right, %f
   
-  .done:
-    ret
+  ret
 
   .up:
-    jeq .done, %d, 0b01 ; 
+    cmp %d, 0b01 ; Don't update if current direction is down
+    req
     mov %d, 0b00
     sw %d, DIRECTION
-    jmp .done
+    ret
     
   .down:
-    jeq .done, %d, 0b00
+    cmp %d, 0b00
+    req
     mov %d, 0b01
     sw %d, DIRECTION
-    jmp .done
+    ret
     
   .left:
-    jeq .done, %d, 0b11
+    cmp %d, 0b11
+    req
     mov %d, 0b10
     sw %d, DIRECTION
-    jmp .done
+    ret
     
   .right:
-    jeq .done, %d, 0b10
+    cmp %d, 0b10
+    req
     mov %d, 0b11
     sw %d, DIRECTION
-    jmp .done
+    ret
     
   ; inc/dec a or b depending on d (direction)
   move:
@@ -288,16 +213,14 @@ update_direction:
 
 
 ; caller will place coordinates in ab
-check:
+check_bounds:
   ; Check if x coordinate is not 0-31
-  mov %z, %a
-  and %z, 0b11100000 
-  jnz .gameover, %z
+  and %a, 0b11100000 
+  jnz .gameover, %a
 
   ; Check if y coordinate is not 0-31
-  mov %z, %b
-  and %z, 0b11100000 
-  jnz .gameover, %z 
+  and %b, 0b11100000 
+  jnz .gameover, %b
 
   ret
 
@@ -305,24 +228,138 @@ check:
     pop %f, %f ; forget the caller's address
     jmp main
 
+; Check if the head of the snake == the apple
+; if so, set a new apple.
 ; caller will place coordinates in ab
 check_apple:
   lw %c, %d, APPLE
 
   ; compare head and apple
-  cmp %a, %c
-  mov %z, %f
-  cmp %b, %d
-  and %f, %z
+  cmp16 %z, %a, %b, %c, %d
+  rneq
 
-  jeq .change
-  ret
-  .change:
-
-  ; rand_coords will change ab
-  call rand_coords
+  rand_coord %a
+  rand_coord %b
   sw APPLE, %a, %b
+  call thick_bordered_box
+  
+  lw %c, %d, SNAKE_LEN
+
+  ldhl SNAKE
+  add %l, %h, %c, %d
+  add %l, %h, %c, %d
+  lw %a, %b ; old tail
+  inc %a, %b
+  sw %a, %b
+  inc %c, %d
+  sw SNAKE_LEN, %c, %d 
+
+  ret
+  
+erase:
+  lw %c, %d, SNAKE_LEN
+
+  cmp16 %z, %c, %d, 0, 0
+  req
+
+  add %c, %d, %c, %d ; multiply by two (coordinate pairs are 2 bytes long)
+
+  .iter:
+    sub %c, %d, 2, 0
+    ldhl SNAKE
+    add %l, %h, %c, %d
+    lw %a 
+    inc %l, %h
+    lw %b
+
+    push %c ; clear_box will modify %c
+    call clear_box
+    pop %c 
+
+    jnz .iter, %c, %d
+  
+  lw %a, %b, APPLE
+  call clear_box
+
+  ret
+
+
+full_draw:
+  lw %c, %d, SNAKE_LEN
+
+  cmp16 %z, %c, %d, 0, 0
+  req
+
+  add %c, %d, %c, %d ; multiply by two (coordinate pairs are 2 bytes long)
+
+  .iter:
+    sub %c, %d, 2, 0
+    ldhl SNAKE
+    add %l, %h, %c, %d
+    lw %a 
+    inc %l, %h
+    lw %b
+
+    push %c ; clear_box will modify %c
+    call filled_box
+    pop %c 
+
+    jnz .iter, %c, %d
+  
+  lw %a, %b, APPLE
   call thick_bordered_box
 
   ret
+
+; Util stuff
+
+#[macro] rand_coord: {
+  ($r: reg) => {
+    in $r, RNG
+    and $r, 0b00011111
+  }
+}
+
+; Compare two 16 bit numers with a designated register to trash
+#[macro] cmp16: {
+  ($inter: reg, $lhs_l: reg, $lhs_h: reg, $rhs_l: lit | reg, $rhs_h: lit | reg) => {
+    cmp $lhs_l, $rhs_l
+    mov $inter, %f
+    cmp $lhs_h, $rhs_h
+    and %f, $inter
+  }
+  ($inter: reg, $lhs_l: reg, $lhs_h: reg, $rhs: expr) => {
+    cmp $lhs_l, $rhs.l
+    mov $inter, %f
+    cmp $lhs_h, $rhs.h
+    and %f, $inter
+  }
+}
+
+; Return if neq
+#[macro] rneq: {
+  () => {
+    pop %l
+    pop %h
+
+    jneq
+
+    push %h
+    push %l
+  }
+}
+
+; Return if eq
+#[macro] req: {
+  () => {
+    pop %l
+    pop %h
+
+    jeq
+
+    push %h
+    push %l
+  }
+}
+
   
