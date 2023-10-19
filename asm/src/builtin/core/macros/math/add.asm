@@ -26,7 +26,6 @@
         add $into, 1
     }
     ($lo: reg, $hi: reg) => {
-        clrfb
         inc $lo
         adc $hi
     }

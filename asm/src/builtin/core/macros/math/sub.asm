@@ -26,7 +26,6 @@
         sub $into, 1
     }
     ($lo: reg, $hi: reg) => {
-        clrfb
         dec $lo
         sbb $hi
     }

@@ -1,3 +1,5 @@
+#![doc = include_str!("builtin/core/README.md")]
+
 use macros::modules;
 
 modules! {

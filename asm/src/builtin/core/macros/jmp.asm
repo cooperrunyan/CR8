@@ -81,14 +81,6 @@
     }
 }
 
-#[macro] jne: {
-    ($addr: expr) => {
-        not %f
-        and %f, 0b0010
-        jnz $addr, %f
-    }
-}
-
 #[macro] jz: {
     ($addr: expr, $if: reg) => {
         cmp $if, 0b0010

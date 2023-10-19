@@ -62,9 +62,6 @@
         push $l
         push $h
     }
-}
-
-#[macro] pushx: {
     ($a: expr) => {
         push $a.l
         push $a.h
