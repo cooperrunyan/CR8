@@ -27,10 +27,6 @@
         ldhl $to
         sw $vl, $vh
     }
-    ($to: expr, $b: expr) => {
-        mov %f, $b.l
-        sw $to, %f
-    }
 }
   
 #[macro] lw: {
@@ -62,6 +58,9 @@
         push $l
         push $h
     }
+}
+
+#[macro] pushx: {
     ($a: expr) => {
         push $a.l
         push $a.h

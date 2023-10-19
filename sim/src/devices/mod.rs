@@ -1,9 +1,6 @@
 use anyhow::{bail, Result};
 use std::fmt::Debug;
 
-use crate::cr8::mem::Mem;
-use crate::cr8::CR8;
-
 use self::sysctrl::SysCtrl;
 
 pub mod sysctrl;
@@ -73,16 +70,10 @@ impl Devices {
         }
     }
 
-    pub fn send(
-        &mut self,
-        cr8: &CR8,
-        mem: &Mem,
-        to: impl TryInto<DeviceId> + Debug + Copy,
-        byte: u8,
-    ) -> Result<()> {
+    pub fn send(&mut self, to: impl TryInto<DeviceId> + Debug + Copy, byte: u8) -> Result<()> {
         #[allow(unreachable_patterns)]
         match to.try_into() {
-            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, cr8, mem, self.snapshot()),
+            Ok(DeviceId::SysControl) => self.sysctrl.receive(byte, self.snapshot()),
 
             #[cfg(feature = "rng")]
             Ok(DeviceId::Rng) => {

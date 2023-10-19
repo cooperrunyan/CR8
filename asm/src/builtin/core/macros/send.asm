@@ -1,13 +1,9 @@
 #[use(core::sys)]
 
 #[macro] send: {
-    ($port: lit, $b: lit) => {
-        mov %f, $b
-        out $port, %f
-    }
     ($port: expr, $b: expr) => {
         mov %f, $b.l
-        out $port, %f
+        out $port.l, %f
     }
 }
 
@@ -32,6 +28,14 @@
 #[macro] dbg: {
     () => {
         send CTRL, SIGDBG
+        out 0x00, %a
+        out 0x00, %b
+        out 0x00, %c
+        out 0x00, %d
+        out 0x00, %z
+        out 0x00, %f
+        out 0x00, %l
+        out 0x00, %h
+        out 0x00, %mb
     }
 }
-

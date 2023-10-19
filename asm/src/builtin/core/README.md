@@ -53,7 +53,7 @@ Builtin macros to effectively expand the machine's instruction-set.
 | `ping`   | None                         | 6    | Send `PING` to `CTRL` port                           |
 | `halt`   | None                         | 6    | Send `HALT` to `CTRL` port                           |
 | `brkpt`  | None                         | 6    | Send `BRKPT` to `CTRL` port                          |
-| `dbg`    | None                         | 6    | Send `DBG` to `CTRL` port                            |
+| `dbg`    | None                         | 33   | Send `DBG` to `CTRL` port                            |
 | `add`    | `reg`, `reg`                 | 2    | Add `(1) += (2)`                                     |
 | `add`    | `reg`, `imm8`                | 3    | Add `reg += imm8`                                    |
 | `add`    | `reg`, `reg`, `reg`, `reg`   | 4    | 16-bit add `(1, 2) += (3, 4)`                        |

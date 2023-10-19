@@ -33,7 +33,7 @@ impl CR8 {
             O::PUSH => self.push(mem, amt, bytes),
             O::POP => self.pop(mem, amt, bytes),
             O::IN => self.r#in(dev, amt, bytes),
-            O::OUT => self.out(mem, dev, amt, bytes),
+            O::OUT => self.out(dev, amt, bytes),
             O::ADC => self.add(amt, bytes),
             O::SBB => self.sub(amt, bytes),
             O::CMP => self.cmp(amt, bytes),
@@ -183,13 +183,7 @@ impl CR8 {
     }
 
     /// OUT: (see README.md)
-    fn out(
-        &mut self,
-        mem: &RwLock<Mem>,
-        dev: &RwLock<Devices>,
-        amt: OperationArgAmt,
-        bytes: [u8; 4],
-    ) -> Result<u8> {
+    fn out(&mut self, dev: &RwLock<Devices>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (send, port, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
@@ -197,8 +191,7 @@ impl CR8 {
         };
         trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc());
         let mut devices = dev.write().unwrap();
-        let mem = mem.read().unwrap();
-        devices.send(self, &mem, port, self.reg[send as usize])?;
+        devices.send(port, self.reg[send as usize])?;
         Ok(sz)
     }
 
