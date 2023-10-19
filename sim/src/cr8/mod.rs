@@ -12,7 +12,6 @@ pub mod mem;
 
 mod debug;
 mod inst;
-mod probe;
 
 pub const STACK: u16 = 0xFC00;
 pub const STACK_END: u16 = 0xFEFF;
@@ -38,6 +37,10 @@ impl Joinable for (u8, u8) {
     }
 }
 
+/// The center of everything.
+///
+/// Holds 13 (1-byte) registers and has the ability to perform
+/// an [asm::op::Operation] on them.
 #[derive(Debug, Default)]
 pub struct CR8 {
     pub reg: [u8; 13],
@@ -50,6 +53,7 @@ impl CR8 {
         cr8
     }
 
+    /// Do an [asm::op::Operation]
     pub fn cycle(&mut self, mem: &RwLock<Mem>, dev: &RwLock<Devices>) -> Result<u8> {
         let pc = self.pc();
 
@@ -70,6 +74,7 @@ impl CR8 {
         Ok(ticks)
     }
 
+    /// Get Program Counter by turning PCL and PCH into a single u16
     pub fn pc(&self) -> u16 {
         (
             self.reg[Register::PCL as usize],
@@ -78,12 +83,14 @@ impl CR8 {
             .join()
     }
 
+    /// Set PCL and PCH from a u16
     pub fn set_pc(&mut self, pc: u16) {
         let (l, h) = pc.split();
         self.reg[Register::PCL as usize] = l;
         self.reg[Register::PCH as usize] = h;
     }
 
+    /// Get Stack Pointer by turning PCL and PCH into a single u16
     pub fn sp(&self) -> u16 {
         (
             self.reg[Register::SPL as usize],
@@ -92,9 +99,18 @@ impl CR8 {
             .join()
     }
 
+    /// Set SPL and SPH from a u16
     pub fn set_sp(&mut self, sp: u16) {
         let (l, h) = sp.split();
         self.reg[Register::SPL as usize] = l;
         self.reg[Register::SPH as usize] = h;
+    }
+
+    /// Get HL by turning L and H into a single u16
+    pub fn hl(&self) -> u16 {
+        let l = self.reg[Register::L as usize];
+        let h = self.reg[Register::H as usize];
+
+        (l, h).join()
     }
 }

@@ -7,6 +7,8 @@ use log::{info, warn};
 
 use super::DeviceSnapshot;
 
+/// Communicates with the [crate::cr8::CR8].
+/// When it receives a byte, it will parse it as a [SysCtrlSignal].
 #[derive(Debug, Default)]
 pub struct SysCtrl {
     pub state: u8,
@@ -15,9 +17,16 @@ pub struct SysCtrl {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SysCtrlSignal {
+    /// Ping the controller
     Ping,
+
+    /// Stop the clock
     Halt,
+
+    /// Print [crate::cr8::CR8] state data
     Debug,
+
+    /// Pause the clock until stdin receives a line
     Breakpoint,
 }
 

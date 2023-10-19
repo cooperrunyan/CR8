@@ -9,6 +9,12 @@ use crate::cr8::CR8;
 
 mod config;
 
+/// Wraps around a [CR8].
+///
+/// ## Purpose
+///
+/// - Tells the [CR8] to tick. On each tick, tells it what to do.
+/// - Provides the [CR8] with memory to read from or write to.
 pub struct Runner {
     pub mem: RwLock<Mem>,
     pub cr8: RwLock<CR8>,
@@ -17,6 +23,7 @@ pub struct Runner {
 }
 
 impl Runner {
+    /// Create a new runner and load a byte slice to ROM
     pub fn new(bin: &[u8], tickrate: Duration, debug: bool) -> Self {
         let mem = RwLock::new(Mem::new(bin));
         let devices = RwLock::new(Devices::new(debug));
@@ -37,6 +44,7 @@ impl Runner {
         Ok(())
     }
 
+    /// Tick the [CR8]
     pub fn cycle(&mut self) -> Result<(u8, bool)> {
         {
             let status = {

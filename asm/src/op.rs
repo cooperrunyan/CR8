@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 use crate::compiler::lex::Value;
 
+/// Native instructions
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Operation {
     MOV = 0b000000,

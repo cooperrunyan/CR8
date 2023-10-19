@@ -18,6 +18,8 @@ const BANK_END: usize = RAM_LEN + BANK_LEN - 1;
 const BANK_MASK: usize = BANK_LEN - 1;
 const RAM_MASK: usize = RAM_LEN - 1;
 
+/// Holds all of the ROM, RAM, and Banks. Tracks the MB [asm::reg::Register] to determine where to
+/// read or write to.
 #[derive(Debug)]
 pub struct Mem {
     selected: BankId,

@@ -14,6 +14,7 @@ use Operation as O;
 use OperationArgAmt as A;
 
 impl CR8 {
+    /// Decide which [Operation] to run
     pub fn delegate(
         &mut self,
         mem: &RwLock<Mem>,
@@ -46,6 +47,7 @@ impl CR8 {
         }
     }
 
+    /// LW: (see README.md)
     fn lw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (to, addr, sz) = match amt {
             A::R1I0 => (bytes[1] & 0b1111, self.hl(), 2),
@@ -60,6 +62,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// SW: (see README.md)
     fn sw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (val, addr, sz) = match amt {
             A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], self.hl(), 2),
@@ -76,6 +79,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// MOV: (see README.md)
     fn mov(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (into, val, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -90,6 +94,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// PUSH: (see README.md)
     fn push(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         if self.sp() >= STACK_END {
             bail!("Stack overflow");
@@ -116,6 +121,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// POP: (see README.md)
     fn pop(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         if self.sp() < STACK {
             bail!("Cannot pop empty stack");
@@ -143,6 +149,7 @@ impl CR8 {
         Ok(2)
     }
 
+    /// JNZ: (see README.md)
     fn jnz(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (condition, sz) = match amt {
             A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], 2),
@@ -162,6 +169,7 @@ impl CR8 {
         Ok(0)
     }
 
+    /// IN: (see README.md)
     fn r#in(&mut self, dev: &RwLock<Devices>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (into, port, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -174,6 +182,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// OUT: (see README.md)
     fn out(
         &mut self,
         mem: &RwLock<Mem>,
@@ -193,6 +202,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// CMP: (see README.md)
     fn cmp(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -216,6 +226,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// ADD: (see README.md)
     fn add(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -239,6 +250,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// SUB: (see README.md)
     fn sub(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -262,6 +274,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// OR: (see README.md)
     fn or(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -276,6 +289,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// NOT: (see README.md)
     fn not(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (lhs, sz) = match amt {
             A::R1I0 => (bytes[1] & 0b1111, 2),
@@ -286,6 +300,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// AND: (see README.md)
     fn and(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
@@ -300,6 +315,7 @@ impl CR8 {
         Ok(sz)
     }
 
+    /// XOR: (see README.md)
     fn xor(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),

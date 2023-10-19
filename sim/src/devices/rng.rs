@@ -1,6 +1,7 @@
 use log::warn;
 use rand::random;
 
+/// Allows the [crate::cr8::CR8] to request a random byte.
 #[derive(Debug, Default)]
 pub struct Rng;
 

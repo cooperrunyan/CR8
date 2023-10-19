@@ -1,3 +1,5 @@
+#![doc(alias = "assembler")]
+
 use anyhow::{anyhow, bail, Result};
 use indexmap::IndexMap;
 use path_clean::clean;

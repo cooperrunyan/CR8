@@ -1,19 +1,33 @@
 use std::fmt::Display;
 
+/// Single-byte data gets stored into a [Register].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Register {
+    /// %a
     A,
+    /// %b
     B,
+    /// %c
     C,
+    /// %d
     D,
+    /// %z
     Z,
+    /// %l
     L,
+    /// %h
     H,
+    /// %f
     F,
+    /// %pcl
     PCL,
+    /// %pch
     PCH,
+    /// %spl
     SPL,
+    /// %sph
     SPH,
+    /// %mb
     MB,
 }
 

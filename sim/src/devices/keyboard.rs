@@ -2,6 +2,8 @@ use std::fmt::Debug;
 
 use log::info;
 
+/// Holds the state of up to 8 keys and, when requested,
+/// sends the state to the [crate::cr8::CR8]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Keyboard(pub u8);
 
