@@ -41,6 +41,10 @@
         and %f, 0b0010
         jnz $addr, %f
     }
+    ($addr: expr, $r: reg, $cmp: lit | reg) => {
+        cmp $r, $cmp
+        jeq $addr
+    }
 }
 
 #[macro] jneq: {
