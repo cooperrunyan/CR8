@@ -19,7 +19,7 @@ pub(super) fn smallmask(idx: usize) -> usize {
 }
 
 #[derive(Debug)]
-pub struct Bank([u8; BANK_LEN]);
+pub struct Bank(pub [u8; BANK_LEN]);
 
 impl Default for Bank {
     fn default() -> Self {
@@ -51,7 +51,7 @@ mod macros {
         #[allow(non_snake_case)]
         #[derive(Default)]
         $v struct $name {
-            $( #[cfg(feature = $feature)] pub(super) $member: Bank, )*
+            $( #[cfg(feature = $feature)] pub $member: Bank, )*
         }
 
         #[derive(Debug, Clone, Copy, Eq, PartialEq)]

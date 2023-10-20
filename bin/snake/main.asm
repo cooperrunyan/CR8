@@ -6,7 +6,7 @@
 ; in %cd
 
 #[use(std::gfx::grid::block::filled)]
-#[use(std::gfx::grid::block::thick_bordered)]
+#[use(std::gfx::grid::block::bordered)]
 #[use(std::gfx::grid::block::clear)]
 #[use(std::gfx::grid::point)]
 #[use(std::gfx::grid::inline_box)]
@@ -77,7 +77,7 @@ loop:
   call update_direction
   call move 
   push %a, %b ; store the next head for later
-  ; call check_bounds
+  call check_bounds
 
 
   lw %c, %d, SNAKE_LEN
@@ -132,7 +132,7 @@ loop:
   call filled_box
 
   mov %a, 0
-  mov %b, 1
+  mov %b, 9
   mov %c, 0
   mov %d, 0
   call sleep
@@ -241,7 +241,7 @@ check_apple:
   rand_coord %a
   rand_coord %b
   sw APPLE, %a, %b
-  call thick_bordered_box
+  call bordered_box
   
   lw %c, %d, SNAKE_LEN
 
@@ -307,7 +307,7 @@ full_draw:
     jnz .iter, %c, %d
   
   lw %a, %b, APPLE
-  call thick_bordered_box
+  call bordered_box
 
   ret
 

@@ -30,6 +30,8 @@ fn main() -> Result<(), JsValue> {
     Ok(())
 }
 
+const SCALE: f64 = 4.0;
+
 const HZ: usize = 4_000_000;
 const HZ_10MS: usize = HZ / 1000;
 
@@ -94,8 +96,10 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
 
                 ticks += ticks_in_this_cycle;
 
+                let mem = state.mem.read().unwrap();
+
                 for _ in 0..ticks_in_this_cycle {
-                    let byte = state.mem.read().unwrap().get_vram(i).unwrap();
+                    let byte = mem.get_vram(i).unwrap();
 
                     for j in 0..8 {
                         let j = 7 - j;
@@ -107,13 +111,13 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
                         let y = by as f64;
 
                         if v == 1 {
-                            context.fill_rect(x * 4.0, y * 4.0, 4.0, 4.0);
+                            context.fill_rect(x * SCALE, y * SCALE, SCALE, SCALE);
                         } else {
-                            context.clear_rect(x * 4.0, y * 4.0, 4.0, 4.0);
+                            context.clear_rect(x * SCALE, y * SCALE, SCALE, SCALE);
                         }
                     }
 
-                    i = if i >= 0x3fff { 0 } else { i + 1 };
+                    i = (i + 1) & 0x3fff;
                 }
             }
         })
