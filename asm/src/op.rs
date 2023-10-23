@@ -140,6 +140,12 @@ impl Operation {
                 AMT::R1I0 => 2,
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },
+            O::JNZ => match arg_amt {
+                AMT::R1I1 => 4,
+                AMT::R1I0 => 2,
+                AMT::R0I1 => 1,
+                _ => bail!("Invalid arg amounts for {self:#?}"),
+            },
             O::MOV
             | O::IN
             | O::OUT
@@ -154,11 +160,6 @@ impl Operation {
             | O::XNOR => match arg_amt {
                 AMT::R2I0 => 2,
                 AMT::R1I1 => 3,
-                _ => bail!("Invalid arg amounts for {self:#?}"),
-            },
-            O::JNZ => match arg_amt {
-                AMT::R1I0 => 2,
-                AMT::R0I1 => 1, // If the "if" condition to jnz is known at compile time, effectively "jmp"
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },
             O::NOT | O::POP => match arg_amt {
