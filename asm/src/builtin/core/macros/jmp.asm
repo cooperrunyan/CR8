@@ -12,6 +12,10 @@
 }
 
 #[macro] jnz: {
+    ($addr: expr, $if: lit | reg) => {
+        ldhl $addr
+        jnz $if
+    }
     ($addr: expr, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh

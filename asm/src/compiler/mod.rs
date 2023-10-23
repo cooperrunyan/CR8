@@ -117,7 +117,7 @@ impl Compiler {
                                     Value::Register(r) => reg = r as u8,
                                     Value::Literal(imm) => trail.push(imm as u8),
                                     Value::Expr(e) => match op {
-                                        Operation::LW | Operation::SW | Operation::JNZ => {
+                                        Operation::LW | Operation::SW => {
                                             let r = e.resolve(&self)?;
                                             trail.push(r as u8);
                                             trail.push((r >> 8) as u8);

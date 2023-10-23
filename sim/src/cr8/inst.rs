@@ -151,14 +151,9 @@ impl CR8 {
 
     /// JNZ: (see README.md)
     fn jnz(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
-        let (condition, to, sz) = match amt {
-            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], self.hl(), 2),
-            A::R1I1 => (
-                self.reg[(bytes[1] & 0b1111) as usize],
-                (bytes[2], bytes[3]).join(),
-                4,
-            ),
-            A::R0I1 => (1, self.hl(), 1),
+        let (condition, sz) = match amt {
+            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], 2),
+            A::R0I1 => (1, 1),
             _ => bail!("Invalid amount {amt:?}"),
         };
         if condition == 0 {
@@ -168,7 +163,7 @@ impl CR8 {
 
         let old = self.pc();
 
-        self.set_pc(to);
+        self.set_pc(self.hl());
 
         trace!("{:04x}: JNZ to {:04x}", old, self.pc());
         Ok(0)
