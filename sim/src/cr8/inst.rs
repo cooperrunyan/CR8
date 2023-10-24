@@ -50,7 +50,7 @@ impl CR8 {
             A::R1I1 => (bytes[1] & 0b1111, (bytes[2], bytes[3]).join(), 4),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: LW {to:#?} {addr:04x}", self.pc());
+        trace!("{:04x}: LW {to:#?} {addr:04x}", self.pc);
         self.reg[to as usize] = {
             let mem = mem.read().unwrap();
             mem.get(addr)?
@@ -69,7 +69,7 @@ impl CR8 {
             ),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: SW {val:#?} {addr:04x}", self.pc());
+        trace!("{:04x}: SW {val:#?} {addr:04x}", self.pc);
         let mut mem = mem.write().unwrap();
         mem.set(addr, val)?;
         Ok(sz)
@@ -82,7 +82,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc());
+        trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc);
         self.reg[into as usize] = val;
         if Register::K as u8 == into {
             mem.write().unwrap().select(val)?;
@@ -92,11 +92,11 @@ impl CR8 {
 
     /// PUSH: (see README.md)
     fn push(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
-        if self.sp() >= STACK_END {
+        if self.sp >= STACK_END {
             bail!("Stack overflow");
         }
 
-        self.set_sp(self.sp() + 1);
+        self.sp += 1;
 
         let (val, sz) = match amt {
             A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], 2),
@@ -105,13 +105,13 @@ impl CR8 {
         };
         {
             let mut mem = mem.write().unwrap();
-            mem.set(self.sp(), val)?;
+            mem.set(self.sp, val)?;
         };
 
         trace!(
             "{:04x}: PUSHED: [{:04x}] {:02x}",
-            self.pc(),
-            self.sp() as i128 - STACK as i128,
+            self.pc,
+            self.sp as i128 - STACK as i128,
             val,
         );
         Ok(sz)
@@ -119,7 +119,7 @@ impl CR8 {
 
     /// POP: (see README.md)
     fn pop(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
-        if self.sp() < STACK {
+        if self.sp < STACK {
             bail!("Cannot pop empty stack");
         }
 
@@ -130,18 +130,18 @@ impl CR8 {
 
         {
             let mut mem = mem.write().unwrap();
-            self.reg[reg as usize] = mem.get(self.sp())?;
-            mem.set(self.sp(), 0)?;
+            self.reg[reg as usize] = mem.get(self.sp)?;
+            mem.set(self.sp, 0)?;
         };
 
         trace!(
             "{:04x}: POPPED: [{:04x}] {:?}",
-            self.pc(),
-            self.sp() - STACK,
+            self.pc,
+            self.sp - STACK,
             reg,
         );
 
-        self.set_sp(self.sp() - 1);
+        self.sp -= 1;
         Ok(2)
     }
 
@@ -153,15 +153,15 @@ impl CR8 {
             _ => bail!("Invalid amount {amt:?}"),
         };
         if condition == 0 {
-            trace!("{:04x}: No JNZ", self.pc());
+            trace!("{:04x}: No JNZ", self.pc);
             return Ok(sz);
         }
 
-        let old = self.pc();
+        let old = self.pc;
 
-        self.set_pc(self.xy());
+        self.pc = self.xy();
 
-        trace!("{:04x}: JNZ to {:04x}", old, self.pc());
+        trace!("{:04x}: JNZ to {:04x}", old, self.pc);
         Ok(0)
     }
 
@@ -172,7 +172,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc());
+        trace!("{:04x}: IN {into:#?}, {port:02x}", self.pc);
         let mut devices = dev.write().unwrap();
         self.reg[into as usize] = devices.receive(port)?;
         Ok(sz)
@@ -185,7 +185,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc());
+        trace!("{:04x}: OUT {send:#?}, {port:02x}", self.pc);
         let mut devices = dev.write().unwrap();
         devices.send(port, self.reg[send as usize])?;
         Ok(sz)
@@ -198,7 +198,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: CMP {lhs:#?}, {rhs:02x}", self.pc());
+        trace!("{:04x}: CMP {lhs:#?}, {rhs:02x}", self.pc);
 
         let diff = (self.reg[lhs as usize] as i16) - (rhs as i16);
         let mut f = 0;
@@ -222,7 +222,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: ADD {lhs:#?}, {rhs:02x}", self.pc());
+        trace!("{:04x}: ADD {lhs:#?}, {rhs:02x}", self.pc);
 
         let f = self.reg[Register::F as usize];
         let cf = (f >> 2) & 1;
@@ -246,7 +246,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: SUB {lhs:#?}, {rhs:02x}", self.pc());
+        trace!("{:04x}: SUB {lhs:#?}, {rhs:02x}", self.pc);
 
         let f = self.reg[Register::F as usize];
         let bf = (f >> 3) & 1;
@@ -270,7 +270,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: OR {lhs:#?}, {rhs:02x}", self.pc());
+        trace!("{:04x}: OR {lhs:#?}, {rhs:02x}", self.pc);
         self.reg[lhs as usize] |= rhs;
         if not {
             self.reg[lhs as usize] = !self.reg[lhs as usize];
@@ -285,7 +285,7 @@ impl CR8 {
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
             _ => bail!("Invalid amount {amt:?}"),
         };
-        trace!("{:04x}: AND {lhs:#?}, {rhs:02x}", self.pc());
+        trace!("{:04x}: AND {lhs:#?}, {rhs:02x}", self.pc);
         self.reg[lhs as usize] &= rhs;
         Ok(sz)
     }

@@ -43,67 +43,36 @@ impl Joinable for (u8, u8) {
 /// an [asm::op::Operation] on them.
 #[derive(Debug, Default)]
 pub struct CR8 {
-    pub reg: [u8; 13],
+    pub reg: [u8; 9],
+    pub pc: u16,
+    pub sp: u16,
 }
 
 impl CR8 {
     pub fn new() -> Self {
-        let mut cr8 = Self::default();
-        cr8.set_sp(STACK);
-        cr8
+        Self {
+            sp: STACK,
+            ..Default::default()
+        }
     }
 
     /// Do an [asm::op::Operation]
     pub fn cycle(&mut self, mem: &RwLock<Mem>, dev: &RwLock<Devices>) -> Result<u8> {
-        let pc = self.pc();
-
         let (inst, b0, b1, b2) = {
             let mem = mem.read().map_err(|_| anyhow!("Read error"))?;
             (
-                mem.get(pc)?,
-                mem.get(pc + 1).unwrap_or(0),
-                mem.get(pc + 2).unwrap_or(0),
-                mem.get(pc + 3).unwrap_or(0),
+                mem.get(self.pc)?,
+                mem.get(self.pc + 1).unwrap_or(0),
+                mem.get(self.pc + 2).unwrap_or(0),
+                mem.get(self.pc + 3).unwrap_or(0),
             )
         };
 
         let ticks = self.delegate(mem, dev, [inst, b0, b1, b2])?;
 
-        self.set_pc(self.pc() + ticks as u16);
+        self.pc += ticks as u16;
 
         Ok(ticks)
-    }
-
-    /// Get Program Counter by turning PCL and PCH into a single u16
-    pub fn pc(&self) -> u16 {
-        (
-            self.reg[Register::PCL as usize],
-            self.reg[Register::PCH as usize],
-        )
-            .join()
-    }
-
-    /// Set PCL and PCH from a u16
-    pub fn set_pc(&mut self, pc: u16) {
-        let (l, h) = pc.split();
-        self.reg[Register::PCL as usize] = l;
-        self.reg[Register::PCH as usize] = h;
-    }
-
-    /// Get Stack Pointer by turning PCL and PCH into a single u16
-    pub fn sp(&self) -> u16 {
-        (
-            self.reg[Register::SPL as usize],
-            self.reg[Register::SPH as usize],
-        )
-            .join()
-    }
-
-    /// Set SPL and SPH from a u16
-    pub fn set_sp(&mut self, sp: u16) {
-        let (l, h) = sp.split();
-        self.reg[Register::SPL as usize] = l;
-        self.reg[Register::SPH as usize] = h;
     }
 
     /// Get XY by turning X and Y into a single u16

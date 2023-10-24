@@ -21,14 +21,6 @@ pub enum Register {
     F,
     /// %k
     K,
-    /// %pcl
-    PCL,
-    /// %pch
-    PCH,
-    /// %spl
-    SPL,
-    /// %sph
-    SPH,
 }
 
 impl Display for Register {
@@ -44,10 +36,6 @@ impl Display for Register {
             R::Z => "z",
             R::F => "f",
             R::K => "k",
-            R::PCL => "pcl",
-            R::PCH => "pch",
-            R::SPL => "spl",
-            R::SPH => "sph",
         };
         f.write_str(str)
     }
@@ -67,10 +55,6 @@ impl TryFrom<&str> for Register {
             "z" => R::Z,
             "f" => R::F,
             "k" => R::K,
-            "pcl" => R::PCL,
-            "pch" => R::PCH,
-            "spl" => R::SPL,
-            "sph" => R::SPH,
             _ => Err(())?,
         })
     }
@@ -90,10 +74,6 @@ impl TryFrom<u8> for Register {
             6 => R::Z,
             7 => R::F,
             8 => R::K,
-            9 => R::PCL,
-            10 => R::PCH,
-            11 => R::SPL,
-            12 => R::SPH,
             _ => Err(())?,
         })
     }

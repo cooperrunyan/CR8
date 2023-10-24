@@ -57,13 +57,13 @@ impl CR8 {
                 byte!("B", self.reg[Register::B as usize]),
                 byte!("C", self.reg[Register::C as usize]),
                 byte!("D", self.reg[Register::D as usize]),
-                byte!("Z", self.reg[Register::Z as usize]),
                 byte!("F", self.reg[Register::F as usize]),
-                byte!("L", self.reg[Register::X as usize]),
-                byte!("H", self.reg[Register::Y as usize]),
+                byte!("X", self.reg[Register::X as usize]),
+                byte!("Y", self.reg[Register::Y as usize]),
+                byte!("Z", self.reg[Register::Z as usize]),
                 addr!("XY", self.xy(), mem.get(self.xy()).unwrap_or_default()),
-                addr!("PC", self.pc(), mem.get(self.pc()).unwrap_or_default()),
-                addr!("SP", self.sp(), mem.get(self.sp()).unwrap_or_default()),
+                addr!("PC", self.pc, mem.get(self.pc).unwrap_or_default()),
+                addr!("SP", self.sp, mem.get(self.sp).unwrap_or_default()),
                 mem.banks,
                 snapshot
             )

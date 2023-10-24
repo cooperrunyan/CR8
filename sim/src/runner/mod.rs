@@ -71,7 +71,7 @@ impl Runner {
 
         let ticks = cr8
             .cycle(&self.mem, &self.devices)
-            .context(format!("Cycle failed at {:#06x?}", cr8.pc()))?;
+            .context(format!("Cycle failed at {:#06x?}", cr8.pc))?;
 
         Ok((ticks, true))
     }
