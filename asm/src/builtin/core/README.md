@@ -79,16 +79,12 @@ Builtin macros to effectively expand the machine's instruction-set.
 | `not`    | `reg`                        | 2    | `reg = ~reg`                                         |
 | `and`    | `reg`, `reg`                 | 2    | `(1) &= (2)`                                         |
 | `and`    | `reg`, `imm8`                | 3    | `reg &= imm8`                                        |
-| `nand`   | `reg`, `reg`                 | 2    | `(1) = ~(1 & 2)`                                     |
-| `nand`   | `reg`, `imm8`                | 3    | `reg = ~(reg & imm8)`                                |
+| `nand`   | `reg`, `reg`                 | 4    | `(1) = ~(1 & 2)`                                     |
+| `nand`   | `reg`, `imm8`                | 5    | `reg = ~(reg & imm8)`                                |
 | `or`     | `reg`, `reg`                 | 2    | `(1) \|= (2)`                                        |
 | `or`     | `reg`, `imm8`                | 3    | `reg \|= imm8`                                       |
 | `nor`    | `reg`, `reg`                 | 2    | `(1) = ~(1 \| 2)`                                    |
 | `nor`    | `reg`, `imm8`                | 3    | `reg = ~(reg \| imm8)`                               |
-| `xor`    | `reg`, `reg`                 | 2    | `(1) ^= (2)`                                         |
-| `xor`    | `reg`, `imm8`                | 3    | `reg ^= imm8`                                        |
-| `xnor`   | `reg`, `reg`                 | 2    | `(1) = ~(1 ^ 2)`                                     |
-| `xnor`   | `reg`, `imm8`                | 3    | `reg = ~(reg ^ imm8)`                                |
 | `clrf`   | None                         | 3    | Clear the flags register                             |
 | `clrfb`  | None                         | 3    | Clear the `borrow` flag                              |
 | `clrfc`  | None                         | 3    | Clear the `carry` flag                               |

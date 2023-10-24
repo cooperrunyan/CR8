@@ -37,13 +37,9 @@ impl CR8 {
             O::ADC => self.add(amt, bytes),
             O::SBB => self.sub(amt, bytes),
             O::CMP => self.cmp(amt, bytes),
-            O::NOT => self.not(amt, bytes),
-            O::AND => self.and(amt, bytes, false),
-            O::NAND => self.and(amt, bytes, true),
+            O::AND => self.and(amt, bytes),
             O::OR => self.or(amt, bytes, false),
             O::NOR => self.or(amt, bytes, true),
-            O::XOR => self.xor(amt, bytes, false),
-            O::XNOR => self.xor(amt, bytes, true),
         }
     }
 
@@ -282,19 +278,8 @@ impl CR8 {
         Ok(sz)
     }
 
-    /// NOT: (see README.md)
-    fn not(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
-        let (lhs, sz) = match amt {
-            A::R1I0 => (bytes[1] & 0b1111, 2),
-            _ => bail!("Invalid amount {amt:?}"),
-        };
-        trace!("{:04x}: NOT {lhs:#?}", self.pc());
-        self.reg[lhs as usize] = !self.reg[lhs as usize];
-        Ok(sz)
-    }
-
     /// AND: (see README.md)
-    fn and(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
+    fn and(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (lhs, rhs, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
@@ -302,24 +287,6 @@ impl CR8 {
         };
         trace!("{:04x}: AND {lhs:#?}, {rhs:02x}", self.pc());
         self.reg[lhs as usize] &= rhs;
-        if not {
-            self.reg[lhs as usize] = !self.reg[lhs as usize];
-        }
-        Ok(sz)
-    }
-
-    /// XOR: (see README.md)
-    fn xor(&mut self, amt: OperationArgAmt, bytes: [u8; 4], not: bool) -> Result<u8> {
-        let (lhs, rhs, sz) = match amt {
-            A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
-            A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
-            _ => bail!("Invalid amount {amt:?}"),
-        };
-        trace!("{:04x}: XOR {lhs:#?}, {rhs:02x}", self.pc());
-        self.reg[lhs as usize] ^= rhs;
-        if not {
-            self.reg[lhs as usize] = !self.reg[lhs as usize];
-        }
         Ok(sz)
     }
 }

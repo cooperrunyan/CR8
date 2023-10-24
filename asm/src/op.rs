@@ -6,24 +6,20 @@ use crate::compiler::lex::Value;
 /// Native instructions
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Operation {
-    MOV = 0b000000,
-    JNZ = 0b000001,
-    LW = 0b000010,
-    SW = 0b000011,
-    PUSH = 0b000100,
-    POP = 0b000101,
-    IN = 0b000110,
-    OUT = 0b000111,
-    ADC = 0b010000,
-    SBB = 0b010001,
-    CMP = 0b011000,
-    NOT = 0b011001,
-    AND = 0b011010,
-    NAND = 0b011011,
-    OR = 0b011100,
-    NOR = 0b011101,
-    XOR = 0b011110,
-    XNOR = 0b011111,
+    MOV = 0,
+    JNZ = 1,
+    LW = 2,
+    SW = 3,
+    PUSH = 4,
+    POP = 5,
+    IN = 6,
+    OUT = 7,
+    ADC = 8,
+    SBB = 9,
+    CMP = 10,
+    AND = 11,
+    OR = 12,
+    NOR = 13,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -62,13 +58,9 @@ impl Display for Operation {
             O::ADC => "adc",
             O::SBB => "sbb",
             O::CMP => "cmp",
-            O::NOT => "not",
             O::AND => "and",
-            O::NAND => "nand",
             O::OR => "or",
             O::NOR => "nor",
-            O::XOR => "xor",
-            O::XNOR => "xnor",
         };
         f.write_str(str)
     }
@@ -90,13 +82,9 @@ impl TryFrom<&str> for Operation {
             "adc" => O::ADC,
             "sbb" => O::SBB,
             "cmp" => O::CMP,
-            "not" => O::NOT,
             "and" => O::AND,
-            "nand" => O::NAND,
             "or" => O::OR,
             "nor" => O::NOR,
-            "xor" => O::XOR,
-            "xnor" => O::XNOR,
             _ => Err(())?,
         })
     }
@@ -107,24 +95,20 @@ impl TryFrom<u8> for Operation {
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         use Operation as O;
         Ok(match value {
-            0b000000 => O::MOV,
-            0b000001 => O::JNZ,
-            0b000010 => O::LW,
-            0b000011 => O::SW,
-            0b000100 => O::PUSH,
-            0b000101 => O::POP,
-            0b000110 => O::IN,
-            0b000111 => O::OUT,
-            0b010000 => O::ADC,
-            0b010001 => O::SBB,
-            0b011000 => O::CMP,
-            0b011001 => O::NOT,
-            0b011010 => O::AND,
-            0b011011 => O::NAND,
-            0b011100 => O::OR,
-            0b011101 => O::NOR,
-            0b011110 => O::XOR,
-            0b011111 => O::XNOR,
+            0 => O::MOV,
+            1 => O::JNZ,
+            2 => O::LW,
+            3 => O::SW,
+            4 => O::PUSH,
+            5 => O::POP,
+            6 => O::IN,
+            7 => O::OUT,
+            8 => O::ADC,
+            9 => O::SBB,
+            10 => O::CMP,
+            11 => O::AND,
+            12 => O::OR,
+            13 => O::NOR,
             _ => Err(())?,
         })
     }
@@ -140,28 +124,19 @@ impl Operation {
                 AMT::R1I0 => 2,
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },
-            O::MOV
-            | O::IN
-            | O::OUT
-            | O::ADC
-            | O::SBB
-            | O::CMP
-            | O::AND
-            | O::NAND
-            | O::OR
-            | O::NOR
-            | O::XOR
-            | O::XNOR => match arg_amt {
-                AMT::R2I0 => 2,
-                AMT::R1I1 => 3,
-                _ => bail!("Invalid arg amounts for {self:#?}"),
-            },
+            O::MOV | O::IN | O::OUT | O::ADC | O::SBB | O::CMP | O::AND | O::OR | O::NOR => {
+                match arg_amt {
+                    AMT::R2I0 => 2,
+                    AMT::R1I1 => 3,
+                    _ => bail!("Invalid arg amounts for {self:#?}"),
+                }
+            }
             O::JNZ => match arg_amt {
                 AMT::R1I0 => 2,
                 AMT::R0I1 => 1, // If the "if" condition to jnz is known at compile time, effectively "jmp"
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },
-            O::NOT | O::POP => match arg_amt {
+            O::POP => match arg_amt {
                 AMT::R1I0 => 2,
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },

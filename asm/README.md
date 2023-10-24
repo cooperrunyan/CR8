@@ -86,7 +86,7 @@ functionality of builtin instructions. See [core](./src/builtin/core/README.md).
 ### Instruction Encoding
 
 - Instructions are 2-4 bytes long.
-- First byte of the instruction looks like `ZXXXXXYY`, where:
+- First byte of the instruction looks like `ZZXXXXYY`, where:
   - `Z`: Empty
   - `X`: Instruction code (see above)
   - `Y`: Argument type
