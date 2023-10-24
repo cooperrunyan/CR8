@@ -106,11 +106,11 @@ impl CR8 {
         self.reg[Register::SPH as usize] = h;
     }
 
-    /// Get HL by turning L and H into a single u16
-    pub fn hl(&self) -> u16 {
-        let l = self.reg[Register::L as usize];
-        let h = self.reg[Register::H as usize];
+    /// Get XY by turning X and Y into a single u16
+    pub fn xy(&self) -> u16 {
+        let x = self.reg[Register::X as usize];
+        let y = self.reg[Register::Y as usize];
 
-        (l, h).join()
+        (x, y).join()
     }
 }

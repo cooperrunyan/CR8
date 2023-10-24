@@ -50,7 +50,7 @@ impl CR8 {
     /// LW: (see README.md)
     fn lw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (to, addr, sz) = match amt {
-            A::R1I0 => (bytes[1] & 0b1111, self.hl(), 2),
+            A::R1I0 => (bytes[1] & 0b1111, self.xy(), 2),
             A::R1I1 => (bytes[1] & 0b1111, (bytes[2], bytes[3]).join(), 4),
             _ => bail!("Invalid amount {amt:?}"),
         };
@@ -65,7 +65,7 @@ impl CR8 {
     /// SW: (see README.md)
     fn sw(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (val, addr, sz) = match amt {
-            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], self.hl(), 2),
+            A::R1I0 => (self.reg[(bytes[1] & 0b1111) as usize], self.xy(), 2),
             A::R1I1 => (
                 self.reg[(bytes[1] & 0b1111) as usize],
                 (bytes[2], bytes[3]).join(),
@@ -88,7 +88,7 @@ impl CR8 {
         };
         trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc());
         self.reg[into as usize] = val;
-        if Register::MB as u8 == into {
+        if Register::K as u8 == into {
             mem.write().unwrap().select(val)?;
         }
         Ok(sz)
@@ -163,7 +163,7 @@ impl CR8 {
 
         let old = self.pc();
 
-        self.set_pc(self.hl());
+        self.set_pc(self.xy());
 
         trace!("{:04x}: JNZ to {:04x}", old, self.pc());
         Ok(0)

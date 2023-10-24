@@ -10,7 +10,7 @@ Builtin macros to effectively expand the machine's instruction-set.
 | `mov`    | `reg`, `reg`, `reg`, `reg`   | 4    | Move `(1, 2) = (3, 4)`                               |
 | `mov`    | `reg`, `reg`, `imm8`, `imm8` | 6    | Move `(1, 2) = (3, 4)`                               |
 | `mov`    | `reg`, `reg`, `imm16`        | 6    | Move `(1, 2) = imm16`                                |
-| `ldhl`   | `imm16`                      | 6    | Move `(%l, %h) = imm16`                              |
+| `ldxy`   | `imm16`                      | 6    | Move `(%x, %y) = imm16`                              |
 | `jnz`    | `reg`                        | 2    | If `reg != 0`, set `PC` to `HL`                      |
 | `jnz`    | `imm8`                       | 2    | If `imm8 != 0`, set `PC` to `HL`                     |
 | `jnz`    | `imm16`, `imm8`              | 8    | Jump to `imm16` if `imm8 != 0`                       |

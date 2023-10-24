@@ -1,19 +1,19 @@
 #[use(core::macros::logic)]
 
-#[macro] ldhl: {
+#[macro] ldxy: {
     ($addr: expr) => {
-        mov %h, $addr.h
-        mov %l, $addr.l
+        mov %y, $addr.h
+        mov %x, $addr.l
     }
     ($l: lit | reg, $h: lit | reg) => {
-        mov %h, $h
-        mov %l, $l
+        mov %y, $h
+        mov %x, $l
     }
 }
 
 #[macro] jnz: {
     ($addr: expr, $if: lit | reg) => {
-        ldhl $addr
+        ldxy $addr
         jnz $if
     }
     ($addr: expr, $ifl: reg, $ifh: reg) => {
@@ -28,7 +28,7 @@
         jnz $addr, 1
     }
     ($l: lit | reg, $h: lit | reg) => {
-        ldhl $l, $h
+        ldxy $l, $h
         jmp
     }
     () => {

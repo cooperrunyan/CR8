@@ -2,7 +2,7 @@
 
 #[main]
 main:
-    mov %mb, 1
+    mov %k, 1
     mov %a, %b, 0, 0
 
     .loop:

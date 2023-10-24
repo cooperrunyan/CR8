@@ -20,28 +20,28 @@
     }
     ($vl: reg, $vh: reg) => {
         sw $vl
-        inc %l, %h
+        inc %x, %y
         sw $vh
     }
     ($to: expr, $vl: reg, $vh: reg) => {
-        ldhl $to
+        ldxy $to
         sw $vl, $vh
     }
 }
-  
+
 #[macro] lw: {
     ($tol: reg, $toh: reg) => {
         lw $tol
-        inc %l, %h
+        inc %x, %y
         lw $toh
     }
     ($tol: reg, $toh: reg, $addr: expr) => {
-        ldhl $addr
+        ldxy $addr
         lw $tol, $toh
     }
     ($tol: reg, $toh: reg, $addrl: lit | reg, $addrh: lit | reg) => {
-        mov %l, $addrl 
-        mov %h, $addrh
+        mov %x, $addrl
+        mov %y, $addrh
         lw $tol, $toh
     }
 }

@@ -8,7 +8,7 @@
 
 #[main]
 main:
-    mov %mb, 0x01
+    mov %k, 0x01
     jmp hello
 
 hello:

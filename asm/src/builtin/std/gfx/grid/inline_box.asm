@@ -11,23 +11,23 @@
       $l5: lit | reg,
       $l6: lit | reg,
       $l7: lit | reg) => {
-        ldhl %a, %b
+        ldxy %a, %b
         sw $l0
 
         ; Draw next 7 lines (block height - 1)
-        add %l, %h, SCREEN_WIDTH 
+        add %x, %y, SCREEN_WIDTH
         sw $l1
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l2
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l3
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l4
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l5
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l6
-        add %l, %h, SCREEN_WIDTH
+        add %x, %y, SCREEN_WIDTH
         sw $l6
     }
 }

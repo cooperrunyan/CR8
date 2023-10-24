@@ -15,8 +15,8 @@
 
 #[macro] ret: {
     () => {
-        pop %l
-        pop %h
+        pop %x
+        pop %y
         jmp
     }
 }

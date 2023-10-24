@@ -4,7 +4,7 @@
 
 #[main]
 main:
-    mov %mb, 1
+    mov %k, 1
     mov %a, 0
     mov %b, 0
     mov %c, (0x4000 - LEN) & 0xFF
@@ -12,11 +12,11 @@ main:
     mov %z, 0xff
 
     .loop:
-        ldhl BRAM
-        add %l, %a
-        add %h, %b
+        ldxy BRAM
+        add %x, %a
+        add %y, %b
         sw %z
-      
+
         call cycle
         jnz .loop, %a, %b
         not %z

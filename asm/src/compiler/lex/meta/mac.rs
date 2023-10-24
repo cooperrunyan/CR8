@@ -176,7 +176,7 @@ mod test {
         let (mac, remaining) = Macro::lex(
             r#"jnz: {
                 ($addr: expr, $if: lit | reg) => {
-                    ldhl $addr
+                    ldxy $addr
                     jnz $if
                 }
                 ($addr: lit, $if: lit | reg) => {
@@ -196,7 +196,7 @@ mod test {
     fn lex_macro_capture() -> Result<(), Box<dyn std::error::Error>> {
         let (cap, remaining) = MacroCapture::lex(
             r#"($addr: expr, $if: lit | reg) => {
-                ldhl $addr
+                ldxy $addr
                 jnz $if
             }"#,
         )?;
@@ -208,7 +208,7 @@ mod test {
             cap.content,
             vec![
                 Instruction {
-                    id: "ldhl".to_string(),
+                    id: "ldxy".to_string(),
                     args: vec![Value::MacroVariable("$addr".to_string())]
                 },
                 Instruction {

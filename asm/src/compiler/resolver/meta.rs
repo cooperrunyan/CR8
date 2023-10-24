@@ -20,7 +20,7 @@ impl Compiler {
                         Node::Instruction(Instruction {
                             id: "mov".to_string(),
                             args: vec![
-                                Value::Register(crate::reg::Register::L),
+                                Value::Register(crate::reg::Register::X),
                                 Value::Expr(Expr::Expr {
                                     lhs: Box::new(Expr::Variable(to.clone())),
                                     op: ExprOperation::And,
@@ -31,7 +31,7 @@ impl Compiler {
                         Node::Instruction(Instruction {
                             id: "mov".to_string(),
                             args: vec![
-                                Value::Register(crate::reg::Register::H),
+                                Value::Register(crate::reg::Register::Y),
                                 Value::Expr(Expr::Expr {
                                     lhs: Box::new(Expr::Variable(to.clone())),
                                     op: ExprOperation::Rsh,

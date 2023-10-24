@@ -1,6 +1,6 @@
 ; 32 x 32 (byte) Grid
 ; 8 x 8 px boxes
-; coordinates are stored in 2-byte pairs where COORD is the x 
+; coordinates are stored in 2-byte pairs where COORD is the x
 ; value and COORD + 1 is the y value
 ; coords are generally stored in %ab and iterations are usually
 ; in %cd
@@ -27,7 +27,7 @@
 
 #[main]
 main:
-  mov %mb, 1
+  mov %k, 1
 
   call erase
 
@@ -42,72 +42,72 @@ main:
 
   mov %a, 5
   mov %b, 1
-  ldhl SNAKE
+  ldxy SNAKE
 
   sw %a, %b
 
-  inc %l, %h
+  inc %x, %y
   dec %a
   sw %a, %b
 
-  inc %l, %h
+  inc %x, %y
   dec %a
   sw %a, %b
 
-  inc %l, %h
+  inc %x, %y
   dec %a
   sw %a, %b
 
-  inc %l, %h
+  inc %x, %y
   dec %a
   sw %a, %b
 
   mov %d, 0b11 ; right
   sw %d, DIRECTION
-  
+
   call full_draw
   ; `loop` is right after main so as long as nothing new
   ; is put here, `jmp loop` is unnecessary.
-  
+
 ; move snake
-; requires shifting the snake in memory to pop the tail 
+; requires shifting the snake in memory to pop the tail
 ; and push a new head
 loop:
   lw %a, %b, SNAKE
   call update_direction
-  call move 
+  call move
   push %a, %b ; store the next head for later
   call check_bounds
 
 
   lw %c, %d, SNAKE_LEN
 
-  ldhl SNAKE
-  lw %a, %b 
-  dec %l, %h
-  add %l, %h, %c, %d
-  add %l, %h, %c, %d
-  push %l, %h ; push the current addr
-  sub %l, %h, 2, 0 ; comment this to make the snake grow on every tick
+  ldxy SNAKE
+  lw %a, %b
+  dec %x, %y
+  add %x, %y, %c, %d
+  add %x, %y, %c, %d
+  push %x, %y ; push the current addr
+  sub %x, %y, 2, 0 ; comment this to make the snake grow on every tick
   lw %a, %b ; old tail
   call clear_box
-  
-  pop %l, %h
+
+  pop %x, %y
   pop %c, %d
-  push %l, %h
+  push %x, %y
 
   .shift:
-    pop %l, %h ; get the address of the last iteration
-    sub %l, %h, 4, 0
+    pop %x, %y ; get the address of the last iteration
+    sub %x, %y, 4, 0
     lw %a, %b ; current block to be shifted in memory
-    
-    inc %l, %h ; move this block to the position of the next block
-    sw %a, %b 
-    dec %l, %h 
-    push %l, %h
+
+    inc %x, %y ; move this block to the position of the next block
+    sw %a, %b
+    dec %x, %y
+    push %x, %y
 
     ; if this iteration == start address of SNAKE
-    cmp16 %z, %l, %h, SNAKE + 2
+    cmp16 %z, %x, %y, SNAKE + 2
     ; then end
     jeq .end_shift
 
@@ -124,7 +124,7 @@ loop:
   mov %a, %c
   mov %b, %d
   push %a, %b
-  
+
   sw SNAKE, %a, %b
   call check_apple
 
@@ -158,7 +158,7 @@ update_direction:
   mov %f, %z
   and %f, 0b1000 ; right arrow
   jnz .right, %f
-  
+
   ret
 
   .up:
@@ -167,28 +167,28 @@ update_direction:
     mov %d, 0b00
     sw %d, DIRECTION
     ret
-    
+
   .down:
     cmp %d, 0b00
     req
     mov %d, 0b01
     sw %d, DIRECTION
     ret
-    
+
   .left:
     cmp %d, 0b11
     req
     mov %d, 0b10
     sw %d, DIRECTION
     ret
-    
+
   .right:
     cmp %d, 0b10
     req
     mov %d, 0b11
     sw %d, DIRECTION
     ret
-    
+
   ; inc/dec a or b depending on d (direction)
   move:
     and %d, 0b11
@@ -215,11 +215,11 @@ update_direction:
 ; caller will place coordinates in ab
 check_bounds:
   ; Check if x coordinate is not 0-31
-  and %a, 0b11100000 
+  and %a, 0b11100000
   jnz .gameover, %a
 
   ; Check if y coordinate is not 0-31
-  and %b, 0b11100000 
+  and %b, 0b11100000
   jnz .gameover, %b
 
   ret
@@ -242,20 +242,20 @@ check_apple:
   rand_coord %b
   sw APPLE, %a, %b
   call bordered_box
-  
+
   lw %c, %d, SNAKE_LEN
 
-  ldhl SNAKE
-  add %l, %h, %c, %d
-  add %l, %h, %c, %d
+  ldxy SNAKE
+  add %x, %y, %c, %d
+  add %x, %y, %c, %d
   lw %a, %b ; old tail
   inc %a, %b
   sw %a, %b
   inc %c, %d
-  sw SNAKE_LEN, %c, %d 
+  sw SNAKE_LEN, %c, %d
 
   ret
-  
+
 erase:
   lw %c, %d, SNAKE_LEN
 
@@ -266,18 +266,18 @@ erase:
 
   .iter:
     sub %c, %d, 2, 0
-    ldhl SNAKE
-    add %l, %h, %c, %d
-    lw %a 
-    inc %l, %h
+    ldxy SNAKE
+    add %x, %y, %c, %d
+    lw %a
+    inc %x, %y
     lw %b
 
     push %c ; clear_box will modify %c
     call clear_box
-    pop %c 
+    pop %c
 
     jnz .iter, %c, %d
-  
+
   lw %a, %b, APPLE
   call clear_box
 
@@ -294,18 +294,18 @@ full_draw:
 
   .iter:
     sub %c, %d, 2, 0
-    ldhl SNAKE
-    add %l, %h, %c, %d
-    lw %a 
-    inc %l, %h
+    ldxy SNAKE
+    add %x, %y, %c, %d
+    lw %a
+    inc %x, %y
     lw %b
 
     push %c ; clear_box will modify %c
     call filled_box
-    pop %c 
+    pop %c
 
     jnz .iter, %c, %d
-  
+
   lw %a, %b, APPLE
   call bordered_box
 
@@ -339,27 +339,27 @@ full_draw:
 ; Return if neq
 #[macro] rneq: {
   () => {
-    pop %l
-    pop %h
+    pop %x
+    pop %y
 
     jneq
 
-    push %h
-    push %l
+    push %y
+    push %x
   }
 }
 
 ; Return if eq
 #[macro] req: {
   () => {
-    pop %l
-    pop %h
+    pop %x
+    pop %y
 
     jeq
 
-    push %h
-    push %l
+    push %y
+    push %x
   }
 }
 
-  
+

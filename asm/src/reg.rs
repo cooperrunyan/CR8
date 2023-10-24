@@ -11,14 +11,16 @@ pub enum Register {
     C,
     /// %d
     D,
+    /// %x
+    X,
+    /// %y
+    Y,
     /// %z
     Z,
-    /// %l
-    L,
-    /// %h
-    H,
     /// %f
     F,
+    /// %k
+    K,
     /// %pcl
     PCL,
     /// %pch
@@ -27,8 +29,6 @@ pub enum Register {
     SPL,
     /// %sph
     SPH,
-    /// %mb
-    MB,
 }
 
 impl Display for Register {
@@ -39,15 +39,15 @@ impl Display for Register {
             R::B => "b",
             R::C => "c",
             R::D => "d",
+            R::X => "x",
+            R::Y => "y",
             R::Z => "z",
-            R::L => "l",
-            R::H => "h",
             R::F => "f",
+            R::K => "k",
             R::PCL => "pcl",
             R::PCH => "pch",
             R::SPL => "spl",
             R::SPH => "sph",
-            R::MB => "mb",
         };
         f.write_str(str)
     }
@@ -62,15 +62,15 @@ impl TryFrom<&str> for Register {
             "b" => R::B,
             "c" => R::C,
             "d" => R::D,
+            "x" => R::X,
+            "y" => R::Y,
             "z" => R::Z,
-            "l" => R::L,
-            "h" => R::H,
             "f" => R::F,
+            "k" => R::K,
             "pcl" => R::PCL,
             "pch" => R::PCH,
             "spl" => R::SPL,
             "sph" => R::SPH,
-            "mb" => R::MB,
             _ => Err(())?,
         })
     }
@@ -85,15 +85,15 @@ impl TryFrom<u8> for Register {
             1 => R::B,
             2 => R::C,
             3 => R::D,
-            4 => R::Z,
-            5 => R::L,
-            6 => R::H,
+            4 => R::X,
+            5 => R::Y,
+            6 => R::Z,
             7 => R::F,
-            8 => R::PCL,
-            9 => R::PCH,
-            10 => R::SPL,
-            11 => R::SPH,
-            12 => R::MB,
+            8 => R::K,
+            9 => R::PCL,
+            10 => R::PCH,
+            11 => R::SPL,
+            12 => R::SPH,
             _ => Err(())?,
         })
     }

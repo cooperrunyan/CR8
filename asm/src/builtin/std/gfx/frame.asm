@@ -17,8 +17,8 @@ _clrvram:
     mov %z, 0
 
     .loop:
-        mov %l, %a
-        mov %h, %b
+        mov %x, %a
+        mov %y, %b
         sw %z
         inc %a, %b
         dec %c, %d
@@ -31,18 +31,18 @@ _clrvram:
 ; [PSR0][PSR1]: Frame length
 frmwof:
     .loop:
-        mov %l, %a
-        mov %h, %b
+        mov %x, %a
+        mov %y, %b
         lw %z
-        inc %l, %h
-        mov %a, %l
-        mov %b, %h
-        mov %l, %c
-        mov %h, %d
+        inc %x, %y
+        mov %a, %x
+        mov %b, %y
+        mov %x, %c
+        mov %y, %d
         sw %z
-        inc %l, %h
-        push %l ; c
-        push %h ; d
+        inc %x, %y
+        push %x ; c
+        push %y ; d
         lw %c, PSR0
         lw %d, PSR1
         dec %c, %d

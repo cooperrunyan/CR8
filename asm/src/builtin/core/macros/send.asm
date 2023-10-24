@@ -34,8 +34,8 @@
         out 0x00, %d
         out 0x00, %z
         out 0x00, %f
-        out 0x00, %l
-        out 0x00, %h
-        out 0x00, %mb
+        out 0x00, %x
+        out 0x00, %y
+        out 0x00, %k
     }
 }
