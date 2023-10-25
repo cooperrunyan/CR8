@@ -1,10 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "CR8 Assembly",
-  "fileTypes": [
-    "asm",
-    "cr8"
-  ],
+  "fileTypes": ["asm", "cr8"],
   "scopeName": "source.cr8",
   "repository": {
     "num": {
@@ -53,7 +50,7 @@
       "include": "#num"
     },
     {
-      "match": "(#\\[)\\s*(.*)\\s*(\\])",
+      "match": "(#!?\\[)\\s*(.*)\\s*(\\])",
       "captures": {
         "1": {
           "name": "punctuation"
@@ -64,7 +61,7 @@
         "2": {
           "patterns": [
             {
-              "match": "\\b(use|main|macro|static|dyn|const)\\b",
+              "match": "\\b(use|main|macro|static|dyn|const|micro)\\b",
               "name": "keyword.control"
             },
             {
