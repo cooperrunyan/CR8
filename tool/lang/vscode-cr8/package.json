@@ -20,7 +20,9 @@
         ],
         "extensions": [
           ".asm",
-          ".cr8"
+          ".cr8",
+          "asm",
+          "cr8"
         ],
         "configuration": "./language-configuration.json"
       }

@@ -17,11 +17,11 @@ mov: {
 jnz: {
     (R1I0) => {
         aw pc, dw mem, dr lr, pc++
-        alu_cmp, dw alflg, dr f
-        aw xy, pcjnz
+        alu cmp, dw alflg, dr f
+        aw xy, pc jnz
     }
     (R0I1) => {
-        aw xy, pcj
+        aw xy, pc j
     }
 }
 
@@ -82,14 +82,14 @@ adc: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_add, dw alu, dr io
+        alu add, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_add, dw alu, dr io
+        alu add, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
@@ -99,14 +99,14 @@ sbb: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_sub, dw alu, dr io
+        alu sub, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_sub, dw alu, dr io
+        alu sub, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
@@ -116,12 +116,12 @@ cmp: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_cmp, dw alflg, dr f, pc++
+        alu cmp, dw alflg, dr f, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_cmp, dw alflg, dr f, pc++
+        alu cmp, dw alflg, dr f, pc++
     }
 }
 
@@ -129,14 +129,14 @@ and: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_and, dw alu, dr io
+        alu and, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_and, dw alu, dr io
+        alu and, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
@@ -146,14 +146,14 @@ or: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_or, dw alu, dr io
+        alu or, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_or, dw alu, dr io
+        alu or, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
@@ -163,14 +163,14 @@ nor: {
     (R2I0) => {
         aw pc, dw mem, dr lr
         dw sel, dr rhs
-        alu_nor, dw alu, dr io
+        alu nor, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
     (R1I1) => {
         aw pc, dw mem, dr lhs, pc++
         aw pc, dw mem, dr rhs
-        alu_nor, dw alu, dr io
+        alu nor, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel, pc++
     }
