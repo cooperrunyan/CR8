@@ -4,7 +4,7 @@ use std::fmt::Display;
 use crate::compiler::lex::Value;
 
 /// Native instructions
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Operation {
     MOV = 0,
     JNZ = 1,
@@ -22,7 +22,7 @@ pub enum Operation {
     NOR = 13,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum OperationArgAmt {
     R1I0 = 0b00,
     R1I1 = 0b01,
