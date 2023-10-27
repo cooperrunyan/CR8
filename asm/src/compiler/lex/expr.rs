@@ -50,14 +50,13 @@ fn lex_expr_lhs(buf: &str) -> LexResult<'_, Expr> {
         return Ok((ex, buf));
     }
 
-    if let Ok(buf) = expect(buf, "$") {
-        Ok((Expr::Variable("$".to_string()), buf))
-    } else if let Ok((lhs, buf)) = usize::lex(buf) {
+    if let Ok((lhs, buf)) = usize::lex(buf) {
         Ok((Expr::Literal(lhs), buf))
     } else {
         let (lhs, buf) = collect_while(buf, |c| {
             c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
         })?;
+
         Ok((Expr::Variable(lhs.to_string()), buf))
     }
 }

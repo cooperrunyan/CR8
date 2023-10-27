@@ -28,6 +28,6 @@
         add %x, %y, SCREEN_WIDTH
         sw $l6
         add %x, %y, SCREEN_WIDTH
-        sw $l6
+        sw $l7
     }
 }

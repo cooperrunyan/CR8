@@ -23,6 +23,10 @@
         inc %x, %y
         sw $vh
     }
+    ($tol: reg, $toh: reg, $r: reg) => {
+        ldxy $tol, $toh
+        sw $r
+    }
     ($to: expr, $vl: reg, $vh: reg) => {
         ldxy $to
         sw $vl, $vh
@@ -43,6 +47,10 @@
         mov %x, $addrl
         mov %y, $addrh
         lw $tol, $toh
+    }
+    ($to: reg, $addrl: reg, $addrh: reg) => {
+        ldxy $addrl, $addrh
+        lw $to
     }
 }
 
