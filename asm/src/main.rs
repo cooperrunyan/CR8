@@ -27,7 +27,12 @@ fn main() -> Result<()> {
 
     compiler.push(config.input, Arc::new(env::current_dir().unwrap()))?;
 
-    let _ = config.output.write(&compiler.compile()?);
+    compiler.compile().map_err(|e| {
+        compiler.debug();
+        e
+    })?;
+
+    let _ = config.output.write(&compiler.bin);
 
     Ok(())
 }

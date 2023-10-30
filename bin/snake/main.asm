@@ -34,11 +34,14 @@ main:
   ; new coords for apple
   rand_coord %a
   rand_coord %b
-  sw APPLE, %a, %b
+  sw APPLE, %a
+  sw APPLE + 1, %b
 
   mov %a, 5
   mov %b, 0
-  sw SNAKE_LEN, %a, %b
+  sw SNAKE_LEN, %a
+  sw SNAKE_LEN + 1, %b
+
 
   mov %a, 5
   mov %b, 1
@@ -63,7 +66,7 @@ main:
   sw %a, %b
 
   mov %d, 0b11 ; right
-  sw %d, DIRECTION
+  sw DIRECTION, %d
 
   call full_draw
   ; `loop` is right after main so as long as nothing new
@@ -73,23 +76,29 @@ main:
 ; requires shifting the snake in memory to pop the tail
 ; and push a new head
 loop:
-  lw %a, %b, SNAKE
+  lw %a, SNAKE
+  lw %b, SNAKE + 1
   call update_direction
   call move
   push %a, %b ; store the next head for later
   call check_bounds
 
 
-  lw %c, %d, SNAKE_LEN
+  lw %c, SNAKE_LEN
+  lw %d, SNAKE_LEN + 1
 
   ldxy SNAKE
-  lw %a, %b
+  lw %a ; old tail
+  inc %x, %y
+  lw %b
   dec %x, %y
   add %x, %y, %c, %d
   add %x, %y, %c, %d
   push %x, %y ; push the current addr
   sub %x, %y, 2, 0 ; comment this to make the snake grow on every tick
-  lw %a, %b ; old tail
+  lw %a ; old tail
+  inc %x, %y
+  lw %b
   call clear_box
 
   pop %x, %y
@@ -125,7 +134,8 @@ loop:
   mov %b, %d
   push %a, %b
 
-  sw SNAKE, %a, %b
+  sw SNAKE, %a
+  sw SNAKE + 1, %b
   call check_apple
 
   pop %a, %b
@@ -165,28 +175,28 @@ update_direction:
     cmp %d, 0b01 ; Don't update if current direction is down
     req
     mov %d, 0b00
-    sw %d, DIRECTION
+    sw DIRECTION, %d
     ret
 
   .down:
     cmp %d, 0b00
     req
     mov %d, 0b01
-    sw %d, DIRECTION
+    sw DIRECTION, %d
     ret
 
   .left:
     cmp %d, 0b11
     req
     mov %d, 0b10
-    sw %d, DIRECTION
+    sw DIRECTION, %d
     ret
 
   .right:
     cmp %d, 0b10
     req
     mov %d, 0b11
-    sw %d, DIRECTION
+    sw DIRECTION, %d
     ret
 
   ; inc/dec a or b depending on d (direction)
@@ -232,7 +242,8 @@ check_bounds:
 ; if so, set a new apple.
 ; caller will place coordinates in ab
 check_apple:
-  lw %c, %d, APPLE
+  lw %c, APPLE
+  lw %d, APPLE + 1
 
   ; compare head and apple
   cmp16 %z, %a, %b, %c, %d
@@ -240,10 +251,12 @@ check_apple:
 
   rand_coord %a
   rand_coord %b
-  sw APPLE, %a, %b
+  sw APPLE, %a
+  sw APPLE + 1, %b
   call bordered_box
 
-  lw %c, %d, SNAKE_LEN
+  lw %c, SNAKE_LEN
+  lw %d, SNAKE_LEN + 1
 
   ldxy SNAKE
   add %x, %y, %c, %d
@@ -252,12 +265,14 @@ check_apple:
   inc %a, %b
   sw %a, %b
   inc %c, %d
-  sw SNAKE_LEN, %c, %d
+  sw SNAKE_LEN, %c
+  sw SNAKE_LEN + 1, %d
 
   ret
 
 erase:
-  lw %c, %d, SNAKE_LEN
+  lw %c, SNAKE_LEN
+  lw %d, SNAKE_LEN + 1
 
   cmp16 %z, %c, %d, 0, 0
   req
@@ -278,14 +293,16 @@ erase:
 
     jnz .iter, %c, %d
 
-  lw %a, %b, APPLE
+  lw %a, APPLE
+  lw %b, APPLE + 1
   call clear_box
 
   ret
 
 
 full_draw:
-  lw %c, %d, SNAKE_LEN
+  lw %c, SNAKE_LEN
+  lw %d, SNAKE_LEN + 1
 
   cmp16 %z, %c, %d, 0, 0
   req
@@ -306,7 +323,8 @@ full_draw:
 
     jnz .iter, %c, %d
 
-  lw %a, %b, APPLE
+  lw %a, APPLE
+  lw %b, APPLE + 1
   call bordered_box
 
   ret

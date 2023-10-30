@@ -5,11 +5,12 @@ use crate::compiler::lex::{
     collect_while, expect, ignore_comment, ignore_whitespace, ignore_whitespace_noline, LexResult,
     Lexable,
 };
-use crate::op::{Operation, OperationArgAmt};
+use crate::lex_enum;
+use crate::op::Operation;
 
 use super::{
     AddressBusWriter, AluSignal, DataBusReader, DataBusWriter, Micro, MicroInstruction,
-    MicroSignal, ProgramCounterSignal, StackPointerSignal,
+    MicroSignal, ProgramCounterSignal, StackPointerSignal, TypeIdentifier,
 };
 
 const ADDRESS_BUS_WRITE: &str = "aw";
@@ -77,7 +78,7 @@ impl<'b> Lexable<'b> for MicroInstruction {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = ignore_whitespace(buf);
         let mut buf = expect(buf, "{")?;
-        let mut map = IndexMap::new();
+        let mut inst = MicroInstruction::default();
         loop {
             buf = {
                 let buf = buf;
@@ -87,10 +88,10 @@ impl<'b> Lexable<'b> for MicroInstruction {
                 buf
             };
             if let Ok(buf) = expect(buf, "}") {
-                return Ok((Self(map), buf));
+                return Ok((inst, buf));
             }
             buf = expect(buf, "(")?;
-            let (amt, b) = OperationArgAmt::lex(buf)?;
+            let (id, b) = TypeIdentifier::lex(buf)?;
             buf = b;
             buf = ignore_whitespace(buf);
             buf = expect(buf, ")")?;
@@ -109,24 +110,23 @@ impl<'b> Lexable<'b> for MicroInstruction {
                 buf = b;
                 lines.push(line);
             }
-            if map.insert(amt, lines).is_some() {
-                bail!("Defined {amt:#?} twice");
+            match id {
+                TypeIdentifier::Immediate => {
+                    if inst.imm.is_some() {
+                        bail!("Attempted to set \"imm\" twice");
+                    } else {
+                        inst.imm = Some(lines);
+                    }
+                }
+                TypeIdentifier::Register => {
+                    if inst.reg.is_some() {
+                        bail!("Attempted to set \"reg\" twice");
+                    } else {
+                        inst.reg = Some(lines);
+                    }
+                }
             }
         }
-    }
-}
-
-impl<'b> Lexable<'b> for OperationArgAmt {
-    fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        let (word, buf) = collect_while(buf, char::is_alphanumeric)?;
-        let item = match word {
-            "R1I0" => OperationArgAmt::R1I0,
-            "R0I1" => OperationArgAmt::R0I1,
-            "R2I0" => OperationArgAmt::R2I0,
-            "R1I1" => OperationArgAmt::R1I1,
-            x => bail!("Unknown register-immediate amount {x:#?}"),
-        };
-        Ok((item, buf))
     }
 }
 
@@ -278,5 +278,15 @@ impl<'b> Lexable<'b> for StackPointerSignal {
             },
             buf,
         ))
+    }
+}
+
+impl<'b> Lexable<'b> for TypeIdentifier {
+    fn lex(buf: &'b str) -> LexResult<'b, Self> {
+        let buf = ignore_whitespace_noline(buf);
+        lex_enum! { buf;
+            "reg" => Self::Register,
+            "imm" => Self::Immediate,
+        }
     }
 }

@@ -59,6 +59,12 @@ impl Config {
                     }
                     input = Some(Input::File(std::env::args().nth(i + 1).unwrap_or_default()));
                 }
+                "-x" => {
+                    if input.is_some() {
+                        panic!("Attempted to set input flag twice");
+                    }
+                    input = Some(Input::Raw(std::env::args().nth(i + 1).unwrap_or_default()));
+                }
                 "-o" | "--output" => {
                     output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
                 }

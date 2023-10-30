@@ -12,27 +12,10 @@
 }
 
 #[macro] jnz: {
-    ($addr: expr, $if: lit | reg) => {
-        ldxy $addr
-        jnz $if
-    }
     ($addr: expr, $ifl: reg, $ifh: reg) => {
         mov %f, $ifl
         or %f, $ifh
         jnz $addr, %f
-    }
-}
-
-#[macro] jmp: {
-    ($addr: expr) => {
-        jnz $addr, 1
-    }
-    ($l: lit | reg, $h: lit | reg) => {
-        ldxy $l, $h
-        jmp
-    }
-    () => {
-        jnz 1
     }
 }
 

@@ -1,6 +1,6 @@
 #![doc(alias = "assembler")]
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use indexmap::IndexMap;
 use path_clean::clean;
 use std::env;
@@ -13,8 +13,8 @@ pub mod lex;
 pub mod micro;
 mod resolver;
 
-use crate::compiler::lex::{Node, Value};
-use crate::op::{Operation, OperationArgAmt};
+use crate::compiler::lex::Node;
+use crate::op::Operation;
 
 pub use config::*;
 
@@ -22,9 +22,9 @@ use self::lex::{ignore_whitespace, Item, LexableWith, Macro};
 
 #[derive(Debug, Default)]
 pub struct Compiler {
-    bin: Vec<u8>,
+    pub bin: Vec<u8>,
     tree: Vec<Node>,
-    preamble: Option<Vec<Node>>,
+    preamble: bool,
     labels: IndexMap<String, usize>,
     last_label: String,
     pc: usize,
@@ -49,14 +49,7 @@ impl Compiler {
         ctx
     }
 
-    pub fn compile(mut self) -> Result<Vec<u8>> {
-        if let Some(mut preamble) = self.preamble {
-            let mut old = self.tree;
-            preamble.append(&mut old);
-            self.tree = preamble;
-            self.preamble = None;
-        }
-
+    pub fn compile(&mut self) -> Result<()> {
         self.resolve_macros()?;
         self.resolve_labels()?;
 
@@ -77,71 +70,14 @@ impl Compiler {
                 Node::Instruction(inst) => {
                     let op = Operation::try_from(inst.id.as_str())
                         .map_err(|_| anyhow!("Invalid operation {:#?}", inst.id))?;
-                    let mut header = (op as u8) << 2;
-                    let arg_amt = OperationArgAmt::from_args(&inst.args)?;
-                    header |= arg_amt as u8;
 
-                    if arg_amt == OperationArgAmt::R0I1 && &inst.id == "jnz" {
-                        self.bin.push(header);
-                        continue;
-                    }
-
-                    let mut bin = match arg_amt {
-                        OperationArgAmt::R1I0 => match &inst.args[..] {
-                            &[Value::Register(r)] => vec![header, r as u8],
-                            _ => bail!("Invalid args for {:#?}", inst.id),
-                        },
-                        OperationArgAmt::R2I0 => match &inst.args[..] {
-                            &[Value::Register(r1), Value::Register(r2)] => {
-                                vec![header, (r1 as u8) | ((r2 as u8) << 4)]
-                            }
-                            _ => bail!("Invalid args for {:#?}", inst.id),
-                        },
-                        OperationArgAmt::R0I1 => match inst.args.get(0) {
-                            Some(Value::Literal(imm8)) => {
-                                vec![header, (*imm8 as u8)]
-                            }
-                            Some(Value::Expr(e)) => match op {
-                                Operation::LW | Operation::SW => {
-                                    let r = e.resolve(&self)?;
-                                    vec![header, r as u8, (r >> 8) as u8]
-                                }
-                                _ => vec![header, e.resolve(&self)? as u8],
-                            },
-                            _ => bail!("Invalid args for {:#?}", inst.id),
-                        },
-                        OperationArgAmt::R1I1 => {
-                            let mut reg = 0;
-                            let mut trail = vec![];
-                            for arg in inst.args {
-                                match arg {
-                                    Value::Register(r) => reg = r as u8,
-                                    Value::Literal(imm) => trail.push(imm as u8),
-                                    Value::Expr(e) => match op {
-                                        Operation::LW | Operation::SW => {
-                                            let r = e.resolve(&self)?;
-                                            trail.push(r as u8);
-                                            trail.push((r >> 8) as u8);
-                                        }
-                                        _ => trail.push(e.resolve(&self)? as u8),
-                                    },
-                                    _ => {}
-                                }
-                            }
-                            let mut b = vec![header, reg];
-                            b.append(&mut trail);
-                            b
-                        }
-                    };
-                    self.bin.append(&mut bin);
+                    self.bin.append(&mut op.compile(inst.args, self)?);
                 }
                 _ => {}
             }
         }
 
-        self.debug();
-
-        Ok(self.bin)
+        Ok(())
     }
 
     pub fn push(&mut self, input: Input, from: Arc<PathBuf>) -> Result<()> {

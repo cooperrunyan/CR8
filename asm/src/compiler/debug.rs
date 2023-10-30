@@ -1,4 +1,4 @@
-use log::{debug, info, log_enabled, Level};
+use log::debug;
 use path_clean::clean;
 use std::collections::HashMap;
 use std::env;
@@ -6,42 +6,39 @@ use std::env;
 use super::Compiler;
 
 impl Compiler {
-    pub(crate) fn debug(&self) {
-        self.debug_labels();
+    pub fn debug(&self) {
+        self.debug_bin();
         self.debug_files();
-        self.debug_statics();
         self.debug_vars();
-
-        if log_enabled!(Level::Debug) {
-            self.debug_macros();
-            self.debug_bin();
-        }
+        self.debug_labels();
+        self.debug_statics();
+        self.debug_macros();
     }
 
     fn debug_files(&self) {
-        info!("===== Files Used: =====");
+        debug!("===== Files Used: =====");
         let mut pwd = env::current_dir().unwrap().display().to_string();
         pwd.push('/');
         for file in self.files.iter() {
-            info!("  - {}", clean(file.as_path()).display());
+            debug!("  - {}", clean(file.as_path()).display());
         }
-        info!("");
+        debug!("");
     }
 
     fn debug_statics(&self) {
-        info!("======== Statics: ========");
+        debug!("======== Statics: ========");
         for (k, v) in self.statics.iter() {
-            info!("  - {}: {:#06X}", k, v);
+            debug!("  - {}: {:#06X}", k, v);
         }
-        info!("");
+        debug!("");
     }
 
     fn debug_vars(&self) {
-        info!("======= Variables: ========");
+        debug!("======= Variables: ========");
         for (k, v) in self.ram_locations.iter() {
-            info!("  - {}: {:#06X}", k, *v);
+            debug!("  - {}: {:#06X}", k, *v);
         }
-        info!("");
+        debug!("");
     }
 
     fn debug_macros(&self) {
@@ -53,11 +50,11 @@ impl Compiler {
     }
 
     fn debug_labels(&self) {
-        info!("===== Labels: =====");
+        debug!("===== Labels: =====");
         for (name, location) in self.labels.iter() {
-            info!("  - {name}: {:?}", location);
+            debug!("  - {name}: {:?}", location);
         }
-        info!("");
+        debug!("");
     }
 
     fn debug_bin(&self) {

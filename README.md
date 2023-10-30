@@ -15,25 +15,19 @@
 Registers are written as `%x` where `x` is the id of the register to access.
 Registers include:
 
-| Id    | Usage                                                                   |
-| ----- | ----------------------------------------------------------------------- |
-| `A`   | General purpose.                                                        |
-| `B`   | General purpose.                                                        |
-| `C`   | General purpose.                                                        |
-| `D`   | General purpose.                                                        |
-| `Z`   | General purpose.                                                        |
-| `F`   | Flags regarding the last mathematical operation.                        |
-| `L`   | Low index byte (`L` + `H` are used to read/write to memory).            |
-| `H`   | High index byte (`L` + `H` are used to read/write to memory).           |
-| `PCL` | Program Counter (low byte)                                              |
-| `PCH` | Program Counter (high byte)                                             |
-| `SPL` | Stack Pointer (low byte)                                                |
-| `SPH` | Stack Pointer (high byte)                                               |
-| `MB`  | [Memory Bank](#memory) (the selected bank to use when reading/writing). |
+| Id  | Usage                                                                   |
+| --- | ----------------------------------------------------------------------- |
+| `A` | General purpose.                                                        |
+| `B` | General purpose.                                                        |
+| `C` | General purpose.                                                        |
+| `D` | General purpose.                                                        |
+| `Z` | General purpose.                                                        |
+| `F` | Flags regarding the last mathematical operation.                        |
+| `X` | Low index byte (`X` + `Y` are used to read/write to memory).            |
+| `Y` | High index byte (`X` + `Y` are used to read/write to memory).           |
+| `K` | [Memory Bank](#memory) (the selected bank to use when reading/writing). |
 
-> It is EXTREMELY unsafe to mess with `PC` in a program, the computer takes care
-> of it already. As well, it is ill-advised to change `SP` because `pop` and
-> `push` manage it.
+> `K` register can only be modified with the `bank` instruction.
 
 ### Flags
 
@@ -62,7 +56,7 @@ LSB - MSB
 ### Memory Banks
 
 Each bank is 16Kb long. Banks are accessed through the
-[Memory Bank Register](#registers). If the `MB` register is set to `0`, builtin
+[Memory Bank Register](#registers). If the `K` register is set to `0`, builtin
 ram is used.
 
 - `0x00`: Builtin-memory

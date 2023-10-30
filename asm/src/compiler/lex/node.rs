@@ -26,6 +26,16 @@ pub enum Value {
     MacroVariable(String),
 }
 
+impl Value {
+    pub fn is_register(&self) -> bool {
+        matches!(self, Self::Register(..))
+    }
+
+    pub fn is_imm(&self) -> bool {
+        matches!(self, Self::Literal(..) | Self::Expr(..))
+    }
+}
+
 impl<'b> Lexable<'b> for Value {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         if let Ok((lit, buf)) = usize::lex(buf) {
@@ -43,7 +53,7 @@ impl<'b> Lexable<'b> for Value {
             })?;
             return Ok((Value::MacroVariable(var.to_string()), buf));
         }
-        let (expr_buf, buf) = collect_until(buf, |c| c == ',' || c == '\n')?;
+        let (expr_buf, buf) = collect_until(buf, |c| c == ',' || c == '\n' || c == ';')?;
         let (expr, expr_buf) = Expr::lex(expr_buf)?;
         let expr_buf = ignore_whitespace(expr_buf);
         expect_complete(expr_buf)?;

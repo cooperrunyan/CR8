@@ -158,8 +158,10 @@ impl Compiler {
                 match Operation::try_from(inst.id.as_str()) {
                     Ok(_) => {}
                     Err(_) => bail!(
-                        "Could not find matching macro or instruction for {:#?}",
-                        inst.id
+                        "Could not find matching macro or instruction for {:#?}. \nExpected one of {:#?}. \nGot {:#?}",
+                        inst.id,
+                        mac.captures,
+                        inst.args
                     ),
                 };
 

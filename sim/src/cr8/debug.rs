@@ -20,10 +20,21 @@ macro_rules! addr {
 
 impl CR8 {
     pub fn debug(&self, mem: &Mem, dev: DeviceSnapshot) {
-        let mut snapshot = String::new();
+        let snapshot = String::new();
 
         #[cfg(feature = "keyboard")]
-        snapshot.push_str(&format!("\n    - keyboard: {:#010b}", dev.keyboard));
+        let snapshot = {
+            let mut snapshot = snapshot;
+            snapshot.push_str(&format!("\n    - keyboard: {:#010b}", dev.keyboard));
+            snapshot
+        };
+
+        #[cfg(feature = "rng")]
+        let snapshot = {
+            let mut snapshot = snapshot;
+            snapshot.push_str(&format!("\n    - rng: {:#010b}", dev.rng));
+            snapshot
+        };
 
         info!(
             "\n{}",

@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 
 use super::Compiler;
 use crate::compiler::config::Input;
-use crate::compiler::lex::{Expr, ExprOperation, Instruction, Item, ItemInner, Meta, Node, Value};
+use crate::compiler::lex::{Expr, Instruction, Item, ItemInner, Meta, Node, Value};
 
 impl Compiler {
     pub(crate) fn resolve_meta(&mut self, nodes: Vec<Item>) -> Result<()> {
@@ -12,38 +12,17 @@ impl Compiler {
                     self.push(Input::File(f.to_string()), node.file)?;
                 }
                 ItemInner::Meta(Meta::Main(to)) => {
-                    if self.preamble.is_some() {
+                    if self.preamble {
                         bail!("Cannot set #[main] twice");
                     }
 
-                    self.preamble = Some(vec![
+                    self.tree.insert(
+                        0,
                         Node::Instruction(Instruction {
-                            id: "mov".to_string(),
-                            args: vec![
-                                Value::Register(crate::reg::Register::X),
-                                Value::Expr(Expr::Expr {
-                                    lhs: Box::new(Expr::Variable(to.clone())),
-                                    op: ExprOperation::And,
-                                    rhs: Box::new(Expr::Literal(0xFF)),
-                                }),
-                            ],
+                            id: "jmp".to_string(),
+                            args: vec![Value::Expr(Expr::Variable(to))],
                         }),
-                        Node::Instruction(Instruction {
-                            id: "mov".to_string(),
-                            args: vec![
-                                Value::Register(crate::reg::Register::Y),
-                                Value::Expr(Expr::Expr {
-                                    lhs: Box::new(Expr::Variable(to.clone())),
-                                    op: ExprOperation::Rsh,
-                                    rhs: Box::new(Expr::Literal(8)),
-                                }),
-                            ],
-                        }),
-                        Node::Instruction(Instruction {
-                            id: "jnz".to_string(),
-                            args: vec![Value::Literal(1)],
-                        }),
-                    ]);
+                    );
                 }
                 ItemInner::Meta(Meta::Static(k, v)) => {
                     if self.statics.contains_key(&k) {

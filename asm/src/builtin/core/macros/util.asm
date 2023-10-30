@@ -18,46 +18,25 @@
         mov %f, $b
         sw %f
     }
-    ($vl: reg, $vh: reg) => {
-        sw $vl
+    ($a: reg, $b: reg) => {
+        sw $a
         inc %x, %y
-        sw $vh
-    }
-    ($tol: reg, $toh: reg, $r: reg) => {
-        ldxy $tol, $toh
-        sw $r
-    }
-    ($to: expr, $vl: reg, $vh: reg) => {
-        ldxy $to
-        sw $vl, $vh
+        sw $b
     }
 }
 
 #[macro] lw: {
-    ($tol: reg, $toh: reg) => {
-        lw $tol
+    ($a: reg, $b: reg) => {
+        lw $a
         inc %x, %y
-        lw $toh
-    }
-    ($tol: reg, $toh: reg, $addr: expr) => {
-        ldxy $addr
-        lw $tol, $toh
-    }
-    ($tol: reg, $toh: reg, $addrl: lit | reg, $addrh: lit | reg) => {
-        mov %x, $addrl
-        mov %y, $addrh
-        lw $tol, $toh
-    }
-    ($to: reg, $addrl: reg, $addrh: reg) => {
-        ldxy $addrl, $addrh
-        lw $to
+        lw $b
     }
 }
 
-; do nothing for 2 ticks
+; do nothing for 1 tick
 #[macro] nop: {
     () => {
-      mov %a, %a ; 2 bytes
+      mov %a, %a ; 1 byte
     }
 }
 

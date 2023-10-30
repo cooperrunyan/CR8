@@ -86,24 +86,18 @@ functionality of builtin instructions. See [core](./src/builtin/core/README.md).
 ### Instruction Encoding
 
 - Instructions are 2-4 bytes long.
-- First byte of the instruction looks like `ZZXXXXYY`, where:
-  - `Z`: Empty
+- First byte of the instruction looks like `XXXXYZZZ`, where:
   - `X`: Instruction code (see above)
-  - `Y`: Argument type
-    - `00`: 1 Register + 0 Immediate
-    - `01`: 1 Register + 1 Immediate
-    - `10`: 2 Register + 0 Immediate
-    - `11`: 0 Register + 1 Immediate
-- A Register byte looks like `BBBBAAAA`, where:
-  - `A`: Register #1,
-  - `B`: Register #2
+  - `Y`: Is-Immediate (Denotes whether the instruction uses an immediate or
+    register value)
+  - `Z`: Register (the first register argument)
 
 ```text
-    reg1
-    ┌──┐
+   imm
+    |
 00000000    00000000    00000000
-└──┘        └──────┘    └──────┘
-reg2        imm(low)    imm2(high)
+└──┘ └─┘    └──────┘    └──────┘
+op   reg    imm(low)    imm2(high)
 ```
 
 ## Values
@@ -131,7 +125,7 @@ Values like `1`, `0b0010`, or `0xF000`.
 
 ### Registers
 
-Registers are written as `%a` for `A`, `mb` for `MB`, etc.
+Registers are written as `%a` for `A`.
 
 See [Registers](../README.md#registers).
 
@@ -305,8 +299,6 @@ Variables are not scoped; if `A` is defined in `a.asm` and `b.asm` imports
 Exactly where `const` is called, the compiler will insert its bytes into the
 binary. This is used for data that will be stored on ROM and never changed.
 
-Similar to `@db` in other forms of Assembly.
-
 For functionality that allows values to change, see [dyn](#dyn).
 
 ### `#[dyn]`
@@ -325,8 +317,7 @@ For functionality that allows values to change, see [dyn](#dyn).
 
 - `dyn`: Store data in a specified location in RAM.
 - `static`: Immutable data used only at compile-time.
-- `const`: Immutable data stored in ROM exactly where `const` was called. Like
-  `@db`.
+- `const`: Immutable data stored in ROM exactly where `const` was called.
 
 ### `#[macro]`
 
@@ -394,4 +385,8 @@ The macros can be used the same as
 
 ```cr8
 macro_name %a
+macro_name
+macro_name %a, %b
+macro_name 12 + 3
+; etc.
 ```

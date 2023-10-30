@@ -27,7 +27,9 @@
 
 #[macro] dbg: {
     () => {
+        push %f
         send CTRL, SIGDBG
+        pop %f
         out 0x00, %a
         out 0x00, %b
         out 0x00, %c

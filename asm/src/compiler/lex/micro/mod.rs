@@ -1,14 +1,23 @@
 use indexmap::IndexMap;
 
-use crate::op::{Operation, OperationArgAmt};
+use crate::op::Operation;
 
 mod lex;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Micro(IndexMap<Operation, MicroInstruction>);
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct MicroInstruction(IndexMap<OperationArgAmt, Vec<Vec<MicroSignal>>>);
+#[derive(Debug, PartialEq, Eq, Default)]
+pub struct MicroInstruction {
+    imm: Option<Vec<Vec<MicroSignal>>>,
+    reg: Option<Vec<Vec<MicroSignal>>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum TypeIdentifier {
+    Immediate,
+    Register,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MicroSignal {

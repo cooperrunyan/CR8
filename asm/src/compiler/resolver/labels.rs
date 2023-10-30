@@ -1,5 +1,5 @@
 use crate::compiler::lex::{Instruction, Node};
-use crate::op::{Operation, OperationArgAmt};
+use crate::op::Operation;
 
 use anyhow::{bail, Result};
 
@@ -45,7 +45,6 @@ impl Instruction {
             Ok(o) => o,
             Err(_) => bail!("Cannot determine size of {:#?}", self.id),
         };
-
-        op.size(OperationArgAmt::from_args(&self.args)?)
+        op.check(&self.args).map(|(sz, _)| sz)
     }
 }

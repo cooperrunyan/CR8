@@ -1,4 +1,4 @@
-#[use(std::gfx::grid::block::clear)]
+#[use(std::gfx::grid)]
 #[use(std::sleep)]
 
 #[main]
