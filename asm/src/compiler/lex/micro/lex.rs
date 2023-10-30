@@ -55,12 +55,6 @@ impl<'b> Lexable<'b> for Micro {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut micro = IndexMap::new();
         let mut buf = buf;
-        buf = ignore_whitespace(buf);
-        buf = expect(buf, "#![")?;
-        buf = ignore_whitespace_noline(buf);
-        buf = expect(buf, "micro")?;
-        buf = ignore_whitespace_noline(buf);
-        buf = expect(buf, "]")?;
         loop {
             buf = ignore_whitespace(buf);
             if buf.is_empty() {

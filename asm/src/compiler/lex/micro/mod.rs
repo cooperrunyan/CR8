@@ -4,13 +4,13 @@ use crate::op::{Operation, OperationArgAmt};
 
 mod lex;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Micro(IndexMap<Operation, MicroInstruction>);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct MicroInstruction(IndexMap<OperationArgAmt, Vec<Vec<MicroSignal>>>);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum MicroSignal {
     AddressBusWrite(AddressBusWriter),
     DataBusWrite(DataBusWriter),
@@ -21,7 +21,7 @@ pub enum MicroSignal {
     Reset,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AddressBusWriter {
     ProgramCounter,
     StackPointer,
@@ -29,7 +29,7 @@ pub enum AddressBusWriter {
     LhsRhs,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DataBusReader {
     Flags,
     Io,
@@ -40,7 +40,7 @@ pub enum DataBusReader {
     Sel,    // Selects a reader based on the register ID that is in lhs
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DataBusWriter {
     Sel, // Selects a reader based on the register ID that is in rhs
     A,
@@ -59,7 +59,7 @@ pub enum DataBusWriter {
     Rhs,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AluSignal {
     Add,
     Sub,
@@ -69,14 +69,14 @@ pub enum AluSignal {
     Cmp,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ProgramCounterSignal {
     Increment,
     Jump,
     JumpNotZero,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum StackPointerSignal {
     Increment,
     Decrement,

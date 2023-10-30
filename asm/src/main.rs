@@ -2,7 +2,7 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Result;
-use asm::compiler::{Compiler, Config};
+use asm::compiler::{micro, Compiler, Config};
 
 use env_logger::Env;
 
@@ -15,6 +15,13 @@ fn main() -> Result<()> {
         .init();
 
     let config = Config::from_argv();
+
+    if config.micro {
+        let bin = micro::compile(config.input)?;
+        let _ = config.output.write(&bin);
+
+        return Ok(());
+    }
 
     let mut compiler = Compiler::new();
 

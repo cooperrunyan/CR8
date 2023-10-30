@@ -3,6 +3,7 @@ use std::num::Wrapping;
 use anyhow::{bail, Result};
 
 use crate::compiler::Compiler;
+use crate::lex_enum;
 
 use super::lexable::{collect_while, expect, ignore_whitespace, LexResult, Lexable};
 
@@ -139,31 +140,18 @@ impl ExprOperation {
 
 impl<'b> Lexable<'b> for ExprOperation {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        Ok(if let Ok(buf) = expect(buf, "*") {
-            (Self::Mul, buf)
-        } else if let Ok(buf) = expect(buf, "+") {
-            (Self::Add, buf)
-        } else if let Ok(buf) = expect(buf, "-") {
-            (Self::Sub, buf)
-        } else if let Ok(buf) = expect(buf, "/") {
-            (Self::Div, buf)
-        } else if let Ok(buf) = expect(buf, "&") {
-            (Self::And, buf)
-        } else if let Ok(buf) = expect(buf, "^") {
-            (Self::Xor, buf)
-        } else if let Ok(buf) = expect(buf, "|") {
-            (Self::Or, buf)
-        } else if let Ok(buf) = expect(buf, ">>") {
-            (Self::Rsh, buf)
-        } else if let Ok(buf) = expect(buf, "<<") {
-            (Self::Lsh, buf)
-        } else {
-            bail!(
-                "Unknown operator: {:#?} at {}",
-                buf.split_ascii_whitespace().next(),
-                buf
-            );
-        })
+        lex_enum! { buf;
+            "*" => Self::Mul,
+            "+" => Self::Add,
+            "-" => Self::Sub,
+            "/" => Self::Div,
+            "&" => Self::And,
+            "^" => Self::Xor,
+            "|" => Self::Or,
+            ">>" => Self::Rsh,
+            "<<" => Self::Lsh,
+        }
+        .map_err(|e| e.context("Unknown Operator"))
     }
 }
 

@@ -90,6 +90,33 @@ pub fn expect<'b>(buf: &'b str, expect: &'static str) -> Result<&'b str> {
     }
 }
 
+pub fn expect_enum<'b, E: Clone + Copy>(
+    buf: &'b str,
+    variants: &[(&'static str, E)],
+) -> Result<(E, &'b str)> {
+    for (pat, variant) in variants {
+        if let Ok(buf) = expect(buf, pat) {
+            return Ok((*variant, buf));
+        }
+    }
+    bail!(
+        "Expected one of {:#?}, got {:#?}",
+        variants
+            .iter()
+            .map(|(m, _)| *m)
+            .collect::<Vec<_>>()
+            .join("\", \""),
+        buf.split_ascii_whitespace().next().unwrap_or_default()
+    );
+}
+
+#[macro_export]
+macro_rules! lex_enum {
+    ($buf:expr; $($m:literal => $variant:expr,)*) => {
+        $crate::compiler::lex::lexable::expect_enum($buf, &[ $(($m, $variant),)* ])
+    }
+}
+
 impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut values = vec![];

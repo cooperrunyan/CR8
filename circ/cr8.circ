@@ -720,9 +720,6 @@
     <comp lib="0" loc="(60,630)" name="Constant">
       <a name="value" val="0x0"/>
     </comp>
-    <comp lib="0" loc="(60,650)" name="Constant">
-      <a name="value" val="0x0"/>
-    </comp>
     <comp lib="0" loc="(60,680)" name="Constant">
       <a name="value" val="0x5"/>
       <a name="width" val="3"/>
@@ -903,10 +900,6 @@
     </comp>
     <comp lib="0" loc="(70,630)" name="Tunnel">
       <a name="label" val="PCJ"/>
-      <a name="labelfont" val="SansSerif bold 10"/>
-    </comp>
-    <comp lib="0" loc="(70,650)" name="Tunnel">
-      <a name="label" val="AR_SP"/>
       <a name="labelfont" val="SansSerif bold 10"/>
     </comp>
     <comp lib="0" loc="(70,680)" name="Tunnel">
@@ -1571,7 +1564,6 @@
     <wire from="(60,590)" to="(70,590)"/>
     <wire from="(60,610)" to="(70,610)"/>
     <wire from="(60,630)" to="(70,630)"/>
-    <wire from="(60,650)" to="(70,650)"/>
     <wire from="(60,680)" to="(70,680)"/>
     <wire from="(60,710)" to="(70,710)"/>
     <wire from="(60,730)" to="(70,730)"/>

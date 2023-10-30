@@ -11,6 +11,7 @@ use crate::builtin::BUILTIN;
 pub struct Config {
     pub input: Input,
     pub output: Output,
+    pub micro: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +49,7 @@ impl Config {
     pub fn from_argv() -> Self {
         let mut input: Option<Input> = None;
         let mut output = Output::None;
+        let mut micro = false;
 
         for (i, arg) in std::env::args().enumerate() {
             match arg.as_str() {
@@ -60,6 +62,7 @@ impl Config {
                 "-o" | "--output" => {
                     output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
                 }
+                "--micro" => micro = true,
                 _ => {}
             }
         }
@@ -68,7 +71,11 @@ impl Config {
         }
         let input = input.unwrap();
 
-        Self { input, output }
+        Self {
+            input,
+            output,
+            micro,
+        }
     }
 }
 

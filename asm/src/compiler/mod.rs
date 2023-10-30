@@ -10,6 +10,7 @@ use std::sync::Arc;
 mod config;
 mod debug;
 pub mod lex;
+pub mod micro;
 mod resolver;
 
 use crate::compiler::lex::{Node, Value};
