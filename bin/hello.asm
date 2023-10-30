@@ -2,7 +2,7 @@
 
 #[main]
 main:
-    mov %k, 1
+    bank 1
     draw_char BRAM, CHAR_H
     draw_char BRAM + 1, CHAR_E_LC
     draw_char BRAM + 2, CHAR_L_LC

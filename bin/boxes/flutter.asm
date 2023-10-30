@@ -3,7 +3,7 @@
 
 #[main]
 main:
-    mov %k, 1
+    bank 1
 
     ; Keep a counter on the stack
     call init_counter

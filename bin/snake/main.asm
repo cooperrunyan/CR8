@@ -27,7 +27,7 @@
 
 #[main]
 main:
-  mov %k, 1
+  bank 1
 
   call erase
 

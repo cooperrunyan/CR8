@@ -2,7 +2,7 @@
 
 #[main]
 main:
-    mov %k, 1
+    bank 1
     mov %a, %b, 0, 0
 
     .loop:

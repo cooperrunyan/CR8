@@ -85,10 +85,12 @@ pub enum StackPointerSignal {
 #[cfg(test)]
 #[test]
 fn test() -> Result<(), Box<dyn std::error::Error>> {
-    use crate::compiler::lex::Lexable;
+    use crate::compiler::lex::{Lexable, Pragma};
+    let buf = include_str!("../../../builtin/core/micro.asm");
+    let (prag, buf) = Pragma::lex(buf)?;
+    assert!(prag == Pragma::Micro);
+    let (micro, _) = Micro::lex(buf)?;
 
-    let (microcode, _) = Micro::lex(include_str!("../../../builtin/core/micro.asm"))?;
-
-    dbg!(microcode);
+    dbg!(micro);
     Ok(())
 }

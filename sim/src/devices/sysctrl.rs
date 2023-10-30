@@ -82,7 +82,7 @@ impl SysCtrl {
                 SIG::Debug => {
                     self.debugger = Some(Debugger {
                         stage: DebugStage::Empty,
-                        data: [0; 9],
+                        data: [0; 8],
                     })
                 }
                 SIG::Breakpoint => {
@@ -109,9 +109,8 @@ enum DebugStage {
     D,
     Z,
     F,
-    L,
-    H,
-    MB,
+    X,
+    Y,
 }
 
 impl DebugStage {
@@ -124,10 +123,9 @@ impl DebugStage {
             S::C => S::D,
             S::D => S::Z,
             S::Z => S::F,
-            S::F => S::L,
-            S::L => S::H,
-            S::H => S::MB,
-            S::MB => None?,
+            S::F => S::X,
+            S::X => S::Y,
+            S::Y => None?,
         })
     }
 }
@@ -135,7 +133,7 @@ impl DebugStage {
 #[derive(Debug, Default)]
 struct Debugger {
     stage: DebugStage,
-    data: [u8; 9],
+    data: [u8; 8],
 }
 
 impl Debugger {
@@ -158,7 +156,7 @@ impl Debugger {
         #[cfg(feature = "rng")]
         snapshot.push_str(&format!("\n    - rng: {:#010b}", dev.rng));
 
-        let [a, b, c, d, z, f, l, h, mb] = self.data;
+        let [a, b, c, d, z, f, l, h] = self.data;
 
         info!(
             "\n{}",
@@ -166,7 +164,6 @@ impl Debugger {
                 r#"
 ================== State ==================
 
-  {}
   {}
   {}
   {}
@@ -188,9 +185,8 @@ impl Debugger {
                 byte!("D", d),
                 byte!("Z", z),
                 byte!("F", f),
-                byte!("L", l),
-                byte!("H", h),
-                byte!("M", mb),
+                byte!("X", l),
+                byte!("Y", h),
                 snapshot
             )
         );

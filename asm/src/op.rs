@@ -6,20 +6,21 @@ use crate::compiler::lex::Value;
 /// Native instructions
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Operation {
-    MOV = 0,
-    JNZ = 1,
-    LW = 2,
-    SW = 3,
-    PUSH = 4,
-    POP = 5,
-    IN = 6,
-    OUT = 7,
-    ADC = 8,
-    SBB = 9,
-    CMP = 10,
-    AND = 11,
-    OR = 12,
-    NOR = 13,
+    MOV,
+    JNZ,
+    LW,
+    SW,
+    PUSH,
+    POP,
+    IN,
+    OUT,
+    ADC,
+    SBB,
+    CMP,
+    AND,
+    OR,
+    NOR,
+    BANK,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -61,6 +62,7 @@ impl Display for Operation {
             O::AND => "and",
             O::OR => "or",
             O::NOR => "nor",
+            O::BANK => "bank",
         };
         f.write_str(str)
     }
@@ -85,6 +87,7 @@ impl TryFrom<&str> for Operation {
             "and" => O::AND,
             "or" => O::OR,
             "nor" => O::NOR,
+            "bank" => O::BANK,
             _ => Err(())?,
         })
     }
@@ -109,6 +112,7 @@ impl TryFrom<u8> for Operation {
             11 => O::AND,
             12 => O::OR,
             13 => O::NOR,
+            14 => O::BANK,
             _ => Err(())?,
         })
     }
@@ -142,6 +146,11 @@ impl Operation {
             },
             O::PUSH => match arg_amt {
                 AMT::R1I0 | AMT::R0I1 => 2,
+                _ => bail!("Invalid arg amounts for {self:#?}"),
+            },
+            O::BANK => match arg_amt {
+                AMT::R1I0 => 2,
+                AMT::R0I1 => 2,
                 _ => bail!("Invalid arg amounts for {self:#?}"),
             },
         };

@@ -4,7 +4,7 @@
 
 #[main]
 main:
-    mov %k, 1
+    bank 1
     mov %a, 0
     mov %b, 0
     mov %c, (0x4000 - LEN) & 0xFF

@@ -19,8 +19,6 @@ pub enum Register {
     Z,
     /// %f
     F,
-    /// %k
-    K,
 }
 
 impl Display for Register {
@@ -35,7 +33,6 @@ impl Display for Register {
             R::Y => "y",
             R::Z => "z",
             R::F => "f",
-            R::K => "k",
         };
         f.write_str(str)
     }
@@ -54,7 +51,6 @@ impl TryFrom<&str> for Register {
             "y" => R::Y,
             "z" => R::Z,
             "f" => R::F,
-            "k" => R::K,
             _ => Err(())?,
         })
     }
@@ -73,7 +69,6 @@ impl TryFrom<u8> for Register {
             5 => R::Y,
             6 => R::Z,
             7 => R::F,
-            8 => R::K,
             _ => Err(())?,
         })
     }

@@ -26,7 +26,7 @@ impl CR8 {
         let amt = OperationArgAmt::from(bytes[0]);
 
         match instruction {
-            O::MOV => self.mov(mem, amt, bytes),
+            O::MOV => self.mov(amt, bytes),
             O::JNZ => self.jnz(amt, bytes),
             O::LW => self.lw(mem, amt, bytes),
             O::SW => self.sw(mem, amt, bytes),
@@ -40,6 +40,7 @@ impl CR8 {
             O::AND => self.and(amt, bytes),
             O::OR => self.or(amt, bytes, false),
             O::NOR => self.or(amt, bytes, true),
+            O::BANK => self.bank(mem, amt, bytes),
         }
     }
 
@@ -76,7 +77,7 @@ impl CR8 {
     }
 
     /// MOV: (see README.md)
-    fn mov(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+    fn mov(&mut self, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
         let (into, val, sz) = match amt {
             A::R1I1 => (bytes[1] & 0b1111, bytes[2], 3),
             A::R2I0 => (bytes[1] & 0b1111, self.reg[(bytes[1] >> 4) as usize], 2),
@@ -84,9 +85,6 @@ impl CR8 {
         };
         trace!("{:04x}: MOV {into:#?}, {val:02x} | {val:?}", self.pc);
         self.reg[into as usize] = val;
-        if Register::K as u8 == into {
-            mem.write().unwrap().select(val)?;
-        }
         Ok(sz)
     }
 
@@ -287,6 +285,18 @@ impl CR8 {
         };
         trace!("{:04x}: AND {lhs:#?}, {rhs:02x}", self.pc);
         self.reg[lhs as usize] &= rhs;
+        Ok(sz)
+    }
+
+    /// MOV: (see README.md)
+    fn bank(&mut self, mem: &RwLock<Mem>, amt: OperationArgAmt, bytes: [u8; 4]) -> Result<u8> {
+        let (val, sz) = match amt {
+            A::R1I0 => (bytes[1] & 0b1111, 2),
+            A::R0I1 => (bytes[1], 2),
+            _ => bail!("Invalid amount {amt:?}"),
+        };
+        trace!("{:04x}: BANK {val:02x} | {val:?}", self.pc);
+        mem.write().unwrap().select(val)?;
         Ok(sz)
     }
 }

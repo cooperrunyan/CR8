@@ -36,6 +36,5 @@
         out 0x00, %f
         out 0x00, %x
         out 0x00, %y
-        out 0x00, %k
     }
 }
