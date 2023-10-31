@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use std::fs;
 use std::{env, time::Duration};
 
 use super::Runner;
@@ -9,32 +10,31 @@ mod jit;
 impl Runner {
     #[cfg(not(feature = "jit"))]
     pub fn from_argv() -> Result<Self> {
-        use std::fs;
+        let (bytes, tickrate, debug) = Self::read_argv()?;
 
-        let (file, tickrate, debug) = Self::read_argv()?;
-
-        let bin = match fs::read(file.clone()) {
-            Ok(i) => i,
-            Err(_) => bail!("Could not read input file"),
-        };
-
-        Ok(Self::new(&bin, tickrate, debug))
+        Ok(Self::new(&bytes, tickrate, debug))
     }
 
-    pub fn read_argv() -> Result<(String, Duration, bool)> {
+    pub fn read_argv() -> Result<(Vec<u8>, Duration, bool)> {
         let args: Vec<_> = env::args().collect();
 
-        let mut file = String::new();
+        let mut file: Option<Vec<u8>> = None;
         let mut tickrate = Duration::ZERO;
         let mut debug = false;
 
         for (i, arg) in args.iter().enumerate() {
             match arg.as_str() {
-                "-i" | "--input" => {
+                "-f" => {
                     if args.len() <= i + 1 {
                         break;
                     }
-                    file = args[i + 1].to_string();
+                    file = Some(fs::read(args[i + 1].clone())?);
+                }
+                "-x" => {
+                    if args.len() <= i + 1 {
+                        break;
+                    }
+                    file = Some(args[i + 1].clone().into_bytes());
                 }
                 "-r" | "--tickrate" => {
                     if args.len() <= i + 1 {
@@ -50,11 +50,11 @@ impl Runner {
             }
         }
 
-        if file.is_empty() {
+        if file.is_none() {
             bail!("Expected input file");
         }
 
-        Ok((file, tickrate, debug))
+        Ok((file.unwrap(), tickrate, debug))
     }
 
     pub fn parse_duration(inpt: &str) -> Result<Duration> {

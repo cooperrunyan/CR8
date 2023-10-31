@@ -1,7 +1,16 @@
 [[hooks]]
-    stage             = "pre_build"
-    command           = "cargo"
-    command_arguments = ["web", "bin/snake"]
+    stage = "pre_build"
+    command = "cargo"
+    command_arguments = [
+        "run",
+        "--bin",
+        "asm",
+        "--",
+        "-o",
+        "target/web/exec.bin",
+        "-f",
+        "bin/snake",
+    ]
 
 [build]
     target         = "./sim/web/index.html"
