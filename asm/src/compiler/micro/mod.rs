@@ -6,6 +6,7 @@ use super::Input;
 pub fn compile(input: Input) -> Result<Vec<u8>> {
     let (buf, _) = input.source(None, None)?;
     let buf = buf.unwrap_or_default();
+    #[allow(unused_mut)]
     let mut bin = vec![];
 
     let (prag, buf) = Pragma::lex(&buf)?;

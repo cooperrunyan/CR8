@@ -43,29 +43,24 @@ pub enum DataBusReader {
     Flags,
     Io,
     Memory,
+    MemoryBank,
     Lhs,
     Rhs,
-    LhsRhs, // puts high nibble into rhs and low into lhs
-    Sel,    // Selects a reader based on the register ID that is in lhs
+    Device,
+    Sel, // Selects a reader based on the register ID that is in lhs
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DataBusWriter {
     Sel, // Selects a reader based on the register ID that is in rhs
-    A,
-    B,
-    C,
-    D,
-    X,
-    Y,
-    Z,
-    Flags,
+    Device,
     K,
     AluFlags,
     Alu,
     Memory,
     Io,
     Rhs,
+    Operation,
 }
 
 #[derive(Debug, PartialEq, Eq)]

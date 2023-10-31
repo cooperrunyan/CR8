@@ -17,18 +17,13 @@ const ADDRESS_BUS_WRITE: &str = "aw";
 const DATA_BUS_WRITE: &str = "dw";
 const DATA_BUS_READ: &str = "dr";
 const PROGRAM_COUNTER: &str = "pc";
+const OPERATION_REG: &str = "op";
 const STACK_POINTER: &str = "sp";
 const ALU: &str = "alu";
 const RESET: &str = "rst";
 
 const SEL: &str = "sel";
-const A: &str = "a";
-const B: &str = "b";
-const C: &str = "c";
-const D: &str = "d";
-const X: &str = "x";
-const Y: &str = "y";
-const Z: &str = "z";
+const DEVICE: &str = "dev";
 const LHS: &str = "lhs";
 const RHS: &str = "rhs";
 const LR: &str = "lr";
@@ -192,10 +187,11 @@ impl<'b> Lexable<'b> for DataBusReader {
                 SEL => Self::Sel,
                 FLAGS => Self::Flags,
                 MEMORY => Self::Memory,
+                K => Self::MemoryBank,
+                DEVICE => Self::Device,
                 IO => Self::Io,
                 RHS => Self::Rhs,
                 LHS => Self::Lhs,
-                LR => Self::LhsRhs,
                 o => bail!("Invalid operation {o:#?} for {DATA_BUS_READ:#?}"),
             },
             buf,
@@ -210,20 +206,14 @@ impl<'b> Lexable<'b> for DataBusWriter {
         Ok((
             match x {
                 SEL => Self::Sel,
-                A => Self::A,
-                B => Self::B,
-                C => Self::C,
-                D => Self::D,
-                X => Self::X,
-                Y => Self::Y,
-                Z => Self::Z,
-                FLAGS => Self::Flags,
+                DEVICE => Self::Device,
                 K => Self::K,
                 ALU_FLAGS => Self::AluFlags,
                 ALU => Self::Alu,
                 MEMORY => Self::Memory,
                 IO => Self::Io,
                 RHS => Self::Rhs,
+                OPERATION_REG => Self::Operation,
                 o => bail!("Invalid operation {o:#?} for {DATA_BUS_WRITE:#?}"),
             },
             buf,
