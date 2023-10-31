@@ -1,4 +1,5 @@
 use crate::compiler::lex::lexable::*;
+use crate::token;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Use {
@@ -22,7 +23,7 @@ impl<'b> Lexable<'b> for Use {
             return Ok((Self::File(file.to_string()), buf));
         }
 
-        let (module, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == ':' || c == '_')?;
+        let (module, buf) = token!(buf; ':' | '_')?;
         Ok((Self::Module(module.to_string()), buf))
     }
 }

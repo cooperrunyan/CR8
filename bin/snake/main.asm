@@ -340,7 +340,7 @@ full_draw:
 
 ; Compare two 16 bit numers with a designated register to trash
 #[macro] cmp16: {
-  ($inter: reg, $lhs_l: reg, $lhs_h: reg, $rhs_l: lit | reg, $rhs_h: lit | reg) => {
+  ($inter: reg, $lhs_l: reg, $lhs_h: reg, $rhs_l: any, $rhs_h: any) => {
     cmp $lhs_l, $rhs_l
     mov $inter, %f
     cmp $lhs_h, $rhs_h

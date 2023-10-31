@@ -101,7 +101,7 @@ impl Compiler {
                                 V::Register(r) => insert!(name, Register(r)),
                                 _ => invalid!(),
                             },
-                            MA::LiteralOrRegister => match current {
+                            MA::Any => match current {
                                 V::Literal(v) => insert!(name, Literal(v)),
                                 V::Register(r) => insert!(name, Register(r)),
                                 V::MacroVariable(id) => insert!(name, MacroVariable(id)),

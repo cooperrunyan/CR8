@@ -1,11 +1,14 @@
 use crate::compiler::lex::lexable::*;
 use crate::lex_enum;
+use crate::repeated;
+use crate::surround_inline;
+use crate::token;
 
-mod bytes;
+use anyhow::bail;
+
 mod import;
 mod mac;
 
-pub use bytes::*;
 pub use import::*;
 pub use mac::*;
 
@@ -50,7 +53,7 @@ impl<'b> Lexable<'b> for Meta {
                 let buf = expect(buf, "]")?;
                 let buf = ignore_whitespace(buf);
                 let b = buf;
-                let (label, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
+                let (label, buf) = token!(buf; '_')?;
                 let buf = ignore_whitespace(buf);
                 let _ = expect(buf, ":")?;
                 Ok((Meta::Main(label.to_string()), b))
@@ -63,25 +66,23 @@ impl<'b> Lexable<'b> for Meta {
             }
             MetaKind::Static => {
                 let buf = ignore_whitespace(buf);
-                let buf = expect(buf, "(")?;
+                let ((id, val), buf) = surround_inline!("(" buf ")" {
+                    let (id, buf) = token!(buf; '_')?;
+                    let buf = ignore_whitespace(buf);
+                    let buf = expect(buf, ":")?;
+                    let buf = ignore_whitespace(buf);
+                    let (val, buf) = usize::lex(buf)?;
+                    ((id, val), buf)
+                });
                 let buf = ignore_whitespace(buf);
-                let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
-                let buf = ignore_whitespace(buf);
-                let buf = expect(buf, ":")?;
-                let buf = ignore_whitespace(buf);
-                let (num, buf) = usize::lex(buf)?;
-                let buf = ignore_whitespace(buf);
-                let buf = expect(buf, ")")?;
                 let buf = expect(buf, "]")?;
-                Ok((Self::Static(id.to_string(), num), buf))
+                Ok((Self::Static(id.to_string(), val), buf))
             }
             MetaKind::Use => {
                 let buf = ignore_whitespace(buf);
-                let buf = expect(buf, "(")?;
-                let buf = ignore_whitespace(buf);
-                let (import, buf) = Use::lex(buf)?;
-                let buf = ignore_whitespace(buf);
-                let buf = expect(buf, ")")?;
+                let (import, buf) = surround_inline!("(" buf ")" {
+                    Use::lex(buf)?
+                });
                 let buf = expect(buf, "]")?;
                 Ok((Self::Use(import), buf))
             }
@@ -107,17 +108,29 @@ impl<'b> Lexable<'b> for Meta {
             }
             MetaKind::Constant => {
                 let buf = ignore_whitespace(buf);
-                let buf = expect(buf, "(")?;
+                let (id, buf) = surround_inline!("(" buf ")" {
+                    token!(buf; '_')?
+                });
                 let buf = ignore_whitespace(buf);
-                let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
-                let buf = ignore_whitespace(buf);
-                let buf = expect(buf, ")")?;
                 let buf = expect(buf, "]")?;
                 let buf = ignore_whitespace(buf);
                 let (explicit, buf) = Constant::lex(buf)?;
                 Ok((Self::Constant(id.to_string(), explicit), buf))
             }
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Constant(pub Vec<u8>);
+
+impl<'b> Lexable<'b> for Constant {
+    fn lex(buf: &'b str) -> LexResult<'b, Self> {
+        let (bytes, buf) = repeated!("{" buf "," "}" {
+            let (byte, buf) = usize::lex(buf)?;
+            (byte as u8, buf)
+        });
+        Ok((Self(bytes), buf))
     }
 }
 
@@ -146,6 +159,16 @@ mod test {
 
         let (buf, _) = Meta::lex("#[dyn(&0xC000)]")?;
         assert_eq!(buf, Meta::DynOrigin(0xC000));
+
+        Ok(())
+    }
+
+    #[test]
+    fn lex_bytes() -> Result<(), Box<dyn std::error::Error>> {
+        let (b, remaining) = Constant::lex(r#"{ 0, 0, 1, 0 }"#)?;
+
+        assert!(remaining.is_empty());
+        assert!(b.0 == vec![0, 0, 1, 0]);
 
         Ok(())
     }

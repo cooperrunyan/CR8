@@ -5,7 +5,7 @@
 }
 
 #[macro] nand: {
-    ($lhs: reg, $rhs: reg | lit) => {
+    ($lhs: reg, $rhs: any) => {
         and $lhs, $rhs
         not $lhs
     }

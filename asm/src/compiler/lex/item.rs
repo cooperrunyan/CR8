@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::compiler::lex::{lexable::*, Instruction, Meta, Node, Value};
+use crate::token;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum ItemInner {
@@ -30,13 +31,13 @@ impl<'b> Lexable<'b> for ItemInner {
         }
 
         if expect(buf, ".").is_ok() {
-            let (label, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '.')?;
+            let (label, buf) = token!(buf; '_' |'.')?;
             let buf = ignore_whitespace(buf);
             let buf = expect(buf, ":")?;
             return Ok((Self::Node(Node::Label(label.to_string())), buf));
         }
 
-        let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
+        let (id, buf) = token!(buf; '_')?;
 
         let buf = ignore_whitespace_noline(buf);
         if let Ok(buf) = expect(buf, ":") {

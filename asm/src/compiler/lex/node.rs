@@ -1,4 +1,5 @@
 use crate::reg::Register;
+use crate::token;
 
 use super::expr::Expr;
 use super::lexable::*;
@@ -48,9 +49,7 @@ impl<'b> Lexable<'b> for Value {
         }
 
         if expect(buf, "$").is_ok() {
-            let (var, buf) = collect_while(buf, |c| {
-                c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
-            })?;
+            let (var, buf) = token!(buf; '_' | '$' | '.')?;
             return Ok((Value::MacroVariable(var.to_string()), buf));
         }
         let (expr_buf, buf) = collect_until(buf, |c| c == ',' || c == '\n' || c == ';')?;

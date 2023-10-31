@@ -19,6 +19,74 @@ impl<'b, W, T: Lexable<'b>> LexableWith<'b, W> for T {
     }
 }
 
+#[macro_export]
+macro_rules! lex_enum {
+    ($buf:expr; $($m:literal => $variant:expr,)*) => {
+        $crate::compiler::lex::lexable::expect_enum($buf, &[ $(($m, $variant),)* ])
+    }
+}
+
+#[macro_export]
+macro_rules! token {
+    ($buf:ident $(; $ch:literal $(| $oth:literal)*)?) => {
+        $crate::compiler::lex::lexable::collect_while($buf, |c| c.is_alphanumeric() $( || c == $ch  $(|| c == $oth  )*  )?  )
+    }
+}
+
+#[macro_export]
+macro_rules! surround_inline {
+    ($start:literal $buf:ident $end:literal $inner:block ) => {{
+        let $buf = $crate::compiler::lex::lexable::expect($buf, $start)?;
+        let $buf = $crate::compiler::lex::lexable::ignore_whitespace_noline($buf);
+        let (inner, $buf) = $inner;
+        let $buf = $crate::compiler::lex::lexable::ignore_whitespace_noline($buf);
+        let $buf = $crate::compiler::lex::lexable::expect($buf, $end)?;
+        (inner, $buf)
+    }};
+}
+
+#[macro_export]
+macro_rules! repeated {
+    ($start:literal $buf:ident $end:literal $inner:block) => {{
+        let mut _items = vec![];
+        let mut $buf = $crate::compiler::lex::lexable::expect($buf, $start)?;
+        let $buf = loop {
+            $buf = $crate::compiler::lex::lexable::ignore_whitespace($buf);
+            if let Ok($buf) = $crate::compiler::lex::lexable::expect($buf, $end) {
+                break $buf;
+            }
+            let (_inner, _b) = $inner;
+            $buf = _b;
+            _items.push(_inner);
+        };
+        (_items, $buf)
+    }};
+    ($start:literal $buf:ident $delimeter:literal $end:literal $inner:block) => {{
+        let mut _items = vec![];
+        let mut $buf = $crate::compiler::lex::lexable::expect($buf, $start)?;
+        let $buf = loop {
+            $buf = $crate::compiler::lex::lexable::ignore_whitespace($buf);
+            if let Ok($buf) = $crate::compiler::lex::lexable::expect($buf, $end) {
+                break $buf;
+            }
+            let (_inner, _b) = $inner;
+            $buf = _b;
+            _items.push(_inner);
+            $buf = ignore_whitespace($buf);
+            if let Ok(b) = expect($buf, $delimeter) {
+                $buf = b;
+                continue;
+            }
+            if let Ok(b) = expect($buf, $end) {
+                $buf = b;
+                break $buf;
+            }
+            bail!("Expected {} or {}\n\n{}", $delimeter, $end, $buf);
+        };
+        (_items, $buf)
+    }};
+}
+
 pub fn ignore_comment(buf: &str) -> &str {
     if buf.starts_with(';') {
         if let Some(nl) = buf.find('\n') {
@@ -108,13 +176,6 @@ pub fn expect_enum<'b, E: Clone + Copy>(
             .join("\", \""),
         buf.split_ascii_whitespace().next().unwrap_or_default()
     );
-}
-
-#[macro_export]
-macro_rules! lex_enum {
-    ($buf:expr; $($m:literal => $variant:expr,)*) => {
-        $crate::compiler::lex::lexable::expect_enum($buf, &[ $(($m, $variant),)* ])
-    }
 }
 
 impl<'b, T: Lexable<'b>> Lexable<'b> for Vec<T> {

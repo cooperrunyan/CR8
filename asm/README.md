@@ -369,7 +369,7 @@ Each macro variable can be one of:
 - `reg`: Any [Register](../README.md#registers) (ex: `%a`)
 - `lit`: A literal number (ex: `5`)
 - `expr`: An [Expression](#expressions)
-- `reg | lit`: Either a [Register](../README.md#registers) or a literal number
+- `any`: Either a [Register](../README.md#registers) or a literal number
 
 #### Body
 

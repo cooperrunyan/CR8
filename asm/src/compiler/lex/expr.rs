@@ -3,9 +3,9 @@ use std::num::Wrapping;
 use anyhow::{bail, Result};
 
 use crate::compiler::Compiler;
-use crate::lex_enum;
+use crate::{lex_enum, token};
 
-use super::lexable::{collect_while, expect, ignore_whitespace, LexResult, Lexable};
+use super::lexable::{expect, ignore_whitespace, LexResult, Lexable};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
@@ -54,10 +54,7 @@ fn lex_expr_lhs(buf: &str) -> LexResult<'_, Expr> {
     if let Ok((lhs, buf)) = usize::lex(buf) {
         Ok((Expr::Literal(lhs), buf))
     } else {
-        let (lhs, buf) = collect_while(buf, |c| {
-            c.is_alphanumeric() || c == '_' || c == '$' || c == '.'
-        })?;
-
+        let (lhs, buf) = token!(buf; '_' | '$' | '.')?;
         Ok((Expr::Variable(lhs.to_string()), buf))
     }
 }

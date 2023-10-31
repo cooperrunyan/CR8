@@ -1,6 +1,6 @@
-use crate::lex_enum;
+use crate::{lex_enum, surround_inline};
 
-use super::{expect, ignore_whitespace, ignore_whitespace_noline, Lexable};
+use super::{expect, ignore_whitespace, Lexable};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Pragma {
@@ -12,16 +12,18 @@ pub enum Pragma {
 impl<'b> Lexable<'b> for Pragma {
     fn lex(buf: &'b str) -> super::LexResult<'b, Self> {
         let buf = ignore_whitespace(buf);
-        let buf = match expect(buf, "#![") {
-            Ok(buf) => buf,
+
+        match expect(buf, "#![") {
+            Ok(_) => {}
             Err(_) => return Ok((Self::None, buf)),
         };
-        let buf = ignore_whitespace_noline(buf);
-        let (variant, buf) = lex_enum! { buf;
-            "micro" => Pragma::Micro,
-        }?;
-        let buf = ignore_whitespace_noline(buf);
-        let buf = expect(buf, "]")?;
+
+        let (variant, buf) = surround_inline!("#![" buf "]" {
+            lex_enum! { buf;
+                "micro" => Pragma::Micro,
+            }?
+        });
+
         Ok((variant, buf))
     }
 }

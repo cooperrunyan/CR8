@@ -1,5 +1,6 @@
 use crate::compiler::lex::lexable::*;
 use crate::compiler::lex::node::{Instruction, Value};
+use crate::{lex_enum, repeated, token};
 
 use anyhow::bail;
 
@@ -15,12 +16,12 @@ pub struct MacroCapture {
     pub content: Vec<Instruction>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum MacroCaptureArgType {
     Register,
     Literal,
     Expr,
-    LiteralOrRegister,
+    Any,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -32,92 +33,52 @@ pub struct MacroCaptureArg {
 impl<'b> Lexable<'b> for Macro {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = ignore_whitespace(buf);
-        let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
-        let mut mac = Macro {
-            id: id.to_string(),
-            captures: vec![],
-        };
+        let (id, buf) = token!(buf; '_')?;
 
         let buf = ignore_whitespace(buf);
         let buf = expect(buf, ":")?;
         let buf = ignore_whitespace(buf);
-        let buf = expect(buf, "{")?;
-        let mut buf = buf;
 
-        loop {
-            buf = ignore_whitespace(buf);
-            if let Ok(buf) = expect(buf, "}") {
-                return Ok((mac, buf));
-            }
+        let (captures, buf) = repeated!("{" buf "}" {
+            MacroCapture::lex(buf)?
+        });
 
-            let (cap, b) = MacroCapture::lex(buf)?;
-            buf = b;
-            mac.captures.push(cap);
-        }
+        Ok((
+            Macro {
+                id: id.to_string(),
+                captures,
+            },
+            buf,
+        ))
     }
 }
 
 impl<'b> Lexable<'b> for MacroCapture {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        let mut buf = expect(buf, "(")?;
-        let mut args = vec![];
-
-        loop {
-            buf = ignore_whitespace(buf);
-            if let Ok(b) = expect(buf, ")") {
-                buf = b;
-                break;
-            }
-
-            let (arg, b) = MacroCaptureArg::lex(buf)?;
-            buf = b;
-
-            args.push(arg);
-            buf = ignore_whitespace(buf);
-            if let Ok(b) = expect(buf, ",") {
-                buf = b;
-                continue;
-            }
-            if let Ok(b) = expect(buf, ")") {
-                buf = b;
-                break;
-            }
-            bail!("Expected ',' or ')' after macro arg. \n\n{buf}");
-        }
+        let (args, buf) = repeated!("(" buf "," ")" {
+            MacroCaptureArg::lex(buf)?
+        });
 
         let buf = ignore_whitespace(buf);
         let buf = expect(buf, "=>")?;
         let buf = ignore_whitespace(buf);
-        let buf = expect(buf, "{")?;
-        let buf = ignore_whitespace(buf);
-        let (mut raw, buf) = collect_until(buf, |c| c == '}')?;
-        let buf = expect(buf, "}")?;
 
-        let mut content = vec![];
-
-        loop {
-            raw = ignore_whitespace(raw);
-            if raw.is_empty() {
-                break;
-            }
-            let (id, r) = collect_while(raw, |c| c.is_alphanumeric() || c == '_')?;
-            raw = r;
-            raw = ignore_whitespace_noline(raw);
-            if let Ok(r) = expect(raw, "\n") {
-                raw = r;
-                content.push(Instruction {
+        let (content, buf) = repeated!("{" buf "}" {
+            let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_')?;
+            let buf = ignore_whitespace_noline(buf);
+            if let Ok(buf) = expect(buf, "\n") {
+                (Instruction {
                     id: id.to_string(),
                     args: vec![],
-                });
+                }, buf)
             } else {
-                let (args, r) = Vec::<Value>::lex(raw)?;
-                raw = r;
-                content.push(Instruction {
+                let (args, buf) = Vec::<Value>::lex(buf)?;
+                (Instruction {
                     id: id.to_string(),
                     args,
-                });
+                }, buf)
             }
-        }
+        });
 
         Ok((MacroCapture { args, content }, buf))
     }
@@ -125,7 +86,7 @@ impl<'b> Lexable<'b> for MacroCapture {
 
 impl<'b> Lexable<'b> for MacroCaptureArg {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
-        let (id, buf) = collect_while(buf, |c| c.is_alphanumeric() || c == '_' || c == '$')?;
+        let (id, buf) = token!(buf; '_' | '$')?;
         let buf = ignore_whitespace(buf);
         let buf = expect(buf, ":")?;
         let buf = ignore_whitespace(buf);
@@ -144,26 +105,13 @@ impl<'b> Lexable<'b> for MacroCaptureArg {
 impl<'b> Lexable<'b> for MacroCaptureArgType {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let buf = ignore_whitespace(buf);
-        let (ty0, buf) = collect_while(buf, |c| c.is_alphanumeric())?;
-        let buf = ignore_whitespace(buf);
-        if let Ok(buf) = expect(buf, "|") {
-            let buf = ignore_whitespace(buf);
-            let (ty1, buf) = collect_while(buf, |c| c.is_alphanumeric())?;
-            if (ty0 == "reg" && ty1 == "lit") || (ty1 == "reg" && ty0 == "lit") {
-                return Ok((Self::LiteralOrRegister, buf));
-            }
-            bail!("Expected `reg`, `lit` or `expr` at {buf:#?}");
-        }
 
-        Ok((
-            match ty0 {
-                "reg" => Self::Register,
-                "lit" => Self::Literal,
-                "expr" => Self::Expr,
-                _ => bail!("Unknown macro type {ty0:#?}"),
-            },
-            buf,
-        ))
+        lex_enum!(buf;
+            "reg" => Self::Register,
+            "lit" => Self::Literal,
+            "expr" => Self::Expr,
+            "any" => Self::Any,
+        )
     }
 }
 
@@ -175,11 +123,11 @@ mod test {
     fn lex_macro() -> Result<(), Box<dyn std::error::Error>> {
         let (mac, remaining) = Macro::lex(
             r#"jnz: {
-                ($addr: expr, $if: lit | reg) => {
+                ($addr: expr, $if: any) => {
                     ldxy $addr
                     jnz $if
                 }
-                ($addr: lit, $if: lit | reg) => {
+                ($addr: lit, $if: any) => {
                     jnz $if
                 }
             }"#,
@@ -195,7 +143,7 @@ mod test {
     #[test]
     fn lex_macro_capture() -> Result<(), Box<dyn std::error::Error>> {
         let (cap, remaining) = MacroCapture::lex(
-            r#"($addr: expr, $if: lit | reg) => {
+            r#"($addr: expr, $if: any) => {
                 ldxy $addr
                 jnz $if
             }"#,
@@ -226,7 +174,7 @@ mod test {
                 },
                 MacroCaptureArg {
                     id: "$if".to_string(),
-                    ty: MacroCaptureArgType::LiteralOrRegister
+                    ty: MacroCaptureArgType::Any
                 },
             ]
         );

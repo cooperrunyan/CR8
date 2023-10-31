@@ -1,11 +1,11 @@
 #[use(core::macros::clear)]
 
 #[macro] add: {
-    ($into: reg, $rhs: reg | lit) => {
+    ($into: reg, $rhs: any) => {
         clrfc
         adc $into, $rhs
     }
-    ($tol: reg, $toh: reg, $frl: reg | lit, $frh: reg | lit) => {
+    ($tol: reg, $toh: reg, $frl: any, $frh: any) => {
         add $tol, $frl
         adc $toh, $frh
     }

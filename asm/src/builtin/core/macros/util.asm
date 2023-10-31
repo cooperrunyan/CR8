@@ -1,5 +1,5 @@
 #[macro] mov: {
-    ($inlo: reg, $inhi: reg, $frlo: reg | lit, $frhi: reg | lit) => {
+    ($inlo: reg, $inhi: reg, $frlo: any, $frhi: any) => {
         mov $inlo, $frlo
         mov $inhi, $frhi
     }
@@ -41,7 +41,7 @@
 }
 
 #[macro] push: {
-    ($l: lit | reg, $h: lit | reg) => {
+    ($l: any, $h: any) => {
         push $l
         push $h
     }

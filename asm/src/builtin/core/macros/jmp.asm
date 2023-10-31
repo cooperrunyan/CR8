@@ -5,7 +5,7 @@
         mov %y, $addr.h
         mov %x, $addr.l
     }
-    ($l: lit | reg, $h: lit | reg) => {
+    ($l: any, $h: any) => {
         mov %y, $h
         mov %x, $l
     }
@@ -24,7 +24,7 @@
         and %f, 0b0010
         jnz $addr, %f
     }
-    ($addr: expr, $r: reg, $cmp: lit | reg) => {
+    ($addr: expr, $r: reg, $cmp: any) => {
         cmp $r, $cmp
         jeq $addr
     }

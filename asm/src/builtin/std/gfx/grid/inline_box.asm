@@ -3,14 +3,14 @@
 ; Draws a box at the address: [%ab]
 #[macro] inline_box: {
     (
-      $l0: lit | reg,
-      $l1: lit | reg,
-      $l2: lit | reg,
-      $l3: lit | reg,
-      $l4: lit | reg,
-      $l5: lit | reg,
-      $l6: lit | reg,
-      $l7: lit | reg) => {
+      $l0: any,
+      $l1: any,
+      $l2: any,
+      $l3: any,
+      $l4: any,
+      $l5: any,
+      $l6: any,
+      $l7: any) => {
         ldxy %a, %b
         sw $l0
 
