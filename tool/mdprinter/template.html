@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/github-markdown-css/2.2.1/github-markdown.css" />
+
+    <style>
+      body,
+      .markdown-body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI',
+          system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      @media print {
+        pre,
+        blockquote {
+          page-break-inside: avoid;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          page-break-after: avoid;
+        }
+
+        h2 + h1,
+        h3 + h2,
+        h4 + h3,
+        h5 + h4,
+        h6 + h5 {
+          page-break-before: always;
+        }
+      }
+    </style>
+    {{GFM_STYLE}}
+  </head>
+  <body class="vscode-light vscode-body">
+    <div class="markdown-body">
+      <div class="markdown-content">{{CONTENT}}</div>
+    </div>
+  </body>
+</html>

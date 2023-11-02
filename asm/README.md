@@ -2,8 +2,8 @@
 
 Custom `CR8` Assembly compiler.
 
-Note: [core](./src/builtin/core/README.md) is automatically imported into every
-invocation of `compile`.
+Note: [`core`](./src/builtin/core/README.md) is automatically imported into
+every invocation of `compile`.
 
 ## Syntax
 

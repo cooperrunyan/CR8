@@ -9,7 +9,7 @@
   ],
   "repository": {
     "cr8-code-block": {
-      "begin": "(^|\\G)(\\s*)(\\`{3,}|~{3,})\\s*(?i:(cr8)(\\s+[^`~]*)?$)",
+      "begin": "(^|\\G)(\\s*)(`{3,}|~{3,})\\s*(?i:(cr8)((\\s+|:|,|\\{|\\?)[^`]*)?$)",
       "name": "markup.fenced_code.block.markdown",
       "end": "(^|\\G)(\\2|\\s{0,3})(\\3)\\s*$",
       "beginCaptures": {

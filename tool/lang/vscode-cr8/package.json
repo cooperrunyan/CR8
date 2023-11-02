@@ -13,28 +13,29 @@
   "contributes": {
     "languages": [
       {
-        "id": "cr8-markdown-injection"
-      },
-      {
         "id": "cr8",
         "aliases": [
           "CR8 Assembly",
           "cr8"
         ],
         "extensions": [
-          ".asm",
-          ".cr8",
           "asm",
           "cr8"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "cr8-markdown-injection"
       }
     ],
     "grammars": [
       {
         "language": "cr8",
         "scopeName": "source.cr8",
-        "path": "./syntaxes/cr8.tmLanguage.json"
+        "path": "./syntaxes/cr8.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.cr8": "cr8"
+        }
       },
       {
         "language": "cr8-markdown-injection",
