@@ -15,17 +15,17 @@
 Registers are written as `%x` where `x` is the id of the register to access.
 Registers include:
 
-| Id  | Usage                                                                   |
-| --- | ----------------------------------------------------------------------- |
-| `A` | General purpose.                                                        |
-| `B` | General purpose.                                                        |
-| `C` | General purpose.                                                        |
-| `D` | General purpose.                                                        |
-| `Z` | General purpose.                                                        |
-| `F` | Flags regarding the last mathematical operation.                        |
-| `X` | Low index byte (`X` + `Y` are used to read/write to memory).            |
-| `Y` | High index byte (`X` + `Y` are used to read/write to memory).           |
-| `K` | [Memory Bank](#memory) (the selected bank to use when reading/writing). |
+| Id  | Usage    | Description                                                             |
+| --- | -------- | ----------------------------------------------------------------------- |
+| `A` | GP       | General purpose                                                         |
+| `B` | GP       | General purpose                                                         |
+| `C` | GP       | General purpose                                                         |
+| `D` | GP       | General purpose                                                         |
+| `F` | GP       | Flags regarding the last mathematical operation.                        |
+| `X` | GP       | Low index byte (`X` + `Y` are used to read/write to memory).            |
+| `Y` | GP       | High index byte (`X` + `Y` are used to read/write to memory).           |
+| `Z` | GP       | General purpose                                                         |
+| `K` | Internal | [Memory Bank](#memory) (the selected bank to use when reading/writing). |
 
 > `K` register can only be modified with the `bank` instruction.
 
@@ -37,6 +37,29 @@ LSB - MSB
 - `Lessthan` (`LF`): `cmp` resulted in `arg1 < arg2`
 - `Carry` (`CF`): Previous addition operation carried.
 - `Borrow` (`BF`): Previous subtraction operation borrowed.
+
+## Instructions
+
+| Id | Mnemonic | Args               | Result                                         |
+| -- | -------- | ------------------ | ---------------------------------------------- |
+| 0  | `MOV`    | `reg`, `reg/imm8`  | `reg = reg/imm8`                               |
+| 1  | `JNZ`    | `reg`, `XY/imm16`  | `if reg/imm8 != 0; PC = [XY/imm16]; else: NOP` |
+| 2  | `JMP`    | `XY/imm16`         | `PC = [XY/imm16]`                              |
+| 3  | `LW`     | `reg`, `XY/imm16`  | `reg = [XY/imm16]`                             |
+| 4  | `SW`     | `XY/imm16`, `reg`, | `[XY/imm16] = reg`                             |
+| 5  | `PUSH`   | `reg/imm8`         | `[SP++] = reg/imm8`                            |
+| 6  | `POP`    | `reg`              | `reg = [SP--]`                                 |
+| 7  | `IN`     | `reg`, `reg/imm8`  | `reg = PORT[reg/imm8]`                         |
+| 8  | `OUT`    | `reg/imm8`, `reg`  | `PORT[reg/imm8] = reg`                         |
+| 9  | `ADC*`   | `reg`, `reg/imm8`  | `reg = reg + reg/imm8 + CF`                    |
+| A  | `SBB*`   | `reg`, `reg/imm8`  | `reg = reg + ~(reg/imm8 + BF)`                 |
+| B  | `CMP*`   | `reg`, `reg/imm8`  | `reg - reg/imm8`                               |
+| C  | `AND`    | `reg`, `reg/imm8`  | `reg = reg & reg/imm8`                         |
+| D  | `OR`     | `reg`, `reg/imm8`  | `reg = reg \| reg/imm8`                        |
+| E  | `NOR`    | `reg`, `reg/imm8`  | `reg = ~(reg \| reg/imm8)`                     |
+| F  | `BANK`   | `reg/imm8`         | `%k = reg/imm8`                                |
+
+> `*`: Updates FLAG register
 
 ## Memory
 
@@ -100,4 +123,4 @@ the system or `receive` a byte from the system.
 
 ## Assembler
 
-[asm](./asm/README.md) -- Compiler for the custom Assembly language.
+[asm](./asm/README.md) - Compiler for the custom Assembly language.

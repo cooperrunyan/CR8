@@ -53,7 +53,7 @@ impl Config {
 
         for (i, arg) in std::env::args().enumerate() {
             match arg.as_str() {
-                "-i" | "--input" => {
+                "-f" | "--file" => {
                     if input.is_some() {
                         panic!("Attempted to set input flag twice");
                     }

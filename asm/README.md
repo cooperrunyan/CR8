@@ -1,4 +1,4 @@
-# `ASM`
+# `asm`
 
 Custom `CR8` Assembly compiler.
 
@@ -127,7 +127,7 @@ Values like `1`, `0b0010`, or `0xF000`.
 
 Registers are written as `%a` for `A`.
 
-See [Registers](../README.md#registers).
+See [`registers`](../README.md#registers).
 
 ### Constants
 
@@ -161,8 +161,8 @@ Valid operations in expressions are:
 
 #### Terms
 
-Expressions can operate on any [value](#values) except for
-[registers](#registers).
+Expressions can operate on any [`value`](#values) except for
+[`registers`](#registers).
 
 ```cr8
 _ CONST + label - $macro_variable
@@ -181,12 +181,12 @@ _ label & 0xFF ; low byte
 
 Items that tell the compiler extra information.
 
-- [main](#main)
-- [use](#use)
-- [static](#static)
-- [const](#const)
-- [dyn](#dyn)
-- [macro](#macro)
+- [`main`](#main)
+- [`use`](#use)
+- [`static`](#static)
+- [`const`](#const)
+- [`dyn`](#dyn)
+- [`macro`](#macro)
 
 ### `#[main]`
 
@@ -208,8 +208,8 @@ main: ; Conventionally, this label is called `main`
 ### `#[use]`
 
 Import the contents of another `.asm` file. Argument can be either a
-(rust-inspired) module path to a [builtin](./src/builtin/core/README.md) module
-or a quoted string.
+(rust-inspired) module path to a [`builtin`](./src/builtin/core/README.md)
+module or a quoted string.
 
 ```cr8
 ; builtin modules
@@ -299,7 +299,7 @@ Variables are not scoped; if `A` is defined in `a.asm` and `b.asm` imports
 Exactly where `const` is called, the compiler will insert its bytes into the
 binary. This is used for data that will be stored on ROM and never changed.
 
-For functionality that allows values to change, see [dyn](#dyn).
+For functionality that allows values to change, see [`dyn`](#dyn).
 
 ### `#[dyn]`
 
@@ -321,7 +321,7 @@ For functionality that allows values to change, see [dyn](#dyn).
 
 ### `#[macro]`
 
-Define a [Macro](#macros)
+Define a [`macro`](#macros)
 
 ## Macros
 
@@ -349,7 +349,7 @@ After its definition, a macro cannot be redefined elsewhere.
 
 Inside the macro declaration block contains macro captures (inspired by
 [Rust](https://rust-lang.org)). Captures are not separated by commas. A capture
-takes the form: `(` [arguments](#arguments) `)` `=>` `{` [body](#body) `}`.
+takes the form: `(` [`arguments`](#arguments) `)` `=>` `{` [`body`](#body) `}`.
 
 #### Arguments
 
@@ -359,17 +359,17 @@ definition in common programming languages.
 Example:
 
 - None
-- `$name` `:` [type](#types)
-- `$arg0` `:` [type](#types) `,` `$arg1` `:` [type](#types)
+- `$name` `:` [`type`](#types)
+- `$arg0` `:` [`type`](#types) `,` `$arg1` `:` [`type`](#types)
 
 #### Types
 
 Each macro variable can be one of:
 
-- `reg`: Any [Register](../README.md#registers) (ex: `%a`)
+- `reg`: Any [`register`](../README.md#registers) (ex: `%a`)
 - `lit`: A literal number (ex: `5`)
-- `expr`: An [Expression](#expressions)
-- `any`: Either a [Register](../README.md#registers) or a literal number
+- `expr`: An [`expression`](#expressions)
+- `any`: Either a [`register`](../README.md#registers) or a literal number
 
 #### Body
 

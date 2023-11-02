@@ -80,6 +80,7 @@ impl TryFrom<u8> for Operation {
     type Error = ();
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         use Operation as O;
+
         Ok(match value {
             0 => O::MOV,
             1 => O::JNZ,

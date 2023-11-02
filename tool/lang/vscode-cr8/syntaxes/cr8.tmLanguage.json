@@ -4,243 +4,285 @@
   "fileTypes": ["asm", "cr8"],
   "scopeName": "source.cr8",
   "repository": {
-    "num": {
+    "global": {
       "patterns": [
+        { "include": "#num" },
+        { "include": "#const" },
+        { "include": "#punctuation" },
+        { "include": "#operator" }
+      ]
+    },
+    "num": {
+      "match": "\\b(0x[0-9a-fA-F_]+)|(0b[01_]+)|([0-9_]+)\\b",
+      "name": "constant.numeric"
+    },
+    "string": {
+      "match": "\"[^\"]*\"",
+      "name": "string"
+    },
+    "comment": {
+      "match": ";.*$",
+      "name": "comment.line"
+    },
+    "const": {
+      "match": "\\b[A-Z_][A-Z_0-9]*\\b",
+      "name": "constant.numeric"
+    },
+    "operator": {
+      "match": "\\+|=|\\-|&|\\||\\/|\\*|\\>|\\<",
+      "name": "keyword.operator"
+    },
+    "arrow": {
+      "match": "\\=\\>",
+      "name": "keyword.control"
+    },
+    "punctuation": {
+      "match": "\\[|\\]|\\(|\\)|\\:|\\:\\:|\\,|\\{|\\}|#\\[|#!\\[",
+      "name": "punctuation"
+    },
+    "label": {
+      "match": "^\\s*([\\w_\\d]+)\\s*(?=\\:)",
+      "captures": {
+        "1": { "name": "entity.name.function" }
+      }
+    },
+    "sub-label": {
+      "match": "^\\s*(\\.[\\w_\\d]+)\\s*(?=\\:)",
+      "captures": {
+        "1": { "name": "entity.name.function" }
+      }
+    },
+    "register": {
+      "match": "\\%[a-z]+\\b",
+      "name": "variable.other"
+    },
+    "macro-variable-define": {
+      "match": "(\\$\\w[\\w\\d_]*)\\s*(:)\\s*([\\w_\\d]+)",
+      "captures": {
+        "1": { "name": "variable.parameter" },
+        "2": { "name": "punctuation" },
+        "3": { "patterns": [{ "include": "#macro-variable-type" }] }
+      }
+    },
+    "macro-variable-usage": {
+      "match": "(\\$\\w[\\w\\d_]*)((\\.)([hl]))?\\b",
+      "captures": {
+        "1": { "name": "variable.parameter" },
+        "3": { "name": "punctuation" },
+        "4": { "name": "variable.parameter" }
+      }
+    },
+    "macro-variable-type": {
+      "match": "\\b(lit|reg|expr|any)\\b",
+      "name": "support.type"
+    },
+    "operation": {
+      "match": "^\\s*([\\w_][\\w_\\d]*)\\s*(?=[^:])\\b",
+      "name": "keyword.operator"
+    },
+    "label-reference": {
+      "match": "(?<=[\\w,\\d_\\+\\/\\>\\<\\-\\(\\)\\*\\&\\$]\\s*)\\.?[\\w_\\d]+\\b",
+      "name": "entity.name.function"
+    },
+    "instruction-scope": {
+      "patterns": [
+        { "include": "#global" },
+        { "include": "#comment" },
+        { "include": "#register" },
+        { "include": "#operation" },
+        { "include": "#label-reference" }
+      ]
+    },
+    "module": {
+      "match": "((?<=\\:\\:)[\\w_\\d]+)|([\\w_\\d]+(?=\\:\\:))|std|core|prelude",
+      "name": "entity.name.namespace"
+    },
+    "meta-keyword": {
+      "match": "\\b(use|main|macro|static|dyn|const)\\b",
+      "name": "keyword"
+    },
+    "meta": {
+      "begin": "#\\[",
+      "beginCaptures": {
+        "0": { "name": "punctuation" }
+      },
+      "end": "]",
+      "endCaptures": {
+        "0": { "name": "punctuation" }
+      },
+      "patterns": [
+        { "include": "#meta-keyword" },
+        { "include": "#string" },
+        { "include": "#module" },
+        { "include": "#global" }
+      ]
+    },
+    "macro": {
+      "begin": "(?m)(#\\[\\s*macro\\s*\\])[\\s\\n]*(\\w[\\w_\\d]*)\\s*(:)[\\s\\n]*({)",
+      "end": "}",
+      "beginCaptures": {
+        "1": { "patterns": [{ "include": "#meta" }] },
+        "2": { "name": "entity.name.function" },
+        "3": { "name": "punctuation" },
+        "4": { "name": "punctuation" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation" }
+      },
+      "patterns": [
+        { "include": "#comment" },
         {
-          "match": "\\b0b[01]+\\b",
-          "name": "constant.numeric"
+          "begin": "\\(",
+          "end": "\\)",
+          "beginCaptures": {
+            "0": { "name": "punctuation" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation" }
+          },
+          "patterns": [
+            { "include": "#macro-variable-define" },
+            { "include": "#punctuation" }
+          ]
         },
         {
-          "match": "(i?)\\b0x[0-9a-fA-F]+\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "match": "\\b[0-9]+\\b",
-          "name": "constant.numeric"
+          "begin": "(\\=\\>)[\\s\\n]*({)",
+          "end": "}",
+          "beginCaptures": {
+            "1": { "patterns": [{ "include": "#arrow" }] },
+            "2": { "name": "punctuation" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation" }
+          },
+          "patterns": [
+            { "include": "#macro-variable-usage" },
+            { "include": "#instruction-scope" }
+          ]
         }
       ]
     },
-    "base": {
+    "micro-variant-type": {
+      "match": "\\b(reg|imm)\\b",
+      "name": "support.type"
+    },
+    "microcode": {
+      "patterns": [
+        { "include": "#punctuation" },
+        { "include": "#comment" },
+        {
+          "match": "\\b(pc)\\s+(jmp|jnz|inc)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        },
+        {
+          "match": "\\b(sp)\\s+(dec|inc)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        },
+        {
+          "match": "\\b(alu)\\s+(add|sub|and|or|nor|cmp)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        },
+        {
+          "match": "\\b(aw)\\s+(pc|xy|sp|lr)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        },
+        {
+          "match": "\\b(dr)\\s+(f|k|lhs|rhs|io|sel|mem|dev)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        },
+        {
+          "match": "\\b(dw)\\s+(op|mem|io|sel|alflg|alu|dev|k|rhs)\\b",
+          "captures": {
+            "1": { "name": "keyword.control" },
+            "2": { "name": "keyword.operator" }
+          }
+        }
+      ]
+    },
+    "microcode-variant": {
       "patterns": [
         {
-          "match": ";.*$",
-          "name": "comment.line"
-        },
+          "begin": "(\\()\\s*(\\w[\\w_\\d]*)\\s*(\\))\\s*(\\=\\>)\\s*({)",
+          "end": "}",
+          "beginCaptures": {
+            "1": { "name": "punctuation" },
+            "2": { "patterns": [{ "include": "#micro-variant-type" }] },
+            "3": { "name": "punctuation" },
+            "4": { "patterns": [{ "include": "#arrow" }] },
+            "5": { "name": "punctuation" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation" }
+          },
+          "patterns": [{ "include": "#microcode" }, { "include": "#comment" }]
+        }
+      ]
+    },
+    "micro": {
+      "begin": "(#!\\[)\\s*(micro)\\s*(\\])",
+      "beginCaptures": {
+        "1": { "name": "punctuation" },
+        "2": { "name": "keyword.control" },
+        "3": { "name": "punctuation" }
+      },
+      "end": "",
+      "patterns": [
         {
-          "match": "[A-Z_][A-Z_0-9]+",
-          "name": "constant.numeric"
-        },
-        {
-          "match": "\\+|=|\\-|&|\\|\\/|\\*|\\>|\\<",
-          "name": "keyword.operator"
-        },
-        {
-          "match": "\"[^\"]*\"",
-          "name": "string"
-        },
-        {
-          "match": "\\[|\\]|\\(|\\)|\\:|\\,|\\{|\\}",
-          "name": "punctuation"
-        },
-        {
-          "include": "#num"
-        },
-        {
-          "match": "(\\.?[a-z_0-9]+)\\s*(?=\\:)",
-          "name": "entity.name.function"
+          "begin": "\\b(\\w[\\w_\\d]*)\\s*(:)\\s*({)",
+          "end": "}",
+          "beginCaptures": {
+            "1": { "name": "entity.name.function" },
+            "2": { "name": "punctuation" },
+            "3": { "name": "punctuation" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation" }
+          },
+          "patterns": [{ "include": "#microcode-variant" }]
         }
       ]
     }
   },
   "patterns": [
+    { "include": "#num" },
+    { "include": "#micro" },
     {
-      "include": "#base"
+      "match": "(?<!\\w|\\d)\\$(?!\\w|\\d)",
+      "name": "support.constant"
     },
-    {
-      "match": "\\=\\>",
-      "name": "keyword.control"
-    },
+    { "include": "#macro" },
+    { "include": "#meta" },
 
     {
-      "match": "(#\\[)\\s*(.*)\\s*(\\])",
+      "begin": "{",
+      "end": "}",
       "captures": {
-        "1": {
-          "name": "punctuation"
-        },
-        "3": {
-          "name": "punctuation"
-        },
-        "2": {
-          "patterns": [
-            {
-              "match": "\\b(use|main|macro|static|dyn|const)\\b",
-              "name": "keyword.control"
-            },
-            {
-              "match": "(\\()\\s*(.*)\\s*(\\))",
-              "captures": {
-                "1": {
-                  "name": "punctuation"
-                },
-                "3": {
-                  "name": "punctuation"
-                },
-                "2": {
-                  "patterns": [
-                    {
-                      "include": "#num"
-                    },
-                    {
-                      "match": "std|core|prelude",
-                      "name": "entity.name.namespace"
-                    },
-                    {
-                      "match": "(?:\\:\\:)(\\w+)",
-                      "captures": {
-                        "1": {
-                          "name": "entity.name.namespace"
-                        }
-                      }
-                    },
-                    {
-                      "match": "(\\w+)\\s*(?=\\:)",
-                      "captures": {
-                        "1": {
-                          "name": "constant.numeric"
-                        }
-                      }
-                    },
-                    {
-                      "match": "\"[^\"]*\"",
-                      "name": "string"
-                    },
-                    {
-                      "match": "(?<=\\s*)(\\w+)(?=\\s*)",
-                      "captures": {
-                        "1": {
-                          "name": "constant.numeric"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "match": "(\\.?[a-z0-9_]+)",
-      "name": "entity.name.function"
-    },
-    {
-      "match": "\\%[a-z]+\\b",
-      "name": "variable.name"
-    },
-    {
-      "match": "(?<=\\()(.*?)(?=\\)\\s*?\\=\\>)",
-      "captures": {
-        "1": {
-          "patterns": [
-            {
-              "match": "\\b(lit|reg|expr)\\b",
-              "name": "support.type"
-            },
-            {
-              "match": "\\$\\w(\\w|\\d|_)*",
-              "name": "variable.parameter"
-            },
-            {
-              "match": "\\|",
-              "name": "keyword.control"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "match": "\\$\\w(\\w|\\d|_)*",
-      "name": "variable.parameter"
-    },
-    {
-      "begin": "^\\s*(#!\\[)\\s*(micro)\\s*(\\])",
-      "beginCaptures": {
-        "1": {
-          "name": "punctuation"
-        },
-        "2": {
-          "name": "keyword.control"
-        },
-        "3": {
-          "name": "punctuation"
-        }
+        "0": { "name": "punctuation" }
       },
-      "end": "",
       "patterns": [
-        {
-          "match": "\\=\\>",
-          "name": "keyword.control"
-        },
-        {
-          "include": "#base"
-        },
-        {
-          "match": "\\b(pc)\\s*(\\+\\+)",
-          "captures": {
-            "1": {
-              "name": "keyword.control"
-            },
-            "2": {
-              "name": "keyword.operator"
-            }
-          }
-        },
-        {
-          "match": "\\b(pc)\\s+\\b(j|jnz)\\b",
-          "captures": {
-            "1": {
-              "name": "keyword.control"
-            },
-            "2": {
-              "name": "entity.name.function"
-            }
-          }
-        },
-        {
-          "match": "\\b(sp)\\s*(\\+\\+|--)",
-          "captures": {
-            "1": {
-              "name": "keyword.control"
-            },
-            "2": {
-              "name": "keyword.operator"
-            }
-          }
-        },
-        {
-          "match": "\\b(alu)\\s*\\b(add|sub|and|or|nor|cmp)\\b",
-          "captures": {
-            "1": {
-              "name": "keyword.control"
-            },
-            "2": {
-              "name": "entity.name.function"
-            }
-          }
-        },
-        {
-          "match": "\\b(aw|ar|dw|dr|rst)\\s+\\b(sp|pc|xy|lr|a|b|c|d|x|y|z|f|k|alu|mem|io|rhs|lhs|sel|alflg)?",
-          "captures": {
-            "1": {
-              "name": "keyword.control"
-            },
-            "2": {
-              "name": "entity.name"
-            }
-          }
-        }
+        { "include": "#num" },
+        { "include": "#punctuation" },
+        { "include": "#comment" }
       ]
-    }
+    },
+
+    { "include": "#sub-label" },
+    { "include": "#label" },
+    { "include": "#instruction-scope" }
   ]
 }

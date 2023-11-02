@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start web server",
+      "command": "trunk",
+      "args": ["serve"],
+      "problemMatcher": ["$rustc", "$rust-panic"]
+    },
+    {
+      "label": "Tests",
+      "command": "cargo",
+      "args": ["test"],
+      "problemMatcher": ["$rustc", "$rust-panic"]
+    },
+    {
+      "label": "Build Language Extension",
+      "command": "vsce",
+      "args": ["package"],
+      "options": {
+        "cwd": "tool/lang/vscode-cr8"
+      },
+      "problemMatcher": ["$rustc", "$rust-panic"]
+    }
+  ]
+}

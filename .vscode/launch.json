@@ -2,10 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Extension",
+      "name": "vscode-extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/tool/lang/vscode-cr8"
+      ],
       "cwd": "${workspaceFolder}"
     }
   ]

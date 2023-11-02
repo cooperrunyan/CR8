@@ -20,7 +20,6 @@ const PROGRAM_COUNTER: &str = "pc";
 const OPERATION_REG: &str = "op";
 const STACK_POINTER: &str = "sp";
 const ALU: &str = "alu";
-const RESET: &str = "rst";
 
 const SEL: &str = "sel";
 const DEVICE: &str = "dev";
@@ -34,10 +33,10 @@ const K: &str = "k";
 const IO: &str = "io";
 const MEMORY: &str = "mem";
 
-const INC: &str = "++";
-const DEC: &str = "--";
+const INC: &str = "inc";
+const DEC: &str = "dec";
 
-const PC_JUMP: &str = "j";
+const PC_JUMP: &str = "jmp";
 const PC_JNZ: &str = "jnz";
 
 const ALU_ADD: &str = "add";
@@ -155,7 +154,6 @@ impl<'b> Lexable<'b> for MicroSignal {
                 let (pc, buf) = ProgramCounterSignal::lex(buf)?;
                 Ok((Self::ProgramCounter(pc), buf))
             }
-            RESET => Ok((Self::Reset, buf)),
             o => bail!("Invalid signal {o:#?}"),
         }
     }
