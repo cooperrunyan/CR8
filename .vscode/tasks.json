@@ -24,11 +24,8 @@
     },
     {
       "label": "Generate README",
-      "dependsOn": [
-        "README.md",
-        "asm/README.md",
-        "asm/src/builtin/core/README.md"
-      ],
+      "command": "bash",
+      "args": ["tool/scripts/markdown.sh"],
       "problemMatcher": []
     },
     {
@@ -37,63 +34,6 @@
       "command": "open",
       "args": ["target/md/README.html"],
       "problemMatcher": []
-    },
-    {
-      "hide": true,
-      "label": "ensure_md_folder",
-      "command": ["mkdir"],
-      "args": ["-p", "target/md/asm/src/builtin/core"]
-    },
-    {
-      "hide": true,
-      "isBackground": true,
-      "presentation": {
-        "echo": false,
-        "reveal": "never",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
-      },
-      "dependsOn": "ensure_md_folder",
-      "label": "README.md",
-      "command": ["bun"],
-      "args": [
-        "run",
-        "--cwd",
-        "tool/mdprinter",
-        "tool/mdprinter/index.ts",
-        "README.md",
-        "target/md/README.html"
-      ]
-    },
-    {
-      "hide": true,
-      "dependsOn": "ensure_md_folder",
-      "label": "asm/README.md",
-      "command": ["bun"],
-      "args": [
-        "run",
-        "--cwd",
-        "tool/mdprinter",
-        "tool/mdprinter/index.ts",
-        "asm/README.md",
-        "target/md/asm/README.html"
-      ]
-    },
-    {
-      "hide": true,
-      "dependsOn": "ensure_md_folder",
-      "label": "asm/src/builtin/core/README.md",
-      "command": ["bun"],
-      "args": [
-        "run",
-        "--cwd",
-        "tool/mdprinter",
-        "tool/mdprinter/index.ts",
-        "asm/src/builtin/core/README.md",
-        "target/md/asm/src/builtin/core/README.html"
-      ]
     }
   ]
 }

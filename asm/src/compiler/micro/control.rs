@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display};
+
 use anyhow::bail;
 
 use super::{
@@ -48,6 +50,8 @@ use super::{
 /// - `R`: Decrement Stack Pointer
 /// - `S`: Cycle Complete
 ///     - (tells the Control Unit this is the last micro instruction of the cycle)
+pub struct RawControlSignal(pub [u8; 3]);
+
 #[derive(Debug, PartialEq, Eq, Default, Clone, Copy)]
 pub struct ControlSignal {
     alu_op: Option<AluSignal>,
@@ -68,6 +72,31 @@ pub struct ControlSignal {
     dr_lhs: bool,
     dr_rhs: bool,
     dr_dev: bool,
+}
+
+impl Display for RawControlSignal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "{:08b} {:08b} {:08b}",
+            self.0[0], self.0[1], self.0[2]
+        ))
+    }
+}
+
+impl Debug for RawControlSignal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self, f)
+    }
+}
+
+impl From<RawControlSignal> for u32 {
+    fn from(val: RawControlSignal) -> Self {
+        let mut r = 0u32;
+        r |= val.0[0] as u32;
+        r |= (val.0[1] as u32) << 8;
+        r |= (val.0[2] as u32) << 16;
+        r
+    }
 }
 
 impl TryFrom<&Vec<MicroSignal>> for ControlSignal {
@@ -126,7 +155,7 @@ impl TryFrom<&Vec<MicroSignal>> for ControlSignal {
                     ProgramCounterSignal::JumpNotZero => set!(pc_jnz, "pc jnz", true),
                 },
                 MicroSignal::StackPointer(sp) => match sp {
-                    StackPointerSignal::Decrement => set!(sp_inc, "sp inc", true),
+                    StackPointerSignal::Decrement => set!(sp_dec, "sp dec", true),
                     StackPointerSignal::Increment => set!(sp_inc, "sp inc", true),
                 },
             }
@@ -136,65 +165,65 @@ impl TryFrom<&Vec<MicroSignal>> for ControlSignal {
     }
 }
 
-impl ControlSignal {
-    pub fn bits(&self) -> [u8; 3] {
+impl From<ControlSignal> for RawControlSignal {
+    fn from(value: ControlSignal) -> Self {
         let mut bits = [0; 3];
-        if self.dr_k {
+        if value.dr_k {
             flag(&mut bits[0], 7);
         }
-        if self.dr_f {
+        if value.dr_f {
             flag(&mut bits[0], 6);
         }
-        if self.dr_op {
+        if value.dr_op {
             flag(&mut bits[0], 5);
         }
-        if self.dr_io {
+        if value.dr_io {
             flag(&mut bits[0], 4);
         }
-        if self.dr_mem {
+        if value.dr_mem {
             flag(&mut bits[0], 3);
         }
-        if self.dr_lhs {
+        if value.dr_lhs {
             flag(&mut bits[0], 2);
         }
-        if self.dr_rhs {
+        if value.dr_rhs {
             flag(&mut bits[0], 1);
         }
-        if self.dr_dev {
+        if value.dr_dev {
             flag(&mut bits[0], 0);
         }
-        if self.databus_read_select {
+        if value.databus_read_select {
             flag(&mut bits[1], 7);
         }
-        if self.databus_write_select {
+        if value.databus_write_select {
             flag(&mut bits[1], 6);
         }
-        if let Some(dw) = self.databus_writer {
+        if let Some(dw) = value.databus_writer {
             bits[1] |= ((dw as u8) & 0b111) << 3;
         }
-        if let Some(aw) = self.addressbus_writer {
+        if let Some(aw) = value.addressbus_writer {
             bits[1] |= ((aw as u8) & 0b11) << 1;
         }
-        if self.pc_jnz {
+        if value.pc_jnz {
             flag(&mut bits[1], 0);
         }
-        if self.pc_jmp {
+        if value.pc_jmp {
             flag(&mut bits[2], 7);
         }
-        if self.pc_inc {
+        if value.pc_inc {
             flag(&mut bits[2], 6);
         }
-        if let Some(op) = self.alu_op {
+        if let Some(op) = value.alu_op {
             bits[2] |= ((op as u8) & 0b111) << 3;
         }
-        if self.sp_inc {
+        if value.sp_inc {
             flag(&mut bits[2], 2)
         }
-        if self.sp_dec {
+        if value.sp_dec {
             flag(&mut bits[2], 1)
         }
 
-        bits
+        Self(bits)
     }
 }
 

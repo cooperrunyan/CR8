@@ -5,7 +5,7 @@ use super::Input;
 
 use indexmap::IndexMap;
 
-use crate::op::Operation;
+use crate::{compiler::micro::control::RawControlSignal, op::Operation};
 
 mod control;
 mod lex;
@@ -137,9 +137,9 @@ pub fn compile(input: Input) -> Result<Vec<u8>> {
                 .map(|(i, line)| {
                     control::ControlSignal::try_from(&line)
                         .map(|sig| {
-                            let mut bits = sig.bits();
+                            let mut bits = RawControlSignal::from(sig);
                             if i == last {
-                                bits[2] |= 1; // Set the CC flag on the last line of the instruction
+                                bits.0[2] |= 1; // Set the CC flag on the last line of the instruction
                             }
                             bits
                         })
