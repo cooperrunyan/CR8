@@ -7,7 +7,7 @@
         "asm",
         "--",
         "-o",
-        "target/web/exec.bin",
+        "target/web.bin",
         "-f",
         "bin/snake",
     ]
@@ -21,7 +21,7 @@
     inject_scripts = true
 
 [watch]
-    watch  = ["./sim", "./target/web", "./bin", "./asm/src/builtin"]
+    watch  = ["./sim", "./bin", "./asm/src/builtin"]
     ignore = []
 
 [serve]

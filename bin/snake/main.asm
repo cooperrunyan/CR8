@@ -142,7 +142,7 @@ loop:
   call filled_box
 
   mov %a, 0
-  mov %b, 9
+  mov %b, 16
   mov %c, 0
   mov %d, 0
   call sleep

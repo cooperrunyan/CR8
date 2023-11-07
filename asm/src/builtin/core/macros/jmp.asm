@@ -16,7 +16,6 @@
         mov %f, $ifl
         or %f, $ifh
         jnz $addr, %f
-        expr
     }
 }
 
