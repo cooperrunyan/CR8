@@ -12,6 +12,7 @@ pub struct Config {
     pub input: Input,
     pub output: Output,
     pub micro: bool,
+    pub debug: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +51,7 @@ impl Config {
         let mut input: Option<Input> = None;
         let mut output = Output::None;
         let mut micro = false;
+        let mut debug = false;
 
         for (i, arg) in std::env::args().enumerate() {
             match arg.as_str() {
@@ -63,10 +65,14 @@ impl Config {
                     if input.is_some() {
                         panic!("Attempted to set input flag twice");
                     }
+                    debug = true;
                     input = Some(Input::Raw(std::env::args().nth(i + 1).unwrap_or_default()));
                 }
                 "-o" | "--output" => {
                     output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
+                }
+                "-d" | "--debug" => {
+                    debug = true;
                 }
                 "--micro" => micro = true,
                 _ => {}
@@ -81,6 +87,7 @@ impl Config {
             input,
             output,
             micro,
+            debug
         }
     }
 }

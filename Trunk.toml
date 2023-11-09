@@ -9,7 +9,7 @@
         "-o",
         "target/web.bin",
         "-f",
-        "bin/snake",
+        "bin/boxes/flutter",
     ]
 
 [build]
@@ -22,7 +22,7 @@
 
 [watch]
     watch  = ["./sim", "./bin", "./asm/src/builtin"]
-    ignore = []
+    ignore = ["circ", "target"]
 
 [serve]
     address = "127.0.0.1"

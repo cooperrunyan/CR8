@@ -1,11 +1,13 @@
 #[use(std::gfx::grid)]
 
+#[dyn(COUNTER: 2)]
+#[static(COUNTER_VAL: 0x0f00)]
+
 
 #[main]
 main:
     bank 1
 
-    ; Keep a counter on the stack
     call init_counter
 
     .loop:
@@ -13,9 +15,11 @@ main:
         in %b, RNG
         call filled_box
 
-        lw %a, %b, COUNTER
+        lw %a, COUNTER
+        lw %b, COUNTER + 1
         dec %a, %b
-        sw COUNTER, %a, %b
+        sw COUNTER, %a
+        sw COUNTER + 1, %b
         jnz .loop, %a, %b
 
         ; Re-init the counter and fall through to [.loop_clear]
@@ -28,9 +32,11 @@ main:
         in %b, RNG
         call clear_box
 
-        lw %a, %b, COUNTER
+        lw %a, COUNTER
+        lw %b, COUNTER + 1
         dec %a, %b
-        sw COUNTER, %a, %b
+        sw COUNTER, %a
+        sw COUNTER + 1, %b
         jnz .loop_clear, %a, %b
 
         ; Re-init the counter and go back to [.loop]
@@ -41,5 +47,6 @@ main:
 init_counter:
     mov %a, COUNTER_VAL & 0xFF
     mov %b, COUNTER_VAL >> 8
-    sw COUNTER, %a, %b
+    sw COUNTER, %a
+    sw COUNTER + 1, %b
     ret

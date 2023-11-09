@@ -57,7 +57,7 @@ impl Compiler {
         debug!("");
     }
 
-    fn debug_bin(&self) {
+    pub fn debug_bin(&self) {
         let mut label_reverse_lookup: HashMap<usize, &str> = HashMap::new();
 
         for (name, location) in self.labels.iter() {

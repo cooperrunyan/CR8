@@ -32,7 +32,7 @@ fn main() -> Result<(), JsValue> {
 
 const SCALE: f64 = 4.0;
 
-const HZ: usize = 4_000_000;
+const HZ: usize = 1_000_000;
 const HZ_10MS: usize = HZ / 1000;
 
 fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> {
@@ -93,6 +93,10 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
                     let mut cr8 = state.cr8.write().unwrap();
                     cr8.cycle(&state.mem, &state.dev).unwrap() as usize
                 };
+
+                // When it does a 'jmp' it returns 0 ticks, but we still want the renderer to
+                // progress
+                let ticks_in_this_cycle = ticks_in_this_cycle.max(1);
 
                 ticks += ticks_in_this_cycle;
 

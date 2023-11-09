@@ -20,6 +20,7 @@ impl Runner {
             input: compiler::Input::Raw(file),
             output: compiler::Output::None,
             micro: false,
+            debug: false,
         };
         let mut compiler = compiler::Compiler::new();
 

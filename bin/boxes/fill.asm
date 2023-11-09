@@ -7,7 +7,7 @@ main:
 
     .loop:
         push %a, %b
-        call bordered_box
+        call filled_box
         pop %a, %b
         inc %a
         and %a, 0b00011111

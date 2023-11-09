@@ -32,6 +32,10 @@ fn main() -> Result<()> {
         e
     })?;
 
+    if config.debug {
+        compiler.debug_bin();
+    }
+
     let _ = config.output.write(&compiler.bin);
 
     Ok(())
