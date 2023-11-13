@@ -9,7 +9,7 @@
         "-o",
         "target/web.bin",
         "-f",
-        "bin/boxes/flutter",
+        "bin/snake",
     ]
 
 [build]

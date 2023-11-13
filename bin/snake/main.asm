@@ -1,15 +1,11 @@
-; 32 x 32 (byte) Grid
-; 8 x 8 px boxes
+; 32 x 32 Grid
 ; coordinates are stored in 2-byte pairs where COORD is the x
 ; value and COORD + 1 is the y value
 ; coords are generally stored in %ab and iterations are usually
 ; in %cd
 
-#[use(std::gfx::grid::block::filled)]
-#[use(std::gfx::grid::block::bordered)]
-#[use(std::gfx::grid::block::clear)]
+#[use(std::gfx::grid::block)]
 #[use(std::gfx::grid::point)]
-#[use(std::gfx::grid::inline_box)]
 #[use(std::sleep)]
 
 #[dyn(APPLE: 2)]
@@ -99,7 +95,7 @@ loop:
   lw %a ; old tail
   inc %x, %y
   lw %b
-  call clear_box
+  block 0
 
   pop %x, %y
   pop %c, %d
@@ -139,10 +135,10 @@ loop:
   call check_apple
 
   pop %a, %b
-  call filled_box
+  block 0b001100
 
   mov %a, 0
-  mov %b, 12
+  mov %b, 18
   mov %c, 0
   mov %d, 0
   call sleep
@@ -253,7 +249,7 @@ check_apple:
   rand_coord %b
   sw APPLE, %a
   sw APPLE + 1, %b
-  call bordered_box
+  block 0b110000
 
   lw %c, SNAKE_LEN
   lw %d, SNAKE_LEN + 1
@@ -288,14 +284,14 @@ erase:
     lw %b
 
     push %c ; clear_box will modify %c
-    call clear_box
+    block 0
     pop %c
 
     jnz .iter, %c, %d
 
   lw %a, APPLE
   lw %b, APPLE + 1
-  call clear_box
+  block 0
 
   ret
 
@@ -318,14 +314,14 @@ full_draw:
     lw %b
 
     push %c ; clear_box will modify %c
-    call filled_box
+    block 0b001100
     pop %c
 
     jnz .iter, %c, %d
 
   lw %a, APPLE
   lw %b, APPLE + 1
-  call bordered_box
+  block 0b110000
 
   ret
 

@@ -160,7 +160,20 @@ pub fn compile(input: Input) -> Result<Vec<u8>> {
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    dbg!(&binary);
+    for i in 0..7 {
+        for (header, chunk) in binary.iter() {
+            let header = header >> 3;
+            let msg = match chunk.get(i) {
+                None => "".to_string(),
+                Some(sig) => format!("{i:03b}{header:05b} | {}", sig),
+            }
+            .split("")
+            .collect::<Vec<_>>()
+            .join(" ");
+
+            println!("{}", msg);
+        }
+    }
 
     Ok(vec![])
 }

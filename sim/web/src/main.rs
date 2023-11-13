@@ -30,9 +30,9 @@ fn main() -> Result<(), JsValue> {
     Ok(())
 }
 
-const SCALE: f64 = 4.0;
+const SCALE: f64 = 8.0;
 
-const HZ: usize = 1_000_000;
+const HZ: usize = 4_000_000;
 const HZ_10MS: usize = HZ / 1000;
 
 fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> {
@@ -43,8 +43,8 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
     let canvas = document.create_element("canvas")?;
 
     canvas.set_attribute("id", "cr8")?;
-    canvas.set_attribute("height", "1024")?;
-    canvas.set_attribute("width", "1024")?;
+    canvas.set_attribute("height", (128.0 * SCALE).to_string().as_str())?;
+    canvas.set_attribute("width", (128.0 * SCALE).to_string().as_str())?;
 
     body.append_child(&canvas)?;
 
@@ -61,7 +61,7 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
             .dyn_into::<CanvasRenderingContext2d>()
             .unwrap(),
     );
-    context.set_fill_style(&JsValue::from_str("#ffffff"));
+    // context.set_fill_style(&JsValue::from_str("#ffffff"));
 
     let state = Arc::new(State {
         mem: RwLock::new(Mem::new(bin)),
@@ -104,22 +104,31 @@ fn run(bin: &[u8]) -> Result<(Interval, EventListener, EventListener), JsValue> 
 
                 for _ in 0..ticks_in_this_cycle {
                     let byte = mem.get_vram(i).unwrap();
+                    let r = ((byte >> 4) & 0b11) * 64;
+                    let g = ((byte >> 2) & 0b11) * 64;
+                    let b = (byte & 0b11) * 64;
+                    let color = format!("#{r:02x}{g:02x}{b:02x}ff");
 
-                    for j in 0..8 {
-                        let j = 7 - j;
-                        let v = (byte >> j) & 1;
+                    context.set_fill_style(&JsValue::from_str(&color));
+                    let x = i & 0b1111111;
+                    let y = i >> 7;
+                    context.fill_rect(x as f64 * SCALE, y as f64 * SCALE, SCALE, SCALE);
 
-                        let by = i >> 5;
-                        let bx = i & 0b11111;
-                        let x = (bx as f64) * 8.0 + (7 - j) as f64;
-                        let y = by as f64;
-
-                        if v == 1 {
-                            context.fill_rect(x * SCALE, y * SCALE, SCALE, SCALE);
-                        } else {
-                            context.clear_rect(x * SCALE, y * SCALE, SCALE, SCALE);
-                        }
-                    }
+                    //                     for j in 0..8 {
+                    //                         let j = 7 - j;
+                    //                         let v = (byte >> j) & 1;
+                    //
+                    //                         let by = i >> 5;
+                    //                         let bx = i & 0b11111;
+                    //                         let x = (bx as f64) * 8.0 + (7 - j) as f64;
+                    //                         let y = by as f64;
+                    //
+                    //                         if v == 1 {
+                    //                             context.fill_rect(x * SCALE, y * SCALE, SCALE, SCALE);
+                    //                         } else {
+                    //                             context.clear_rect(x * SCALE, y * SCALE, SCALE, SCALE);
+                    //                         }
+                    //                     }
 
                     i = (i + 1) & 0x3fff;
                 }

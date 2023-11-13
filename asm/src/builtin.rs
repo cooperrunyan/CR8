@@ -29,7 +29,7 @@ modules! {
                     point,
                     inline_box,
                     cfg,
-                    block::{bordered,  clear, filled}
+                    block,
                 }
             }
         }
