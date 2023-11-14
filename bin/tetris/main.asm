@@ -10,7 +10,7 @@
 #[static(ROWS: 20)]
 #[static(COLS: 20)]
 
-#[static(GREY: 0b10_10_10)]
+#[static(GREY: 0b01_01_01)]
 #[static(CYAN: 0b00_11_11)]
 #[static(YELLOW: 0b11_11_00)]
 #[static(MAGENTA: 0b11_00_11)]
@@ -28,21 +28,31 @@ main:
     bank 1
 
     call draw_border
-
     call init_current
 
 
+    .init_loop:
+        push 32
+
     .loop:
+        mov %a, 0
+        mov %b, 4
+        mov %c, 0
+        mov %d, 0
+        call sleep
+        call update
+
+        pop %c
+        dec %c
+        push %c
+
+        jnz .loop, %c
+
         call erase_current
         call tick
         call draw_current
 
-        mov %a, 0
-        mov %b, 32
-        mov %c, 0
-        mov %d, 0
-        call sleep
-        jmp .loop
+        jmp .init_loop
 
 
 init_current:
@@ -63,9 +73,75 @@ init_current:
     sw CURRENT_COLOR, YELLOW
     ret
 
+update:
+    in %z, KB
+
+    mov %f, %z
+    and %f, 0b0010 ; down arrow
+    jnz .down, %f
+
+    mov %f, %z
+    and %f, 0b0100 ; left arrow
+    jnz .left, %f
+
+    mov %f, %z
+    and %f, 0b1000 ; right arrow
+    jnz .right, %f
+
+    .ret:
+    ret
+
+    .down:
+        call erase_current
+        call tick
+        call draw_current
+        ret
+
+    .left:
+        mov %d, 1
+        call check_current
+        jnz .ret, %z
+        call erase_current
+        lw %a, CURRENT
+        dec %a
+        sw CURRENT, %a
+        lw %a, CURRENT + 2
+        dec %a
+        sw CURRENT + 2, %a
+        lw %a, CURRENT + 4
+        dec %a
+        sw CURRENT + 4, %a
+        lw %a, CURRENT + 6
+        dec %a
+        sw CURRENT + 6, %a
+        call draw_current
+        ret
+
+    .right:
+        mov %d, 2
+        call check_current
+        jnz .ret, %z
+        call erase_current
+        lw %a, CURRENT
+        inc %a
+        sw CURRENT, %a
+        lw %a, CURRENT + 2
+        inc %a
+        sw CURRENT + 2, %a
+        lw %a, CURRENT + 4
+        inc %a
+        sw CURRENT + 4, %a
+        lw %a, CURRENT + 6
+        inc %a
+        sw CURRENT + 6, %a
+        call draw_current
+        ret
+
+
 tick:
     ; Set Z to 1 if the current piece cannot go down
-    call check_beneath_current
+    mov %d, 0
+    call check_current
 
     jnz .stop, %z
 
@@ -125,22 +201,22 @@ occupy:
     block GREY
     ret
 
-check_beneath_current:
+check_current:
     lw %a, CURRENT
     lw %b, CURRENT + 1
-    call check_beneath
+    call check
     push %z
     lw %a, CURRENT + 2
     lw %b, CURRENT + 3
-    call check_beneath
+    call check
     push %z
     lw %a, CURRENT + 4
     lw %b, CURRENT + 5
-    call check_beneath
+    call check
     push %z
     lw %a, CURRENT + 6
     lw %b, CURRENT + 7
-    call check_beneath
+    call check
     pop %f
     or %z, %f
     pop %f
@@ -149,15 +225,19 @@ check_beneath_current:
     or %z, %f
     ret
 
-; %ab
-; z -> 0 if nothing below, 1 if something
-check_beneath:
-    cmp %b, 26
-    mov %z, 1
-    req
+; %ab - Coord
+; %d - Direction (down, left, right)
+; z -> 0 if nothing below/left/right, 1 if something
+check:
+    ; Return if out of bounds
+    call check_bounds
+    jnz .true, %z
 
-    sub %b, PAD_ROW + 1
-    sub %a, PAD_COL + 1
+    sub %b, PAD_ROW + 2
+    sub %a, PAD_COL + 2
+
+    call adjust_ab ; inc/dec a or b depending on d
+
     push %a
     mov %a, ROWS
     call mulip ; Multiply b * 20
@@ -180,6 +260,64 @@ check_beneath:
         mov %z, 1
         ret
 
+check_bounds:
+    cmp %d, 0
+    jeq .down
+
+    cmp %d, 1
+    jeq .left
+
+    cmp %d, 2
+    jeq .right
+
+    mov %z, 0
+    ret
+
+    .down:
+        cmp %b, ROWS + PAD_ROW + 1
+        mov %z, 1
+        req
+        mov %z, 0
+        ret
+
+    .left:
+        cmp %a, PAD_COL + 1
+        mov %z, 1
+        req
+        mov %z, 0
+        ret
+
+    .right:
+        cmp %a, COLS + PAD_COL
+        mov %z, 1
+        req
+        mov %z, 0
+        ret
+
+
+adjust_ab:
+    cmp %d, 0
+    jeq .down
+
+    cmp %d, 1
+    jeq .left
+
+    cmp %d, 2
+    jeq .right
+
+    ret
+
+    .down:
+        inc %b
+        ret
+
+    .left:
+        dec %a
+        ret
+
+    .right:
+        inc %a
+        ret
 
 draw_current:
     lw %d, CURRENT_COLOR
