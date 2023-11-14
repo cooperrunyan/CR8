@@ -138,7 +138,7 @@ loop:
   block 0b001100
 
   mov %a, 0
-  mov %b, 18
+  mov %b, 24
   mov %c, 0
   mov %d, 0
   call sleep
