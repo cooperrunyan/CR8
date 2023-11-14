@@ -88,6 +88,10 @@ update:
     and %f, 0b1000 ; right arrow
     jnz .right, %f
 
+    mov %f, %z
+    and %f, 0b10000 ; spacebar
+    jnz .drop, %f
+
     .ret:
     ret
 
@@ -134,6 +138,29 @@ update:
         lw %a, CURRENT + 6
         inc %a
         sw CURRENT + 6, %a
+        call draw_current
+        ret
+
+    .drop:
+        call drop
+        ret
+
+drop:
+    push ROWS
+    call erase_current
+
+    .loop:
+        mov %d, 0
+        call check_current
+        jnz .break, %z
+        call tick
+        pop %c
+        dec %c
+        push %c
+        jnz .loop, %c
+
+    .break:
+        pop %c
         call draw_current
         ret
 
