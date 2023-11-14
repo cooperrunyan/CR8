@@ -29,6 +29,23 @@ main:
 
     call draw_border
 
+    call init_current
+
+
+    .loop:
+        call erase_current
+        call tick
+        call draw_current
+
+        mov %a, 0
+        mov %b, 32
+        mov %c, 0
+        mov %d, 0
+        call sleep
+        jmp .loop
+
+
+init_current:
     mov %a, %b, 15, 6
     sw CURRENT, %a
     sw CURRENT + 1, %b
@@ -44,22 +61,9 @@ main:
 
     sw CURRENT_ROTATION, 0
     sw CURRENT_COLOR, YELLOW
+    ret
 
-
-    .loop:
-        call erase_current
-        call lower
-        call draw_current
-
-        mov %a, 0
-        mov %b, 96
-        mov %c, 0
-        mov %d, 0
-        call sleep
-        jmp .loop
-
-
-lower:
+tick:
     ; Set Z to 1 if the current piece cannot go down
     call check_beneath_current
 
@@ -83,9 +87,43 @@ lower:
     ret
 
     .stop:
-        ; Cannot go down
+        call move_to_occupied
+        call init_current
         ret
 
+move_to_occupied:
+    lw %a, CURRENT
+    lw %b, CURRENT + 1
+    call occupy
+    lw %a, CURRENT + 2
+    lw %b, CURRENT + 3
+    call occupy
+    lw %a, CURRENT + 4
+    lw %b, CURRENT + 5
+    call occupy
+    lw %a, CURRENT + 6
+    lw %b, CURRENT + 7
+    call occupy
+
+occupy:
+    push %a, %b
+    sub %b, PAD_ROW + 2
+    sub %a, PAD_COL + 2
+    push %a
+    mov %a, ROWS
+    call mulip ; Multiply b * 20
+
+    pop %z
+    add %a, %z
+    adc %b
+
+    add %a, %b, OCCUPIED
+
+    mov %x, %y, %a, %b
+    sw 1
+    pop %a, %b
+    block GREY
+    ret
 
 check_beneath_current:
     lw %a, CURRENT
@@ -118,8 +156,10 @@ check_beneath:
     mov %z, 1
     req
 
+    sub %b, PAD_ROW + 1
+    sub %a, PAD_COL + 1
     push %a
-    mov %a, 20
+    mov %a, ROWS
     call mulip ; Multiply b * 20
 
     pop %z
