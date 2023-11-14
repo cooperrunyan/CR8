@@ -128,6 +128,7 @@ adc: {
         aw pc, dw mem, dr rhs, pc inc
         alu add, dw alu, dr io
         dw alflg, dr f
+        dw io, dr sel
     }
 }
 

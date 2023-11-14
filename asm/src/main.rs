@@ -17,8 +17,7 @@ fn main() -> Result<()> {
     let config = Config::from_argv();
 
     if config.micro {
-        let bin = micro::compile(config.input)?;
-        let _ = config.output.write(&bin);
+        micro::compile_to_logisim(config.input, config.output)?;
 
         return Ok(());
     }

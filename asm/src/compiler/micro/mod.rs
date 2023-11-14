@@ -1,7 +1,12 @@
+use std::fs::{self, OpenOptions};
+
 use anyhow::{bail, Result};
 
-use super::lex::{expect_complete, Lexable, Pragma};
-use super::Input;
+use super::{
+    lex::{expect_complete, Lexable, Pragma},
+    Output,
+};
+use super::{logisim_hex_file, Input};
 
 use indexmap::IndexMap;
 
@@ -59,15 +64,15 @@ pub enum DataBusReader {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum DataBusWriter {
     /// Selects a writer based on the register ID that is in rhs
-    Sel,
-    Device,
-    K,
-    AluFlags,
-    Alu,
     Memory,
-    Io,
-    Rhs,
     Operation,
+    Alu,
+    AluFlags,
+    K,
+    Io,
+    Device,
+    Rhs,
+    Sel,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -105,77 +110,131 @@ pub enum StackPointerSignal {
     Decrement,
 }
 
-pub fn compile(input: Input) -> Result<Vec<u8>> {
-    let (buf, _) = input.source(None, None)?;
-    let buf = buf.unwrap_or_default();
+#[derive(Debug)]
+pub struct Microcode(Vec<(u8, Vec<RawControlSignal>)>);
 
-    let (prag, buf) = Pragma::lex(&buf)?;
+impl TryFrom<Input> for Microcode {
+    type Error = anyhow::Error;
+    fn try_from(input: Input) -> Result<Self> {
+        let (buf, _) = input.source(None, None)?;
+        let buf = buf.unwrap_or_default();
 
-    if prag != Pragma::Micro {
-        bail!("Expected #![micro] at the beginning of a microcode file");
-    }
+        let (prag, buf) = Pragma::lex(&buf)?;
 
-    let (micro, buf) = Micro::lex(buf)?;
+        if prag != Pragma::Micro {
+            bail!("Expected #![micro] at the beginning of a microcode file");
+        }
 
-    expect_complete(buf)?;
+        let (micro, buf) = Micro::lex(buf)?;
 
-    let binary = micro
-        .0
-        .into_iter()
-        .flat_map(|(operation, variants)| {
-            let header = (operation as u8) << 4;
-            let r = variants.reg.map(|reg| (header, reg));
-            let i = variants.imm.map(|imm| (header | 0b1000, imm));
-            [r, i]
-        })
-        .flatten()
-        .map(|(header, lines)| {
-            let last = lines.len() - 1;
-            lines
+        expect_complete(buf)?;
+
+        Ok(Self(
+            micro
+                .0
                 .into_iter()
-                .enumerate()
-                .map(|(i, line)| {
-                    control::ControlSignal::try_from(&line)
-                        .map(|sig| {
-                            let mut bits = RawControlSignal::from(sig);
-                            if i == last {
-                                bits.0[2] |= 1; // Set the CC flag on the last line of the instruction
-                            }
-                            bits
+                .flat_map(|(operation, variants)| {
+                    let header = (operation as u8) << 4;
+                    let r = variants.reg.map(|reg| (header, reg));
+                    let i = variants.imm.map(|imm| (header | 0b1000, imm));
+                    [r, i]
+                })
+                .flatten()
+                .map(|(header, lines)| {
+                    let last = lines.len() - 1;
+                    lines
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, line)| {
+                            control::ControlSignal::try_from(&line)
+                                .map(|sig| {
+                                    let mut bits = RawControlSignal::from(sig);
+                                    if i == last {
+                                        bits.0[2] |= 1; // Set the CC flag on the last line of the instruction
+                                    }
+                                    bits
+                                })
+                                .map_err(|e| {
+                                    let op = Operation::try_from(header >> 4).unwrap();
+                                    let imm = header & 0b1000 == 0b1000;
+                                    let variant = if imm { "imm" } else { "reg" };
+                                    e.context(format!(
+                                        "Operation \"{}\"\nVariant \"{}\" \nSignal {}",
+                                        op.to_string(),
+                                        variant,
+                                        i
+                                    ))
+                                })
                         })
-                        .map_err(|e| {
-                            let op = Operation::try_from(header >> 4).unwrap();
-                            let imm = header & 0b1000 == 0b1000;
-                            let variant = if imm { "imm" } else { "reg" };
-                            e.context(format!(
-                                "Operation \"{}\"\nVariant \"{}\" \nSignal {}",
-                                op.to_string(),
-                                variant,
-                                i
-                            ))
+                        .collect::<Result<Vec<_>, _>>()
+                        .map(|mut lines| {
+                            lines.push(RawControlSignal([0, 0, 1])); // "Complete" flag
+                            (header, lines)
                         })
                 })
-                .collect::<Result<Vec<_>, _>>()
-                .map(|lines| (header, lines))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+                .collect::<Result<Vec<_>, _>>()?,
+        ))
+    }
+}
 
-    for i in 0..7 {
-        for (header, chunk) in binary.iter() {
-            let header = header >> 3;
-            let msg = match chunk.get(i) {
-                None => "".to_string(),
-                Some(sig) => format!("{i:03b}{header:05b} | {}", sig),
+impl Microcode {
+    pub fn debug(&self) {
+        for i in 0..7 {
+            for (header, chunk) in self.0.iter() {
+                let header = header >> 3;
+                let msg = match chunk.get(i) {
+                    None => "".to_string(),
+                    Some(sig) => format!("{i:03b}{header:05b} | {}", sig),
+                }
+                .split("")
+                .collect::<Vec<_>>()
+                .join(" ");
+
+                println!("{}", msg);
             }
-            .split("")
-            .collect::<Vec<_>>()
-            .join(" ");
-
-            println!("{}", msg);
         }
     }
 
-    Ok(vec![])
+    /// Returns byte arrays for 3 Microcode ROM chips.
+    /// Uses XXXXYZZZ for addresses
+    ///   X: Operation
+    ///   Y: Immediate
+    ///   Z: Nth clock cycle
+    pub fn rom(self) -> [[u8; 256]; 3] {
+        let mut rom = [[0; 256]; 3];
+
+        for (header, chunk) in self.0 {
+            for i in 0..7 {
+                let signals = match chunk.get(i) {
+                    None => [0, 0, 1],
+                    Some(sig) => sig.0,
+                };
+                let key = ((header | i as u8) as usize) + 1; // Offset by 1 so 0x00 means fetch next instruction
+                rom[0][key] = signals[0];
+                rom[1][key] = signals[1];
+                rom[2][key] = signals[2];
+            }
+        }
+
+        rom
+    }
+}
+
+pub fn compile_to_logisim(input: Input, to: Output) -> Result<()> {
+    let microcode = Microcode::try_from(input)?;
+    let dir = to.path()?;
+    fs::create_dir_all(&dir)?;
+
+    for (i, bytes) in microcode.rom().iter().enumerate() {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .append(false)
+            .create(true)
+            .open(dir.join(format!("microcode-{i}")))?;
+        logisim_hex_file(bytes, 8, &mut file)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

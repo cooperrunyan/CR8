@@ -2,7 +2,7 @@
     sim   = "run --bin sim -q -F jit -- -r 4ghz"
     dbg   = "run --bin sim -F jit -- -r 4hz --dbg"
     asm   = "run --bin asm -- -o target/test.bin"
-    micro = "asm -o target/microcode.bin --micro -f asm/src/builtin/core/micro.asm"
+    micro = "asm -o circ/bin --micro -f asm/src/builtin/core/micro.asm"
     png   = "run --bin png --"
 
 [env]

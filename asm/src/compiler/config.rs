@@ -1,11 +1,16 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use path_clean::clean;
-use std::fs::{self, OpenOptions};
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::{
+    fs::{self, OpenOptions},
+    str::FromStr,
+};
 
 use crate::builtin::BUILTIN;
+
+use super::logisim_hex_file;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -21,17 +26,32 @@ pub enum Input {
     File(String),
 }
 
-#[derive(Debug, Clone)]
-pub enum Output {
+#[derive(Debug, Clone, Default)]
+pub enum OutputKind {
     File(String),
+
+    #[default]
     None,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub enum OutputFormat {
+    #[default]
+    Default,
+    Logisim,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Output {
+    kind: OutputKind,
+    format: OutputFormat,
+}
+
 impl Output {
-    pub fn write(&self, bin: &[u8]) -> Result<(), io::Error> {
-        match self {
-            Output::None => Ok(()),
-            Output::File(f) => {
+    pub fn write(&self, bin: &[u8]) -> Result<()> {
+        match &self.kind {
+            OutputKind::None => Ok(()),
+            OutputKind::File(f) => {
                 let mut options = OpenOptions::new();
                 let mut file = options
                     .write(true)
@@ -40,8 +60,25 @@ impl Output {
                     .create(true)
                     .open(f)?;
 
-                file.write_all(bin)
+                match self.format {
+                    OutputFormat::Default => {
+                        file.write_all(bin)?;
+                        Ok(())
+                    }
+                    OutputFormat::Logisim => {
+                        logisim_hex_file(bin, 16, &mut file)?;
+
+                        Ok(())
+                    }
+                }
             }
+        }
+    }
+
+    pub fn path(&self) -> Result<PathBuf> {
+        match &self.kind {
+            OutputKind::None => Err(anyhow!("No specified output")),
+            OutputKind::File(f) => Ok(PathBuf::from_str(f).unwrap()),
         }
     }
 }
@@ -49,7 +86,10 @@ impl Output {
 impl Config {
     pub fn from_argv() -> Self {
         let mut input: Option<Input> = None;
-        let mut output = Output::None;
+        let mut output = Output {
+            kind: OutputKind::None,
+            format: OutputFormat::Default,
+        };
         let mut micro = false;
         let mut debug = false;
 
@@ -69,7 +109,10 @@ impl Config {
                     input = Some(Input::Raw(std::env::args().nth(i + 1).unwrap_or_default()));
                 }
                 "-o" | "--output" => {
-                    output = Output::File(std::env::args().nth(i + 1).unwrap_or_default());
+                    output.kind = OutputKind::File(std::env::args().nth(i + 1).unwrap_or_default());
+                }
+                "--logisim" => {
+                    output.format = OutputFormat::Logisim;
                 }
                 "-d" | "--debug" => {
                     debug = true;
@@ -87,7 +130,7 @@ impl Config {
             input,
             output,
             micro,
-            debug
+            debug,
         }
     }
 }

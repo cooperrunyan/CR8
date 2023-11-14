@@ -18,7 +18,7 @@ impl Runner {
     pub fn jit(file: String) -> Result<Vec<u8>> {
         let config = compiler::Config {
             input: compiler::Input::Raw(file),
-            output: compiler::Output::None,
+            output: compiler::Output::default(),
             micro: false,
             debug: false,
         };

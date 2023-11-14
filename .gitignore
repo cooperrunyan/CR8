@@ -9,3 +9,5 @@ tool/lang/tree-sitter-cr8/Cargo.toml
 tool/lang/tree-sitter-cr8/node_modules
 **/.DS_Store
 **/node_modules
+
+circ/bin

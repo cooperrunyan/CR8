@@ -1,11 +1,11 @@
 #![doc(alias = "assembler")]
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use indexmap::IndexMap;
 use path_clean::clean;
 use std::env;
-use std::path::PathBuf;
 use std::sync::Arc;
+use std::{io::Write, path::PathBuf};
 
 mod config;
 mod debug;
@@ -137,4 +137,37 @@ pub fn find_err_location(at: &str, file_content: &str, file_path: &str) -> Strin
         }
     }
     format!("{file_path}:{}:{}", lines + 1, col + 1)
+}
+
+// v3.0 hex words addressed
+// 00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+// 10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+// ...
+pub fn logisim_hex_file<W: Write + Sync>(
+    bin: &[u8],
+    addr_width: usize,
+    file: &mut W,
+) -> Result<()> {
+    const ROW: usize = 16;
+
+    let addr_fmt = match addr_width {
+        4 => |byte: &usize| format!("{byte:01x}"),
+        8 => |byte: &usize| format!("{byte:02x}"),
+        16 => |byte: &usize| format!("{byte:04x}"),
+        32 => |byte: &usize| format!("{byte:08x}"),
+        w => bail!("Invalid address width: {w}"),
+    };
+
+    file.write_all("v3.0 hex words addressed".as_bytes())?;
+
+    for (i, bytes) in bin.chunks(ROW).enumerate() {
+        let addr = i * ROW;
+        let row = bytes
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        file.write_fmt(format_args!("\n{}: {}", addr_fmt(&addr), row))?;
+    }
+    Ok(())
 }

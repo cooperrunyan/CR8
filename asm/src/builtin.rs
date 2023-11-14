@@ -24,10 +24,8 @@ modules! {
             },
             gfx::{
                 frame,
-                text,
                 grid::{
                     point,
-                    inline_box,
                     cfg,
                     block,
                 }
