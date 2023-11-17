@@ -39,13 +39,6 @@ const DEC: &str = "dec";
 const PC_JUMP: &str = "jmp";
 const PC_JNZ: &str = "jnz";
 
-const ALU_ADD: &str = "add";
-const ALU_SUB: &str = "sub";
-const ALU_AND: &str = "and";
-const ALU_OR: &str = "or";
-const ALU_NOR: &str = "nor";
-const ALU_CMP: &str = "cmp";
-
 impl<'b> Lexable<'b> for Micro {
     fn lex(buf: &'b str) -> LexResult<'b, Self> {
         let mut micro = IndexMap::new();
@@ -225,12 +218,13 @@ impl<'b> Lexable<'b> for AluSignal {
         let (x, buf) = collect_while(buf, char::is_alphanumeric)?;
         Ok((
             match x {
-                ALU_ADD => Self::Add,
-                ALU_SUB => Self::Sub,
-                ALU_AND => Self::And,
-                ALU_OR => Self::Or,
-                ALU_NOR => Self::Nor,
-                ALU_CMP => Self::Cmp,
+                "add" => Self::Add,
+                "sub" => Self::Sub,
+                "and" => Self::And,
+                "nand" => Self::And,
+                "or" => Self::Or,
+                "nor" => Self::Nor,
+                "cmp" => Self::Cmp,
                 o => bail!("Invalid operation {o:#?} for {ALU:#?}"),
             },
             buf,

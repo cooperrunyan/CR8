@@ -9,7 +9,7 @@
         "-o",
         "target/web.bin",
         "-f",
-        "bin/tetris",
+        "bin/snake",
     ]
 
 [build]

@@ -185,7 +185,7 @@
           }
         },
         {
-          "match": "\\b(alu)\\s+(add|sub|and|or|nor|cmp)\\b",
+          "match": "\\b(alu)\\s+(adc|sbb|nand|and|or|nor|cmp)\\b",
           "captures": {
             "1": { "name": "keyword.control" },
             "2": { "name": "keyword.operator" }

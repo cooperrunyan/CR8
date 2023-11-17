@@ -119,14 +119,14 @@ adc: {
         dw op, dr lhs
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu add, dw alu, dr io
+        alu adc, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel
     }
     (imm) => {
         dw op, dr lhs
         aw pc, dw mem, dr rhs, pc inc
-        alu add, dw alu, dr io
+        alu adc, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel
     }
@@ -137,14 +137,14 @@ sbb: {
         dw op, dr lhs
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu sub, dw alu, dr io
+        alu sbb, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel
     }
     (imm) => {
         dw op, dr lhs
         aw pc, dw mem, dr rhs, pc inc
-        alu sub, dw alu, dr io
+        alu sbb, dw alu, dr io
         dw alflg, dr f
         dw io, dr sel
     }

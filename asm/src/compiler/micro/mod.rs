@@ -91,9 +91,10 @@ pub enum DataBusWriteSignal {
 pub enum AluSignal {
     Add,
     Sub,
-    And,
     Or,
     Nor,
+    And,
+    Nand,
     Cmp,
 }
 

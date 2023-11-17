@@ -210,8 +210,8 @@ move_to_occupied:
 
 occupy:
     push %a, %b
-    sub %b, PAD_ROW + 2
-    sub %a, PAD_COL + 2
+    sub %b, PAD_ROW + 1
+    sub %a, PAD_COL + 1
     push %a
     mov %a, ROWS
     call mulip ; Multiply b * 20
@@ -260,8 +260,8 @@ check:
     call check_bounds
     jnz .true, %z
 
-    sub %b, PAD_ROW + 2
-    sub %a, PAD_COL + 2
+    sub %b, PAD_ROW + 1
+    sub %a, PAD_COL + 1
 
     call adjust_ab ; inc/dec a or b depending on d
 
