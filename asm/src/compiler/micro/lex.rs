@@ -218,8 +218,8 @@ impl<'b> Lexable<'b> for AluSignal {
         let (x, buf) = collect_while(buf, char::is_alphanumeric)?;
         Ok((
             match x {
-                "add" => Self::Add,
-                "sub" => Self::Sub,
+                "adc" => Self::Add,
+                "sbb" => Self::Sub,
                 "and" => Self::And,
                 "nand" => Self::And,
                 "or" => Self::Or,
