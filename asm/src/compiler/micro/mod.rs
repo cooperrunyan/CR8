@@ -38,6 +38,7 @@ pub enum MicroSignal {
     Alu(AluSignal),
     StackPointer(StackPointerSignal),
     ProgramCounter(ProgramCounterSignal),
+    Nop,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -146,6 +147,7 @@ impl TryFrom<Input> for Microcode {
                     lines
                         .into_iter()
                         .enumerate()
+                        .skip(1)
                         .map(|(i, line)| {
                             control::ControlSignal::try_from(&line)
                                 .map(|sig| {

@@ -4,11 +4,14 @@
 - 16-bit address bus (64KB) + 8 bit memory bank
 - Little endian
 - Designed to be implemented with 74HC logic gates
-- RISC-based architecture
+- RISC architecture
 - [Custom Assembly language](./asm/README.md) inspired by
   [Rust](https://rust-lang.org) and AT&T Assembly
 - Supports communications with other devices by sending/recieving a byte
 - Minimal native instruction set. Macro-supported development.
+- 0.240488 Instructions per clock cycle (4.1582 cycles/instruction)
+- Designed to run at 1-4 Mhz
+- Not pipelined (Instructions are executed synchronously)
 
 ## Registers
 

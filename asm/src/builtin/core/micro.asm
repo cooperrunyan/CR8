@@ -1,26 +1,39 @@
 #![micro]
 
+; Note: every instruction starts with either "dr lhs" or "dr rhs".
+; this allows us to set the two flags between the fetch and decode
+; stages, saving a clock cycle.
+
+; SIDE EFFECTS: first signal is excluded from the microcode rom.
+; if an instruction needs to do anything other than reading lhs or
+; rhs, it can have a "nop" to opt out of the preloading. Also, logic
+; for the initial lhs/rhs is found in the circuit, not the microcode.
+
 mov: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs
         dw sel, dr sel, pc inc
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr sel, pc inc
     }
 }
 
 jnz: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         alu cmp, dw alflg, dr f
         aw xy, pc jnz
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         alu cmp, dw alflg, dr f
         aw pc, dw mem, dr lhs, pc inc
         aw pc, dw mem, dr rhs, pc inc
@@ -30,9 +43,13 @@ jnz: {
 
 jmp: {
     (reg) => {
+        nop
+
         aw xy, pc jmp
     }
     (imm) => {
+        nop
+
         aw pc, dw mem, dr lhs, pc inc
         aw pc, dw mem, dr rhs, pc inc
         aw lr, pc jmp
@@ -41,26 +58,30 @@ jmp: {
 
 lw: {
     (imm) => {
-        dw op, dr io ; use io as intermediate
+        nop
+
         aw pc, dw mem, dr lhs, pc inc
         aw pc, dw mem, dr rhs, pc inc
         aw lr, dw mem, dr rhs
-        dw io, dr lhs
+        dw op, dr lhs
         dw rhs, dr sel
     }
     (reg) => {
-        dw op, dr io
+        dr lhs
+
         aw xy, dw mem, dr sel, pc inc
     }
 }
 
 sw: {
     (reg) => {
-        dw op, dr rhs
+        dr rhs
+
         aw xy, dw sel, dr mem
     }
     (imm) => {
-        dw op, dr rhs
+        dr rhs
+
         dw sel, dr io
         aw pc, dw mem, dr lhs, pc inc
         aw pc, dw mem, dr rhs
@@ -70,31 +91,37 @@ sw: {
 
 push: {
     (reg) => {
-        dw op, dr rhs
+        dr rhs
+
         aw sp, dw sel, dr mem, sp inc
     }
     (imm) => {
-        dw op, dr rhs
+        dr rhs
+
         aw sp, dw rhs, dr mem, sp inc
     }
 }
 
 pop: {
     (reg) => {
-        dw op, dr lhs, sp dec
+        dr lhs
+
+        sp dec
         aw sp, dw mem, dr sel
     }
 }
 
 in: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr io
         dw dev, dr sel
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr io, pc inc
         dw dev, dr sel
     }
@@ -102,63 +129,67 @@ in: {
 
 out: {
     (reg) => {
-        dw op, dr rhs, pc inc
-        dw sel, dr io
+        dr rhs
+
+        pc inc, dw sel, dr io
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr dev
     }
     (imm) => {
-        dw op, dr rhs, pc inc
-        dw sel, dr io
+        dr rhs
+
+        dw sel, dr io, pc inc
         aw pc, dw mem, dr dev, pc inc
     }
 }
 
 adc: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu adc, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu adc, dw alu, dr sel
+        alu adc, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
-        alu adc, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu adc, dw alu, dr sel
+        alu adc, dw alflg, dr f
     }
 }
 
 sbb: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu sbb, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu sbb, dw alu, dr sel
+        alu sbb, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
-        alu sbb, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu sbb, dw alu, dr sel
+        alu sbb, dw alflg, dr f
     }
 }
 
 cmp: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
         alu cmp, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         alu cmp, dw alflg, dr f
     }
@@ -166,64 +197,67 @@ cmp: {
 
 and: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu and, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu and, dw alu, dr sel
+        alu and, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
-        alu and, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu and, dw alu, dr sel
+        alu and, dw alflg, dr f
     }
 }
 
 or: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu or, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu or, dw alu, dr sel
+        alu or, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
-        alu or, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu or, dw alu, dr sel
+        alu or, dw alflg, dr f
     }
 }
 
 nor: {
     (reg) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu nor, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu nor, dw alu, dr sel
+        alu nor, dw alflg, dr f
     }
     (imm) => {
-        dw op, dr lhs
+        dr lhs
+
         aw pc, dw mem, dr rhs, pc inc
-        alu nor, dw alu, dr io
-        dw alflg, dr f
-        dw io, dr sel
+        alu nor, dw alu, dr sel
+        alu nor, dw alflg, dr f
     }
 }
 
 bank: {
     (reg) => {
-        dw op, dr rhs, pc inc
-        dr k, dw sel
+        dr rhs
+
+        dr k, dw sel, pc inc
     }
     (imm) => {
+        nop
+
         aw pc, dw mem, dr k, pc inc
     }
 }

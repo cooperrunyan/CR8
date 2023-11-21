@@ -147,6 +147,7 @@ impl<'b> Lexable<'b> for MicroSignal {
                 let (pc, buf) = ProgramCounterSignal::lex(buf)?;
                 Ok((Self::ProgramCounter(pc), buf))
             }
+            "nop" => Ok((Self::Nop, buf)),
             o => bail!("Invalid signal {o:#?}"),
         }
     }

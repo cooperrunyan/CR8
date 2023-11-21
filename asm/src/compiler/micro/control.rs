@@ -158,6 +158,7 @@ impl TryFrom<&Vec<MicroSignal>> for ControlSignal {
                     StackPointerSignal::Decrement => set!(sp_dec, "sp dec", true),
                     StackPointerSignal::Increment => set!(sp_inc, "sp inc", true),
                 },
+                MicroSignal::Nop => {}
             }
         }
 
