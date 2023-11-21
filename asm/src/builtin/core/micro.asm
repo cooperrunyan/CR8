@@ -49,7 +49,6 @@ jmp: {
     }
     (imm) => {
         nop
-
         aw pc, dw mem, dr lhs, pc inc
         aw pc, dw mem, dr rhs, pc inc
         aw lr, pc jmp
@@ -149,15 +148,17 @@ adc: {
 
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu adc, dw alu, dr sel
+        alu adc, dw alu, dr io
         alu adc, dw alflg, dr f
+        dw io, dr sel
     }
     (imm) => {
         dr lhs
 
         aw pc, dw mem, dr rhs, pc inc
-        alu adc, dw alu, dr sel
+        alu adc, dw alu, dr io
         alu adc, dw alflg, dr f
+        dw io, dr sel
     }
 }
 
@@ -167,15 +168,17 @@ sbb: {
 
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu sbb, dw alu, dr sel
+        alu sbb, dw alu, dr io
         alu sbb, dw alflg, dr f
+        dw io, dr sel
     }
     (imm) => {
         dr lhs
 
         aw pc, dw mem, dr rhs, pc inc
-        alu sbb, dw alu, dr sel
+        alu sbb, dw alu, dr io
         alu sbb, dw alflg, dr f
+        dw io, dr sel
     }
 }
 
@@ -201,15 +204,17 @@ and: {
 
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu and, dw alu, dr sel
+        alu and, dw alu, dr io
         alu and, dw alflg, dr f
+        dw io, dr sel
     }
     (imm) => {
         dr lhs
 
         aw pc, dw mem, dr rhs, pc inc
-        alu and, dw alu, dr sel
+        alu and, dw alu, dr io
         alu and, dw alflg, dr f
+        dw io, dr sel
     }
 }
 
@@ -219,15 +224,17 @@ or: {
 
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu or, dw alu, dr sel
+        alu or, dw alu, dr io
         alu or, dw alflg, dr f
+        dw io, dr sel
     }
     (imm) => {
         dr lhs
 
         aw pc, dw mem, dr rhs, pc inc
-        alu or, dw alu, dr sel
+        alu or, dw alu, dr io
         alu or, dw alflg, dr f
+        dw io, dr sel
     }
 }
 
@@ -237,15 +244,16 @@ nor: {
 
         aw pc, dw mem, dr rhs, pc inc
         dw sel, dr rhs
-        alu nor, dw alu, dr sel
+        alu nor, dw alu, dr io
         alu nor, dw alflg, dr f
+        dw io, dr sel
     }
     (imm) => {
         dr lhs
 
-        aw pc, dw mem, dr rhs, pc inc
-        alu nor, dw alu, dr sel
+        alu nor, dw alu, dr io
         alu nor, dw alflg, dr f
+        dw io, dr sel
     }
 }
 

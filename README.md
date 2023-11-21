@@ -9,7 +9,7 @@
   [Rust](https://rust-lang.org) and AT&T Assembly
 - Supports communications with other devices by sending/recieving a byte
 - Minimal native instruction set. Macro-supported development.
-- 0.240488 Instructions per clock cycle (4.1582 cycles/instruction)
+- 0.20054 Instructions per clock cycle (4.9865 cycles/instruction)
 - Designed to run at 1-4 Mhz
 - Not pipelined (Instructions are executed synchronously)
 
