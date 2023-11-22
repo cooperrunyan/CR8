@@ -108,7 +108,7 @@
     <a name="circuit" val="main"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="downloadFrequency" val="1.0"/>
-    <a name="simulationFrequency" val="2048000.0"/>
+    <a name="simulationFrequency" val="256000.0"/>
     <comp lib="0" loc="(100,360)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="BANK"/>
@@ -419,8 +419,8 @@
       <a name="addrWidth" val="15"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 15 8
-98 1 99 0 9a 0 9b 0
-28
+8 1 48 0 80 f8 1 48
+1 80 f8 2 48 2 80
 </a>
       <a name="labelvisible" val="true"/>
     </comp>
@@ -429,7 +429,6 @@
       <a name="appearance" val="logisim_evolution"/>
       <a name="enables" val="line"/>
       <a name="label" val="BUILTIN_RAM"/>
-      <a name="labelvisible" val="true"/>
     </comp>
     <comp lib="4" loc="(370,770)" name="RAM">
       <a name="addrWidth" val="14"/>
